@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { updateAreaState, validatePin, getApiKeyDetails, Area, Device, Organization } from '@/lib/api';
 import { logger } from '@/lib/logger';
+import { analytics } from '@/lib/analytics';
+import { performanceMonitor } from '@/lib/performance';
 import { 
   optimizedGetLocations, 
   optimizedGetAreas, 
@@ -12,11 +14,9 @@ import {
   SmartPoller 
 } from '@/lib/api-optimized';
 
-// Updated API key
-const DEFAULT_API_KEY = 'pCbXsCCROjRgyIiKFIfrOKnWfVCoZIjaobfjhDpBXhjQcBLfRBoxtSCTMtEOKCLH';
-
-// Default Weather API Key - Add your OpenWeatherMap API key here to avoid re-entering it
-const DEFAULT_WEATHER_API_KEY = '90ef093d33c6ba4e1e250ff620cdf273'; // Set to your OpenWeatherMap API key for persistence
+// API keys from environment variables
+const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_DEFAULT_API_KEY || '';
+const DEFAULT_WEATHER_API_KEY = process.env.NEXT_PUBLIC_DEFAULT_WEATHER_API_KEY || '';
 
 export default function AlarmKeypad() {
   const [apiKey, setApiKey] = useState('');
@@ -109,6 +109,9 @@ export default function AlarmKeypad() {
 
   // Initialize on mount
   useEffect(() => {
+    // Track page view
+    analytics.trackPageView('main-keypad');
+    
     // Force update to new API key
     const newApiKey = DEFAULT_API_KEY;
     localStorage.setItem('fusion_api_key', newApiKey);
@@ -499,10 +502,23 @@ export default function AlarmKeypad() {
     setIsProcessing(true);
     setError('');
 
+    const startTime = performance.now();
+
     try {
       const response = await validatePin(pin);
+      const duration = performance.now() - startTime;
       
       if (response.error || !response.data.valid) {
+        analytics.trackAuthentication(false, 'pin');
+        performanceMonitor.trackAPICall({
+          endpoint: '/api/alarm/keypad/validate-pin',
+          method: 'POST',
+          duration,
+          status: response.error ? 400 : 401,
+          success: false,
+        });
+        
+        logger.security('Failed PIN attempt', { pinLength: pin.length });
         setError('Invalid PIN');
         setPin('');
         setIsProcessing(false);
@@ -510,6 +526,21 @@ export default function AlarmKeypad() {
       }
 
       // Authentication successful
+      analytics.trackAuthentication(true, 'pin');
+      analytics.setUserProperties({
+        userId: response.data.userId,
+        organizationId: organization?.id,
+        locationId: selectedLocation?.id,
+      });
+      
+      performanceMonitor.trackAPICall({
+        endpoint: '/api/alarm/keypad/validate-pin',
+        method: 'POST',
+        duration,
+        status: 200,
+        success: true,
+      });
+
       setAuthenticatedUser(response.data.userName || 'User');
       setIsAuthenticated(true);
       setPin('');
@@ -519,6 +550,16 @@ export default function AlarmKeypad() {
         await loadAreas(selectedLocation);
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      analytics.trackError(err as Error, 'authentication');
+      performanceMonitor.trackAPICall({
+        endpoint: '/api/alarm/keypad/validate-pin',
+        method: 'POST',
+        duration,
+        status: 500,
+        success: false,
+      });
+      
       logger.error('Authentication error:', err);
       setError('Failed to authenticate');
       setPin('');
@@ -590,6 +631,9 @@ export default function AlarmKeypad() {
   const handleAreaToggle = async (area: Area, skipConfirmation = false) => {
     const newState = area.armedState === 'DISARMED' ? 'ARMED_AWAY' : 'DISARMED';
     
+    // Track area action
+    analytics.trackAreaAction(newState === 'DISARMED' ? 'disarm' : 'arm', area.id, newState);
+    
     // Check device status only when arming
     if (newState === 'ARMED_AWAY' && !skipConfirmation) {
       const warnings = checkDeviceStatus(area);
@@ -602,13 +646,34 @@ export default function AlarmKeypad() {
     }
     
     setIsProcessing(true);
+    const startTime = performance.now();
+    
     try {
       const response = await updateAreaState(area.id, newState);
+      const duration = performance.now() - startTime;
+      
       if (response.error) {
+        performanceMonitor.trackAPICall({
+          endpoint: `/api/areas/${area.id}`,
+          method: 'PUT',
+          duration,
+          status: 400,
+          success: false,
+        });
+        
         logger.error('API error:', response.error);
         setError(`Failed to update ${area.name}`);
         return;
       }
+      
+      performanceMonitor.trackAPICall({
+        endpoint: `/api/areas/${area.id}`,
+        method: 'PUT',
+        duration,
+        status: 200,
+        success: true,
+      });
+      
       if (selectedLocation) {
         // Clear caches to force fresh data after state change
         clearCache(`areas-${selectedLocation.id}`);
@@ -622,6 +687,16 @@ export default function AlarmKeypad() {
         ]);
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      performanceMonitor.trackAPICall({
+        endpoint: `/api/areas/${area.id}`,
+        method: 'PUT',
+        duration,
+        status: 500,
+        success: false,
+      });
+      
+      analytics.trackError(err as Error, 'area-toggle');
       logger.error('Exception in handleAreaToggle:', err);
       setError('Failed to update area');
     } finally {
@@ -718,23 +793,58 @@ export default function AlarmKeypad() {
       return;
     }
     
+    const startTime = performance.now();
+    
     try {
       const url = `https://api.openweathermap.org/data/2.5/weather?zip=${postalCode},US&appid=${weatherApiKey}&units=imperial`;
       
       const response = await fetch(url);
+      const duration = performance.now() - startTime;
       
       if (!response.ok) {
+        performanceMonitor.trackAPICall({
+          endpoint: 'openweathermap-api',
+          method: 'GET',
+          duration,
+          status: response.status,
+          success: false,
+        });
+        
+        analytics.trackWeatherUpdate(postalCode, false);
         logger.error('Weather API error:', `${response.status} ${response.statusText}`);
         return;
       }
       
       const data = await response.json();
+      
+      performanceMonitor.trackAPICall({
+        endpoint: 'openweathermap-api',
+        method: 'GET',
+        duration,
+        status: 200,
+        success: true,
+      });
+      
+      analytics.trackWeatherUpdate(postalCode, true);
+      
       setWeather({
         temp: Math.round(data.main.temp),
         condition: data.weather[0].main,
         icon: data.weather[0].icon
       });
     } catch (error) {
+      const duration = performance.now() - startTime;
+      
+      performanceMonitor.trackAPICall({
+        endpoint: 'openweathermap-api',
+        method: 'GET',
+        duration,
+        status: 0,
+        success: false,
+      });
+      
+      analytics.trackWeatherUpdate(postalCode, false);
+      analytics.trackError(error as Error, 'weather-fetch');
       logger.error('Failed to fetch weather:', error);
     }
   };

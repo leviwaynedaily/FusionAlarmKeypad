@@ -13,7 +13,7 @@ export const getWeather = async (postalCode: string): Promise<WeatherData | null
     : WEATHER_API_KEY;
     
   if (!apiKey) {
-    console.error('Weather API key not found');
+    // Weather API key not found
     return null;
   }
 
@@ -33,7 +33,7 @@ export const getWeather = async (postalCode: string): Promise<WeatherData | null
       icon: data.weather[0].icon,
     };
   } catch (error) {
-    console.error('Error fetching weather:', error);
+    // Error fetching weather data
     return null;
   }
 }; 

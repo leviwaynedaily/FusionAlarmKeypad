@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ClientLayout } from "@/components/ClientLayout";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,6 +49,29 @@ export default function RootLayout({
           Safely register the service-worker: check that the file exists first so we avoid 404 noise
           in the console when running locally or on deployments without an sw.js.
         */}
+        {/* Google Analytics */}
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                    page_title: 'Fusion Alarm',
+                    custom_map: {'custom_parameter_1': 'fusion_alarm_app'}
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
+        
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -60,8 +84,12 @@ export default function RootLayout({
                     .then((res) => {
                       if (res.ok) {
                         navigator.serviceWorker.register('/sw.js')
-                          .then(() => console.log('ServiceWorker registration successful'))
-                          .catch((err) => console.warn('ServiceWorker registration failed:', err));
+                          .then(() => {
+                            // ServiceWorker registered successfully
+                          })
+                          .catch(() => {
+                            // ServiceWorker registration failed
+                          });
                       }
                     })
                     .catch(() => {/* no sw present */});
@@ -83,7 +111,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ClientLayout>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

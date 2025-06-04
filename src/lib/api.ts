@@ -132,7 +132,6 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API Error Response:', errorText);
       
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       try {
@@ -155,8 +154,6 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
     const data = await response.json();
     return { data };
   } catch (error) {
-    console.error('API Fetch Error:', error);
-    
     // Check if it's a network error
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       return {
@@ -204,7 +201,6 @@ export const validateApiKey = async (key: string): Promise<ApiResponse<boolean>>
     }
     return { data: true };
   } catch (error) {
-    console.error('API key validation error:', error);
     return {
       data: false,
       error: error instanceof Error ? error.message : 'Invalid API key',

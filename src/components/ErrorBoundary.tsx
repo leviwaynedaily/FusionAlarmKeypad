@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import * as Sentry from "@sentry/nextjs";
 import { logger } from '@/lib/logger';
 
 interface ErrorBoundaryState {
@@ -24,8 +25,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logger.error('Error caught by boundary:', error);
-    logger.error('Error info:', errorInfo);
+    logger.error('Error caught by boundary:', error, {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: true
+    });
+    
+    // Send to Sentry with additional context
+    Sentry.withScope((scope) => {
+      scope.setTag('errorBoundary', true);
+      scope.setContext('errorInfo', {
+        componentStack: errorInfo.componentStack
+      });
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
   }
 
   resetError = () => {
