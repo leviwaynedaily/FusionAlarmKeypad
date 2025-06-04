@@ -1,19 +1,21 @@
 # Fusion Alarm Keypad
 
-A responsive, PIN-authenticated alarm keypad web application built to interface with the Fusion platform. This app allows users to arm/disarm areas, view device states, monitor recent events, and trigger automations.
+A responsive, PIN-authenticated alarm keypad web application built to interface with the Fusion platform. This production-ready app allows users to arm/disarm areas, view device states, and manage security systems through an intuitive touch interface.
 
-## Features
+## ✨ Features
 
-- API Key and PIN authentication
-- Location selection
-- Area control (arm/disarm/stay)
-- Device status monitoring
-- Event history
-- Automation tracking
-- Real-time weather display
-- Responsive design for tablets and touch devices
+- 🔐 **API Key and PIN authentication**
+- 📍 **Location selection and management** 
+- 🏠 **Area control** (arm/disarm/stay/bypass)
+- 📱 **Device status monitoring** with real-time updates
+- 🌤️ **Weather integration** with OpenWeatherMap
+- 📊 **Event history** (coming soon)
+- 🔧 **Automation tracking** (coming soon)
+- 📱 **Responsive design** optimized for tablets and touch devices
+- 🌙 **Dark/Light theme** with system preference detection
+- ⚡ **Production-ready** with optimized logging and error handling
 
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -22,30 +24,25 @@ A responsive, PIN-authenticated alarm keypad web application built to interface 
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/fusion-alarm-keypad.git
-cd fusion-alarm-keypad
+git clone https://github.com/levidaily/FusionAlarmKeypad.git
+cd FusionAlarmKeypad
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory and add your OpenWeatherMap API key:
-```
-NEXT_PUBLIC_WEATHER_API_KEY=your_api_key_here
-```
-
-4. Start the development server:
+3. **Start development server:**
 ```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
