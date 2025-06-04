@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fusion Alarm Keypad
+
+A responsive, PIN-authenticated alarm keypad web application built to interface with the Fusion platform. This app allows users to arm/disarm areas, view device states, monitor recent events, and trigger automations.
+
+## Features
+
+- API Key and PIN authentication
+- Location selection
+- Area control (arm/disarm/stay)
+- Device status monitoring
+- Event history
+- Automation tracking
+- Real-time weather display
+- Responsive design for tablets and touch devices
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18.x or later
+- npm 9.x or later
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/fusion-alarm-keypad.git
+cd fusion-alarm-keypad
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file in the root directory and add your OpenWeatherMap API key:
+```
+NEXT_PUBLIC_WEATHER_API_KEY=your_api_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+The application will be available at `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── page.tsx           # API key entry page
+│   ├── location/          # Location selection
+│   ├── pin/              # PIN entry
+│   ├── dashboard/        # Main dashboard
+│   ├── devices/          # Device status
+│   ├── events/           # Event history
+│   └── automations/      # Automation tracking
+├── components/            # Reusable components
+│   ├── AreaCard.tsx      # Area control card
+│   ├── WeatherWidget.tsx # Weather display
+│   ├── PinPad.tsx        # PIN input pad
+│   └── TabNav.tsx        # Navigation tabs
+└── lib/                  # Utility functions
+    ├── api.ts            # API wrapper
+    └── weather.ts        # Weather API integration
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API Integration
 
-## Deploy on Vercel
+The application integrates with the Fusion platform API:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Base URL: `https://fusion-bridge-production.up.railway.app/`
+- Authentication: API Key and PIN
+- Endpoints:
+  - `/api/admin/api-keys/test` - Validate API key
+  - `/api/alarm/keypad/validate-pin` - Validate PIN
+  - `/api/locations` - Get available locations
+  - `/api/areas` - Get and control areas
+  - `/api/devices` - Get device status
+  - `/api/events` - Get event history
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Weather Integration
+
+The application uses OpenWeatherMap API to display current weather conditions based on the selected location's postal code.
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
+
+### Code Style
+
+The project uses:
+- TypeScript for type safety
+- ESLint for code linting
+- Prettier for code formatting
+- Tailwind CSS for styling
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
