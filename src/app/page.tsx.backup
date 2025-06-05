@@ -41,7 +41,6 @@ export default function AlarmKeypad() {
   const [showSeconds, setShowSeconds] = useState(false);
   const [highlightPinButtons, setHighlightPinButtons] = useState(true);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
-  const useDesign2 = true; // Design 2.0 is now default
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 

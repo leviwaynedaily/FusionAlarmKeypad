@@ -43,6 +43,15 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
   },
 
+  // Allow dev server access from local network IPs
+  ...(process.env.NODE_ENV === 'development' && {
+    allowedDevOrigins: [
+      '192.168.200.168', // Your specific local network IP
+      '192.168.1.*',     // Common local network range
+      '10.0.0.*',        // Another common local network range  
+    ],
+  }),
+
   // Service Worker for offline capability
   // (Already configured in layout.tsx)
 };
