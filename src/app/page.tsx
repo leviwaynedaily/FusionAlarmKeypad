@@ -45,6 +45,10 @@ export default function AlarmKeypad() {
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
+  // Service Worker update states
+  const [isCheckingForUpdate, setIsCheckingForUpdate] = useState(false);
+  const [lastUpdateCheck, setLastUpdateCheck] = useState<string>('');
+
   const [devices, setDevices] = useState<Device[]>([]);
   const [deviceWarnings, setDeviceWarnings] = useState<string[]>([]);
   const [showWarningConfirm, setShowWarningConfirm] = useState(false);
@@ -773,6 +777,39 @@ export default function AlarmKeypad() {
     window.location.reload();
   };
 
+  const handleCheckForUpdates = async () => {
+    setIsCheckingForUpdate(true);
+    setLastUpdateCheck('Checking...');
+    
+    try {
+      // Check if service worker is available
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          console.log('[SW] Manual update check triggered');
+          await registration.update();
+          setLastUpdateCheck(new Date().toLocaleTimeString());
+          
+          // If no update was immediately found, show a brief message
+          setTimeout(() => {
+            if (lastUpdateCheck && !lastUpdateCheck.includes('Update available')) {
+              setLastUpdateCheck(prev => prev + ' - App is up to date');
+            }
+          }, 2000);
+        } else {
+          setLastUpdateCheck('Service worker not available');
+        }
+      } else {
+        setLastUpdateCheck('Service worker not supported');
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      setLastUpdateCheck('Error checking for updates');
+    } finally {
+      setIsCheckingForUpdate(false);
+    }
+  };
+
   const formatRelativeTime = (timestamp: number) => {
     const now = Date.now();
     const diff = now - timestamp;
@@ -1246,6 +1283,40 @@ export default function AlarmKeypad() {
                     </button>
                   </div>
                                  </div>
+
+                {/* App Updates */}
+                <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">App Updates</h3>
+                  <div className="space-y-3">
+                    {/* Manual Update Check */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white">Check for Updates</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          {lastUpdateCheck ? `Last checked: ${lastUpdateCheck}` : 'Manually check for app updates'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleCheckForUpdates}
+                        disabled={isCheckingForUpdate}
+                        className={`px-4 py-2 border rounded-md text-sm transition-all font-medium ${
+                          isCheckingForUpdate 
+                            ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed' 
+                            : 'bg-[#22c55f]/10 text-[#22c55f] border-[#22c55f] hover:bg-[#22c55f]/20'
+                        }`}
+                      >
+                        {isCheckingForUpdate ? 'Checking...' : 'Check Now'}
+                      </button>
+                    </div>
+                    
+                    {/* Update Info */}
+                    <div className="text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                      <p>• Updates are applied automatically when you restart the app</p>
+                      <p>• Your current session won&apos;t be interrupted</p>
+                      <p>• Check manually or wait for automatic detection</p>
+                    </div>
+                  </div>
+                </div>
                </div>
              </div>
            </div>

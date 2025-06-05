@@ -1,9 +1,11 @@
 // Service Worker for Fusion Alarm PWA
-const CACHE_NAME = 'fusion-alarm-v1';
+const CACHE_NAME = 'fusion-alarm-v2';
 const urlsToCache = [
   '/',
   '/CSG-v2.otf',
   '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
   '/manifest.json'
 ];
 
