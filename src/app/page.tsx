@@ -224,7 +224,8 @@ export default function AlarmKeypad() {
       const timeOptions: Intl.DateTimeFormatOptions = {
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZone: selectedLocation?.timeZone
       };
       if (showSeconds) {
         timeOptions.second = '2-digit';
@@ -232,7 +233,8 @@ export default function AlarmKeypad() {
       const dateOptions: Intl.DateTimeFormatOptions = {
         weekday: 'long',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: selectedLocation?.timeZone
       };
       setCurrentTime(now.toLocaleTimeString('en-US', timeOptions));
       setCurrentDate(now.toLocaleDateString('en-US', dateOptions));
@@ -241,7 +243,7 @@ export default function AlarmKeypad() {
     updateClock();
     const timer = setInterval(updateClock, 1000);
     return () => clearInterval(timer);
-  }, [showSeconds]);
+  }, [showSeconds, selectedLocation?.timeZone]);
 
   // Auto-refresh areas and devices with smart polling
   useEffect(() => {
@@ -1086,10 +1088,21 @@ export default function AlarmKeypad() {
                 <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Current Location</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{selectedLocation?.name || 'No location selected'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">
-                    {selectedLocation?.addressPostalCode && `Postal Code: ${selectedLocation.addressPostalCode}`}
-                    {weather && ` • Weather: ${weather.temp}°F`}
-                  </p>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mb-2 space-y-1">
+                    {selectedLocation?.addressPostalCode && (
+                      <p>Postal Code: {selectedLocation.addressPostalCode}</p>
+                    )}
+                    {weather && (
+                      <p>Weather: {weather.temp}°F</p>
+                    )}
+                    <p>
+                      Timezone: {selectedLocation?.timeZone ? (
+                        <span className="text-[#22c55f]">{selectedLocation.timeZone}</span>
+                      ) : (
+                        <span className="text-amber-500">Not specified</span>
+                      )}
+                    </p>
+                  </div>
                   <button
                     onClick={() => {
                       setShowSettings(false);
