@@ -112,10 +112,15 @@ export default function AlarmKeypad() {
     // Track page view
     analytics.trackPageView('main-keypad');
     
-    // Force update to new API key
-    const newApiKey = DEFAULT_API_KEY;
-    localStorage.setItem('fusion_api_key', newApiKey);
-    setApiKey(newApiKey);
+    // Load existing API key or use default
+    const existingApiKey = localStorage.getItem('fusion_api_key');
+    if (existingApiKey) {
+      setApiKey(existingApiKey);
+    } else if (DEFAULT_API_KEY) {
+      // Only set default if no existing key and we have a default
+      localStorage.setItem('fusion_api_key', DEFAULT_API_KEY);
+      setApiKey(DEFAULT_API_KEY);
+    }
     
     const savedLocation = localStorage.getItem('selected_location');
     const savedTheme = localStorage.getItem('fusion_theme') as 'light' | 'dark' | 'system' | null;
