@@ -15,8 +15,8 @@ import {
 } from '@/lib/api-optimized';
 
 // API keys from environment variables
-const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_DEFAULT_API_KEY || '';
-const DEFAULT_WEATHER_API_KEY = process.env.NEXT_PUBLIC_DEFAULT_WEATHER_API_KEY || '';
+const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
+const DEFAULT_WEATHER_API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY || '';
 
 export default function AlarmKeypad() {
   const [apiKey, setApiKey] = useState('');
@@ -1047,7 +1047,7 @@ export default function AlarmKeypad() {
                         Weather updates every 10 minutes • Uses location postal code
                       </p>
                       <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                        💡 Tip: Set DEFAULT_WEATHER_API_KEY in code for automatic persistence
+                        💡 Tip: Set NEXT_PUBLIC_WEATHER_API_KEY in environment for automatic persistence
                       </p>
                       {weather && (
                         <p className="text-xs text-[#22c55f] mt-1">
