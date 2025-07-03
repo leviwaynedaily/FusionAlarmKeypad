@@ -130,7 +130,8 @@ export default function AlarmKeypad() {
       if (apiKeyDetails.error) {
         logger.error('Error fetching API key details:', apiKeyDetails.error);
         console.error('❌ API Key Details Error:', apiKeyDetails.error);
-        setError(`API Error: ${apiKeyDetails.error}`);
+        // Don't set error for API key validation - only for PIN authentication
+        // setError(`API Error: ${apiKeyDetails.error}`);
       } else if (apiKeyDetails.data) {
         if (apiKeyDetails.data.organizationInfo) {
           console.log('✅ Organization loaded:', apiKeyDetails.data.organizationInfo.id);
@@ -145,7 +146,8 @@ export default function AlarmKeypad() {
     } catch (error) {
       logger.error('Exception in getApiKeyDetails:', error);
       console.error('💥 Exception in getApiKeyDetails:', error);
-      setError(`Failed to validate API key: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Don't set error for API key validation - only for PIN authentication
+      // setError(`Failed to validate API key: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     
     // Then load locations
@@ -3349,6 +3351,16 @@ export default function AlarmKeypad() {
           </div>
         )}
         
+        {/* Live Events Ticker - Show when enabled and not authenticated */}
+        {showLiveEvents && !isAuthenticated && lastSSEEvent && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 max-w-lg w-full px-4">
+            <div className="p-3 bg-blue-500/90 rounded-lg text-white text-center backdrop-blur-sm shadow-lg">
+              <p className="text-xs font-medium">Live Event</p>
+              <p className="text-sm">{lastSSEEvent}</p>
+            </div>
+          </div>
+        )}
+
         {!isAuthenticated ? (
           useTestDesign2 ? (
             testDesign2VisionProLayout()

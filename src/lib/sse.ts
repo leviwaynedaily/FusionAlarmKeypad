@@ -11,7 +11,11 @@ const MONITORED_CATEGORIES = [
   'entry',
   'lock',
   'area',
-  'system'
+  'system',
+  'light',
+  'switch',
+  'device',
+  'sensor'
 ];
 
 const MONITORED_EVENT_TYPES = [
@@ -26,7 +30,13 @@ const MONITORED_EVENT_TYPES = [
   'contact_opened',
   'contact_closed',
   'intrusion_detected',
-  'tamper_detected'
+  'tamper_detected',
+  'light_on',
+  'light_off',
+  'switch_on',
+  'switch_off',
+  'state_changed',
+  'device_state_change'
 ];
 
 export interface SSEEvent {
@@ -111,15 +121,15 @@ class SSEClient implements FusionSSEClient {
           url.searchParams.append('organizationId', this.config.organizationId);
         }
         
-        // Add category filters
-        if (this.config.categories && this.config.categories.length > 0) {
-          url.searchParams.append('categories', this.config.categories.join(','));
-        }
+        // Don't filter categories or event types to receive all events
+        // This ensures we catch light switches and other device events
+        // if (this.config.categories && this.config.categories.length > 0) {
+        //   url.searchParams.append('categories', this.config.categories.join(','));
+        // }
         
-        // Add event type filters
-        if (this.config.eventTypes && this.config.eventTypes.length > 0) {
-          url.searchParams.append('eventTypes', this.config.eventTypes.join(','));
-        }
+        // if (this.config.eventTypes && this.config.eventTypes.length > 0) {
+        //   url.searchParams.append('eventTypes', this.config.eventTypes.join(','));
+        // }
 
         console.log('🚀 SSE CONNECT: Final URL:', url.toString());
 
@@ -341,10 +351,15 @@ class SSEClient implements FusionSSEClient {
 
         // Handle specific event categories
         if (data.category === 'DEVICE_STATE' && data.type === 'STATE_CHANGED') {
-          if (data.deviceName && data.payload) {
+          if (data.deviceName) {
             console.log('📱 Device State Change:', data.deviceName, data.payload);
             this.emit('device_state_change', data);
           }
+        }
+        // Also handle any device-related events (lights, switches, etc.)
+        else if (data.category && data.category.includes('DEVICE')) {
+          console.log('📱 Device Event:', data.deviceName, data.category, data.type);
+          this.emit('device_state_change', data);
         }
         else if (data.category === 'AREA_STATE' && (data.type === 'ARMED' || data.type === 'DISARMED')) {
           console.log('🏠 Area State Change:', data.areaName || data.areaId, data.type);
@@ -361,10 +376,22 @@ class SSEClient implements FusionSSEClient {
 
         // Emit generic security event for all events
         this.emit('security_event', data);
+        
+        // Also emit as device_state_change if it has a device name (catch-all for lights, switches, etc.)
+        if (data.deviceName && !data.category?.includes('AREA')) {
+          console.log('🔄 Generic Device Event:', data.deviceName, data.category, data.type);
+          this.emit('device_state_change', data);
+        }
       }
       else {
         console.log('❓ Unknown Event Type:', data);
         this.emit('unknown_event', data);
+        
+        // Still try to emit as device event if it has device info
+        if (data.deviceName) {
+          console.log('🔄 Unknown Device Event:', data.deviceName, data);
+          this.emit('device_state_change', data);
+        }
       }
 
     } catch (error) {
