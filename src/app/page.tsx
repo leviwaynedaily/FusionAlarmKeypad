@@ -45,6 +45,41 @@ export default function AlarmKeypad() {
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
+  // NEW: Test Design (v3) functionality - like Outlook vs New Outlook
+  const [useTestDesign, setUseTestDesign] = useState(false);
+  
+  // NEW: Test Design 2.0 (Apple Vision Pro style)
+  const [useTestDesign2, setUseTestDesign2] = useState(false);
+  
+  // NEW: Alarm Zones functionality
+  interface AlarmZone {
+    id: string;
+    name: string;
+    color: string;
+    areas: string[]; // area IDs
+  }
+  
+  const [alarmZones, setAlarmZones] = useState<AlarmZone[]>([
+    {
+      id: 'critical',
+      name: 'Critical Alarm Zone',
+      color: '#ef4444', // red-500
+      areas: []
+    },
+    {
+      id: 'secondary',
+      name: 'Secondary Zone',
+      color: '#f59e0b', // amber-500
+      areas: []
+    },
+    {
+      id: 'perimeter',
+      name: 'Perimeter Zone',
+      color: '#3b82f6', // blue-500
+      areas: []
+    }
+  ]);
+
   // Service Worker update states
   const [isCheckingForUpdate, setIsCheckingForUpdate] = useState(false);
   const [lastUpdateCheck, setLastUpdateCheck] = useState<string>('');
@@ -129,6 +164,28 @@ export default function AlarmKeypad() {
     const savedLocation = localStorage.getItem('selected_location');
     const savedTheme = localStorage.getItem('fusion_theme') as 'light' | 'dark' | 'system' | null;
     const savedShowZones = localStorage.getItem('show_zones_preview');
+
+    // NEW: Load test design setting
+    const savedUseTestDesign = localStorage.getItem('use_test_design');
+    if (savedUseTestDesign !== null) {
+      setUseTestDesign(savedUseTestDesign === 'true');
+    }
+    
+    // NEW: Load test design 2.0 setting
+    const savedUseTestDesign2 = localStorage.getItem('use_test_design_2');
+    if (savedUseTestDesign2 !== null) {
+      setUseTestDesign2(savedUseTestDesign2 === 'true');
+    }
+    
+    // NEW: Load alarm zones configuration
+    const savedAlarmZones = localStorage.getItem('alarm_zones');
+    if (savedAlarmZones) {
+      try {
+        setAlarmZones(JSON.parse(savedAlarmZones));
+      } catch (e) {
+        logger.error('Failed to parse saved alarm zones:', e);
+      }
+    }
 
     const savedShowSeconds = localStorage.getItem('show_seconds');
     const savedHighlightPinButtons = localStorage.getItem('highlight_pin_buttons');
@@ -892,6 +949,984 @@ export default function AlarmKeypad() {
   const allDisarmed = areas.length > 0 && areas.every(area => area.armedState === 'DISARMED');
   const someArmed = areas.some(area => area.armedState !== 'DISARMED');
 
+  // NEW: Apple-style Weather Widget Component
+  const iPhoneWeatherWidget = () => {
+    if (!weather) return null;
+    
+    // Get weather condition styling (Apple-like with subtle gradients and glass effects)
+    const getWeatherStyle = (condition: string) => {
+      const cond = condition.toLowerCase();
+      if (cond.includes('clear') || cond.includes('sunny')) {
+        return {
+          background: 'bg-gradient-to-br from-blue-400/90 via-blue-500/70 to-yellow-400/90',
+          overlay: 'bg-gradient-to-br from-yellow-300/20 to-orange-400/10',
+          icon: '☀️',
+          shadow: 'shadow-yellow-500/20'
+        };
+      } else if (cond.includes('cloud') || cond.includes('overcast')) {
+        return {
+          background: 'bg-gradient-to-br from-gray-300/90 via-gray-400/70 to-gray-500/90',
+          overlay: 'bg-gradient-to-br from-white/15 to-gray-300/20',
+          icon: '☁️',
+          shadow: 'shadow-gray-500/20'
+        };
+      } else if (cond.includes('rain') || cond.includes('drizzle')) {
+        return {
+          background: 'bg-gradient-to-br from-blue-500/90 via-blue-600/70 to-gray-600/90',
+          overlay: 'bg-gradient-to-br from-blue-400/20 to-blue-600/10',
+          icon: '🌧️',
+          shadow: 'shadow-blue-500/20'
+        };
+      } else if (cond.includes('snow')) {
+        return {
+          background: 'bg-gradient-to-br from-blue-200/90 via-white/70 to-blue-300/90',
+          overlay: 'bg-gradient-to-br from-white/30 to-blue-200/20',
+          icon: '❄️',
+          shadow: 'shadow-blue-300/20'
+        };
+      } else if (cond.includes('storm') || cond.includes('thunder')) {
+        return {
+          background: 'bg-gradient-to-br from-gray-700/90 via-purple-600/70 to-gray-900/90',
+          overlay: 'bg-gradient-to-br from-purple-500/20 to-gray-800/10',
+          icon: '⛈️',
+          shadow: 'shadow-purple-500/20'
+        };
+      } else {
+        return {
+          background: 'bg-gradient-to-br from-blue-400/90 via-blue-500/70 to-blue-600/90',
+          overlay: 'bg-gradient-to-br from-blue-300/20 to-blue-500/10',
+          icon: '🌤️',
+          shadow: 'shadow-blue-500/20'
+        };
+      }
+    };
+
+    const style = getWeatherStyle(weather.condition);
+
+    return (
+      <div className={`relative ${style.background} rounded-2xl p-4 text-white shadow-xl ${style.shadow} backdrop-blur-md border border-white/20 overflow-hidden`}>
+        {/* Subtle overlay for depth */}
+        <div className={`absolute inset-0 ${style.overlay} rounded-2xl`}></div>
+        
+        {/* Glass effect overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-white/5 rounded-2xl"></div>
+        
+        {/* Content */}
+        <div className="relative flex items-center justify-between">
+          <div>
+            <p className="text-sm opacity-90 font-medium">{selectedLocation?.name}</p>
+            <p className="text-3xl font-light tracking-tight">{weather.temp}°</p>
+            <p className="text-sm opacity-80 font-medium">{weather.condition}</p>
+          </div>
+          <div className="text-right">
+            <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-2xl border border-white/20 shadow-lg">
+              {style.icon}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // NEW: Get zones with their areas
+  const getZonesWithAreas = () => {
+    // Auto-assign areas to zones if they haven't been assigned yet
+    const assignedAreaIds = alarmZones.flatMap(zone => zone.areas);
+    const unassignedAreas = areas.filter(area => !assignedAreaIds.includes(area.id));
+    
+    // Auto-assign unassigned areas to zones based on naming conventions
+    if (unassignedAreas.length > 0) {
+      const updatedZones = [...alarmZones];
+      
+      unassignedAreas.forEach(area => {
+        const areaName = area.name.toLowerCase();
+        
+        // Smart assignment based on area names
+        if (areaName.includes('critical') || areaName.includes('main') || areaName.includes('primary') || areaName.includes('vault') || areaName.includes('server')) {
+          updatedZones[0].areas.push(area.id); // Critical Zone
+        } else if (areaName.includes('office') || areaName.includes('secondary') || areaName.includes('storage') || areaName.includes('utility')) {
+          updatedZones[1].areas.push(area.id); // Secondary Zone  
+        } else if (areaName.includes('perimeter') || areaName.includes('entry') || areaName.includes('door') || areaName.includes('window') || areaName.includes('garage')) {
+          updatedZones[2].areas.push(area.id); // Perimeter Zone
+        } else {
+          // Default to Critical Zone for unmatched areas
+          updatedZones[0].areas.push(area.id);
+        }
+      });
+      
+      // Update state and save to localStorage
+      setAlarmZones(updatedZones);
+      localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+    }
+    
+    return alarmZones.map(zone => ({
+      ...zone,
+      areaObjects: areas.filter(area => zone.areas.includes(area.id)),
+      armedCount: areas.filter(area => zone.areas.includes(area.id) && area.armedState !== 'DISARMED').length,
+      totalCount: areas.filter(area => zone.areas.includes(area.id)).length
+    }));
+  };
+
+  // NEW: Toggle zone armed state
+  const handleZoneToggle = async (zone: AlarmZone) => {
+    const zoneAreas = areas.filter(area => zone.areas.includes(area.id));
+    if (zoneAreas.length === 0) return;
+    
+    const allArmed = zoneAreas.every(area => area.armedState !== 'DISARMED');
+    const newState = allArmed ? 'DISARMED' : 'ARMED_AWAY';
+    
+    // Check device status only when arming
+    if (newState === 'ARMED_AWAY') {
+      const warnings = checkDeviceStatus(zoneAreas);
+      if (warnings.length > 0) {
+        setDeviceWarnings(warnings);
+        setPendingToggleAll(newState);
+        setShowWarningConfirm(true);
+        return;
+      }
+    }
+    
+    setIsProcessing(true);
+    try {
+      for (const area of zoneAreas) {
+        await updateAreaState(area.id, newState);
+      }
+      if (selectedLocation) {
+        clearCache(`areas-${selectedLocation.id}`);
+        clearCache('devices');
+        await loadAreas(selectedLocation);
+        await loadDevices();
+      }
+    } catch (err) {
+      setError(`Failed to update ${zone.name}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // NEW: Test Design PIN Entry Layout
+  const testDesignPinLayout = () => {
+    if (isMobile) {
+      return (
+        <div className="w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black">
+          {/* Centered Clock & Date at Top */}
+          <div className="flex-shrink-0 text-center py-8 px-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{currentDate}</div>
+            <div className="text-5xl font-thin text-gray-900 dark:text-white mb-4">{currentTime}</div>
+            
+            {/* iPhone-style Weather */}
+            {weather && (
+              <div className="max-w-xs mx-auto mb-6">
+                {iPhoneWeatherWidget()}
+              </div>
+            )}
+          </div>
+
+          {/* Alarm Zones Preview */}
+          {showZonesPreview && areas.length > 0 && (
+            <div className="flex-shrink-0 px-4 mb-6">
+              <h3 className="text-center text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Zones</h3>
+              <div className="space-y-3">
+                {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone) => (
+                  <div
+                    key={zone.id}
+                    className="bg-white dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: zone.color }}
+                        />
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">{zone.name}</h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {zone.armedCount > 0 ? `${zone.armedCount}/${zone.totalCount} Armed` : 'All Clear'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full ${zone.armedCount > 0 ? 'bg-rose-500 animate-pulse' : 'bg-green-500'}`} />
+                    </div>
+                    
+                    {/* Show first 2 areas on mobile */}
+                    <div className="space-y-1">
+                      {zone.areaObjects.slice(0, 2).map((area) => {
+                        const areaDevices = devices.filter(device => device.areaId === area.id);
+                        return (
+                          <div key={area.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{area.name}</span>
+                              <div className={`w-1.5 h-1.5 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-rose-500' : 'bg-green-500'}`} />
+                            </div>
+                            {areaDevices.length > 0 && (
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {areaDevices.slice(0, 2).map(device => device.name).join(', ')}
+                                {areaDevices.length > 2 && ` +${areaDevices.length - 2}`}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      {zone.areaObjects.length > 2 && (
+                        <div className="text-center py-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            +{zone.areaObjects.length - 2} more
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PIN Entry */}
+          <div className="flex-1 flex flex-col justify-center px-4 pb-8">
+            <div className="max-w-xs w-full mx-auto">
+              {/* PIN Display */}
+              <div className="mb-8">
+                <div className="flex justify-center gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-4 h-4 rounded-full border-2 transition-all ${
+                        pin[i] 
+                          ? 'bg-[#22c55f] border-[#22c55f] shadow-lg' 
+                          : 'bg-transparent border-gray-400 dark:border-gray-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-3 bg-rose-500/90 rounded-xl text-white text-center backdrop-blur-sm shadow-lg">
+                  <p className="font-medium text-sm">Authentication Failed</p>
+                  <p className="text-xs opacity-90">Please try again</p>
+                </div>
+              )}
+
+              {/* PIN Pad */}
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handlePinKeyPress(num.toString())}
+                    onTouchStart={() => highlightPinButtons && setPressedButton(num.toString())}
+                    onTouchEnd={() => setPressedButton(null)}
+                    disabled={isProcessing}
+                    className={`h-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-2xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                      highlightPinButtons && pressedButton === num.toString()
+                        ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                        : 'text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPin('')}
+                  onTouchStart={() => highlightPinButtons && setPressedButton('clear')}
+                  onTouchEnd={() => setPressedButton(null)}
+                  disabled={isProcessing}
+                  className={`h-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                    highlightPinButtons && pressedButton === 'clear'
+                      ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => handlePinKeyPress('0')}
+                  onTouchStart={() => highlightPinButtons && setPressedButton('0')}
+                  onTouchEnd={() => setPressedButton(null)}
+                  disabled={isProcessing}
+                  className={`h-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-2xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                    highlightPinButtons && pressedButton === '0'
+                      ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                      : 'text-gray-900 dark:text-white'
+                  }`}
+                >
+                  0
+                </button>
+                <button
+                  onClick={() => setPin(pin.slice(0, -1))}
+                  onTouchStart={() => highlightPinButtons && setPressedButton('backspace')}
+                  onTouchEnd={() => setPressedButton(null)}
+                  disabled={isProcessing}
+                  className={`h-16 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                    highlightPinButtons && pressedButton === 'backspace'
+                      ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  ←
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Processing Overlay */}
+          {isProcessing && (
+            <div className="absolute inset-0 bg-white/90 dark:bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#22c55f] mx-auto mb-4"></div>
+                <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Authenticating...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Desktop Test Design Layout
+    return (
+      <div className="w-full h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black">
+        {/* Centered Clock, Date & Weather at Top */}
+        <div className="flex-shrink-0 text-center py-12 px-8">
+          <div className="text-xl text-gray-600 dark:text-gray-400 mb-2">{currentDate}</div>
+          <div className="text-8xl font-thin text-gray-900 dark:text-white mb-8">{currentTime}</div>
+          
+          {/* iPhone-style Weather */}
+          {weather && (
+            <div className="max-w-sm mx-auto mb-8">
+              {iPhoneWeatherWidget()}
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex items-center justify-center px-8">
+          <div className="w-full max-w-6xl grid grid-cols-2 gap-12 items-center">
+            {/* Left Side - Alarm Zones */}
+            <div className="space-y-4">
+              {getZonesWithAreas().filter(zone => zone.totalCount > 0).length > 0 ? (
+                <div className="space-y-4">
+                  {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone) => (
+                    <div
+                      key={zone.id}
+                      className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full shadow-md"
+                              style={{ backgroundColor: zone.color }}
+                            />
+                            {zone.armedCount > 0 && (
+                              <svg className="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{zone.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {zone.totalCount} area{zone.totalCount !== 1 ? 's' : ''} • {zone.armedCount > 0 ? `${zone.armedCount} armed` : 'All clear'}
+                            </p>
+                          </div>
+                        </div>
+                        {/* Status Indicator - View Only */}
+                        <div className={`w-4 h-4 rounded-full shadow-lg ${
+                          zone.armedCount > 0 ? 'bg-rose-500' : 'bg-green-500'
+                        }`} />
+                      </div>
+                      
+                      {/* Zone Areas */}
+                      <div className="space-y-2">
+                        {zone.areaObjects.slice(0, 5).map((area) => {
+                          // Get devices for this area
+                          const areaDevices = devices.filter(device => device.areaId === area.id);
+                          
+                          return (
+                            <div
+                              key={area.id}
+                              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600/50 transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{area.name}</span>
+                                    {area.armedState !== 'DISARMED' && (
+                                      <svg className="w-3 h-3 text-rose-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <div className={`w-2 h-2 rounded-full ml-2 ${area.armedState !== 'DISARMED' ? 'bg-rose-500' : 'bg-green-500'}`} />
+                                </div>
+                                {areaDevices.length > 0 && (
+                                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {areaDevices.slice(0, 3).map(device => device.name).join(', ')}
+                                    {areaDevices.length > 3 && ` +${areaDevices.length - 3} more`}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {/* Show "and X more" if there are more than 5 areas */}
+                        {zone.areaObjects.length > 5 && (
+                          <div className="p-2 text-center">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                              and {zone.areaObjects.length - 5} more area{zone.areaObjects.length - 5 !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">No zones configured</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500">Areas will be automatically organized into zones</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Side - PIN Entry */}
+            <div className="flex items-center justify-center">
+              <div className="bg-white dark:bg-gray-800/50 rounded-3xl p-10 shadow-2xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm relative h-full">
+                {/* Processing overlay */}
+                {isProcessing && (
+                  <div className="absolute inset-0 bg-white/90 dark:bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 rounded-3xl">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#22c55f] mx-auto mb-4"></div>
+                      <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Authenticating...</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative">
+                  {/* PIN Display */}
+                  <div className="mb-10">
+                    <div className="flex justify-center gap-4">
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-4 h-4 rounded-full border-2 transition-all ${
+                            pin[i] 
+                              ? 'bg-[#22c55f] border-[#22c55f] shadow-lg' 
+                              : 'bg-transparent border-gray-400 dark:border-gray-600'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                      <div className="p-4 bg-rose-500/90 rounded-xl text-white text-center backdrop-blur-sm shadow-lg">
+                        <p className="font-medium">Authentication Failed</p>
+                        <p className="text-sm opacity-90">Please try again</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PIN Pad */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handlePinKeyPress(num.toString())}
+                        onMouseDown={() => highlightPinButtons && setPressedButton(num.toString())}
+                        onMouseUp={() => setPressedButton(null)}
+                        onMouseLeave={() => setPressedButton(null)}
+                        disabled={isProcessing}
+                        className={`py-6 px-8 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-2xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                          highlightPinButtons && pressedButton === num.toString()
+                            ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                            : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPin('')}
+                      onMouseDown={() => highlightPinButtons && setPressedButton('clear')}
+                      onMouseUp={() => setPressedButton(null)}
+                      onMouseLeave={() => setPressedButton(null)}
+                      disabled={isProcessing}
+                      className={`py-6 px-8 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                        highlightPinButtons && pressedButton === 'clear'
+                          ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                      }`}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => handlePinKeyPress('0')}
+                      onMouseDown={() => highlightPinButtons && setPressedButton('0')}
+                      onMouseUp={() => setPressedButton(null)}
+                      onMouseLeave={() => setPressedButton(null)}
+                      disabled={isProcessing}
+                      className={`py-6 px-8 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-2xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                        highlightPinButtons && pressedButton === '0'
+                          ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                          : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                      }`}
+                    >
+                      0
+                    </button>
+                    <button
+                      onClick={() => setPin(pin.slice(0, -1))}
+                      onMouseDown={() => highlightPinButtons && setPressedButton('backspace')}
+                      onMouseUp={() => setPressedButton(null)}
+                      onMouseLeave={() => setPressedButton(null)}
+                      disabled={isProcessing}
+                      className={`py-6 px-8 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${
+                        highlightPinButtons && pressedButton === 'backspace'
+                          ? 'bg-[#22c55f] text-white transform scale-95 shadow-lg'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600/50'
+                      }`}
+                    >
+                      ←
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // NEW: Test Design 2.0 - Apple Vision Pro Style Layout
+  const testDesign2VisionProLayout = () => {
+    if (isMobile) {
+      return (
+        <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 overflow-hidden flex flex-col">
+          {/* Floating ambient background layers - Full coverage */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/4 to-transparent"></div>
+          
+          {/* Centered Clock & Date at Top - Ultra Glass */}
+          <div className="flex-shrink-0 text-center py-8 px-4 relative">
+            <div className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden max-w-sm mx-auto">
+              {/* Glass layers */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-white/5 rounded-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 via-transparent to-purple-400/10 rounded-2xl"></div>
+              
+              <div className="relative">
+                <div className="text-sm text-white/70 mb-1 font-medium tracking-wide">{currentDate}</div>
+                <div className="text-4xl font-ultra-thin text-white mb-4 tracking-tight">{currentTime}</div>
+                
+                {/* Inline Weather */}
+                {weather && (
+                  <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-lg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-xl"></div>
+                    <div className="relative flex items-center justify-between text-white">
+                      <div>
+                        <div className="text-lg font-light">{weather.temp}°</div>
+                        <div className="text-xs opacity-80">{weather.condition}</div>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-lg border border-white/20">
+                        ☀️
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Floating Zone Status Cards - View Only */}
+          {areas.length > 0 && (
+            <div className="flex-shrink-0 px-4 mb-6">
+              <div className="space-y-3 max-h-48 overflow-y-auto">
+                {getZonesWithAreas().filter(zone => zone.totalCount > 0).slice(0, 3).map((zone, index) => (
+                  <div
+                    key={zone.id}
+                    className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-xl relative overflow-hidden"
+                  >
+                    {/* Glass overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-xl"></div>
+                    
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <div 
+                              className="w-2 h-2 rounded-full shadow-lg border border-white/20"
+                              style={{ backgroundColor: zone.color, boxShadow: `0 0 10px ${zone.color}40` }}
+                            />
+                            {zone.armedCount > 0 && (
+                              <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-white/90">{zone.name}</h4>
+                            <p className="text-xs text-white/60">
+                              {zone.armedCount > 0 ? `${zone.armedCount}/${zone.totalCount} Armed` : 'All Clear'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${zone.armedCount > 0 ? 'bg-red-400 animate-pulse shadow-red-400/50' : 'bg-green-400 shadow-green-400/50'}`} />
+                      </div>
+                      
+                      {/* Show first area only for mobile */}
+                      {zone.areaObjects.slice(0, 1).map((area) => {
+                        const areaDevices = devices.filter(device => device.areaId === area.id);
+                        return (
+                          <div key={area.id} className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-lg p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-medium text-white/80 truncate">{area.name}</span>
+                                {area.armedState !== 'DISARMED' && (
+                                  <svg className="w-2.5 h-2.5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <div className={`w-1 h-1 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-red-400' : 'bg-green-400'}`} />
+                            </div>
+                            {areaDevices.length > 0 && (
+                              <div className="mt-1 text-xs text-white/50 truncate">
+                                {areaDevices.slice(0, 1).map(device => device.name).join(', ')}
+                                {areaDevices.length > 1 && ` +${areaDevices.length - 1}`}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      {zone.areaObjects.length > 1 && (
+                        <div className="text-center mt-2">
+                          <span className="text-xs text-white/40 italic">
+                            +{zone.areaObjects.length - 1} more
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Floating PIN Entry */}
+          <div className="flex-1 flex flex-col justify-center px-4 pb-8">
+            <div className="max-w-xs w-full mx-auto">
+              <div className="backdrop-blur-3xl bg-white/8 border border-white/15 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                {/* Glass layers */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-2xl"></div>
+                
+                <div className="relative">
+                  {/* PIN Display */}
+                  <div className="mb-6">
+                    <div className="flex justify-center gap-3">
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-3 h-3 rounded-full border transition-all duration-300 ${
+                            pin[i] 
+                              ? 'bg-white border-white shadow-lg shadow-white/30' 
+                              : 'bg-transparent border-white/30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="mb-4 p-3 backdrop-blur-2xl bg-red-500/20 border border-red-400/30 rounded-xl text-red-200 text-center shadow-lg">
+                      <p className="font-medium text-sm">Authentication Failed</p>
+                      <p className="text-xs opacity-80">Please try again</p>
+                    </div>
+                  )}
+
+                  {/* Vision Pro Style PIN Pad */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handlePinKeyPress(num.toString())}
+                        disabled={isProcessing}
+                        className="h-14 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-xl text-lg font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPin('')}
+                      disabled={isProcessing}
+                      className="h-14 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-xl text-xs text-white/70 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => handlePinKeyPress('0')}
+                      disabled={isProcessing}
+                      className="h-14 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-xl text-lg font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      0
+                    </button>
+                    <button
+                      onClick={() => setPin(pin.slice(0, -1))}
+                      disabled={isProcessing}
+                      className="h-14 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-xl text-base text-white/70 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      ←
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Processing Overlay */}
+          {isProcessing && (
+            <div className="absolute inset-0 backdrop-blur-3xl bg-black/60 flex items-center justify-center z-50">
+              <div className="backdrop-blur-2xl bg-white/10 border border-white/20 rounded-2xl p-6 text-center shadow-2xl">
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-white/30 border-t-white mx-auto mb-3"></div>
+                <p className="text-base font-semibold text-white">Authenticating...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Desktop Apple Vision Pro Layout
+    return (
+      <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 overflow-hidden flex flex-col">
+        {/* Floating ambient background layers - Full coverage */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/12 via-transparent to-purple-500/12"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/8 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/8 rounded-full blur-3xl"></div>
+        
+        {/* Floating Clock, Date & Weather */}
+        <div className="flex-shrink-0 text-center py-6 px-6 relative">
+          <div className="backdrop-blur-3xl bg-white/8 border border-white/15 rounded-2xl p-6 shadow-2xl relative overflow-hidden max-w-lg mx-auto">
+            {/* Glass layers */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-white/5 rounded-2xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 via-transparent to-purple-400/10 rounded-2xl"></div>
+            
+            <div className="relative">
+              <div className="text-base text-white/70 mb-1 font-medium tracking-wide">{currentDate}</div>
+              <div className="text-5xl font-ultra-thin text-white mb-4 tracking-tight">{currentTime}</div>
+              
+              {/* Floating Weather */}
+              {weather && (
+                <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-xl"></div>
+                  <div className="relative">
+                    {iPhoneWeatherWidget()}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Content Grid */}
+        <div className="flex-1 flex justify-center px-6 pb-6">
+          <div className="w-full max-w-5xl grid grid-cols-2 gap-6 items-stretch">
+            {/* Left Side - Floating Zone Cards */}
+            <div className="flex flex-col">
+              {getZonesWithAreas().filter(zone => zone.totalCount > 0).length > 0 ? (
+                <div className="space-y-4 h-full overflow-y-auto">
+                  {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone, index) => (
+                    <div
+                      key={zone.id}
+                      className="backdrop-blur-3xl bg-white/8 border border-white/15 rounded-xl p-4 shadow-xl relative overflow-hidden transform transition-all duration-300 hover:shadow-2xl hover:bg-white/10"
+                    >
+                      {/* Glass overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-xl"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/5 via-transparent to-purple-400/5 rounded-xl"></div>
+                      
+                      <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded-full shadow-xl border border-white/30"
+                                style={{ 
+                                  backgroundColor: zone.color, 
+                                  boxShadow: `0 0 20px ${zone.color}60, 0 0 40px ${zone.color}30` 
+                                }}
+                              />
+                              {zone.armedCount > 0 && (
+                                <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white/95 tracking-wide">{zone.name}</h3>
+                              <p className="text-xs text-white/60 font-medium">
+                                {zone.totalCount} area{zone.totalCount !== 1 ? 's' : ''} • {zone.armedCount > 0 ? `${zone.armedCount} armed` : 'All clear'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Status Indicator - View Only */}
+                          <div className={`w-3 h-3 rounded-full shadow-lg border border-white/30 ${
+                            zone.armedCount > 0 ? 'bg-red-400 shadow-red-400/50' : 'bg-green-400 shadow-green-400/50'
+                          }`} />
+                        </div>
+                        
+                        {/* Floating Area Cards */}
+                        <div className="space-y-2">
+                          {zone.areaObjects.slice(0, 4).map((area) => {
+                            const areaDevices = devices.filter(device => device.areaId === area.id);
+                            
+                            return (
+                              <div
+                                key={area.id}
+                                className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-lg p-3 transition-all duration-300 hover:bg-white/8 hover:border-white/15 shadow-sm"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-white/85 truncate">{area.name}</span>
+                                      {area.armedState !== 'DISARMED' && (
+                                        <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <div className={`w-2 h-2 rounded-full shadow-sm ${
+                                      area.armedState !== 'DISARMED' 
+                                        ? 'bg-red-400 shadow-red-400/50' 
+                                        : 'bg-green-400 shadow-green-400/50'
+                                    }`} />
+                                  </div>
+                                  {areaDevices.length > 0 && (
+                                    <div className="mt-1 text-xs text-white/50 truncate">
+                                      {areaDevices.slice(0, 2).map(device => device.name).join(', ')}
+                                      {areaDevices.length > 2 && ` +${areaDevices.length - 2} more`}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {zone.areaObjects.length > 4 && (
+                            <div className="p-2 text-center">
+                              <span className="text-xs text-white/40 italic">
+                                and {zone.areaObjects.length - 4} more area{zone.areaObjects.length - 4 !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-xl p-6 text-center shadow-xl h-full flex items-center justify-center">
+                  <div>
+                    <p className="text-white/60 mb-2">No zones configured</p>
+                    <p className="text-sm text-white/40">Areas will be automatically organized into zones</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Side - Floating PIN Entry */}
+            <div className="flex flex-col justify-center">
+              <div className="backdrop-blur-3xl bg-white/8 border border-white/15 rounded-xl p-6 shadow-2xl relative overflow-hidden flex items-center justify-center">
+                {/* Glass layers */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/5 via-transparent to-purple-400/5 rounded-xl"></div>
+                
+                {/* Processing overlay */}
+                {isProcessing && (
+                  <div className="absolute inset-0 backdrop-blur-2xl bg-white/20 flex items-center justify-center z-50 rounded-xl">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/30 border-t-white mx-auto mb-4"></div>
+                      <p className="text-lg font-semibold text-white">Authenticating...</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative w-full max-w-sm">
+                  {/* PIN Display */}
+                  <div className="mb-6">
+                    <div className="flex justify-center gap-3">
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-3 h-3 rounded-full border transition-all duration-300 ${
+                            pin[i] 
+                              ? 'bg-white border-white shadow-lg shadow-white/50' 
+                              : 'bg-transparent border-white/30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                      <div className="p-3 backdrop-blur-2xl bg-red-500/20 border border-red-400/30 rounded-lg text-red-200 text-center shadow-lg">
+                        <p className="font-medium text-sm">Authentication Failed</p>
+                        <p className="text-xs opacity-80">Please try again</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Vision Pro Style PIN Pad */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handlePinKeyPress(num.toString())}
+                        disabled={isProcessing}
+                        className="py-4 px-6 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-lg text-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPin('')}
+                      disabled={isProcessing}
+                      className="py-4 px-6 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-lg text-xs text-white/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => handlePinKeyPress('0')}
+                      disabled={isProcessing}
+                      className="py-4 px-6 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-lg text-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      0
+                    </button>
+                    <button
+                      onClick={() => setPin(pin.slice(0, -1))}
+                      disabled={isProcessing}
+                      className="py-4 px-6 backdrop-blur-2xl bg-white/10 border border-white/20 rounded-lg text-base text-white/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl active:scale-95"
+                    >
+                      ←
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Location Selection Screen
   if (showLocationSelect) {
     return (
@@ -1225,6 +2260,63 @@ export default function AlarmKeypad() {
                       </button>
                     </div>
 
+                    {/* Test Design Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white">🧪 Test Design (New Layout)</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Try the new layout with centered clock, iPhone weather, and alarm zones</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newValue = !useTestDesign;
+                          setUseTestDesign(newValue);
+                          localStorage.setItem('use_test_design', newValue.toString());
+                          // Disable Test Design 2.0 if enabling regular Test Design
+                          if (newValue && useTestDesign2) {
+                            setUseTestDesign2(false);
+                            localStorage.setItem('use_test_design_2', 'false');
+                          }
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                          useTestDesign ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            useTestDesign ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Test Design 2.0 Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white">✨ Test Design 2.0 (Apple Vision Pro)</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Ultra-modern glass morphism design inspired by Apple Vision Pro</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newValue = !useTestDesign2;
+                          setUseTestDesign2(newValue);
+                          localStorage.setItem('use_test_design_2', newValue.toString());
+                          // Disable regular Test Design if enabling Test Design 2.0
+                          if (newValue && useTestDesign) {
+                            setUseTestDesign(false);
+                            localStorage.setItem('use_test_design', 'false');
+                          }
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                          useTestDesign2 ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform shadow-lg ${
+                            useTestDesign2 ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
 
                   </div>
                 </div>
@@ -1283,6 +2375,212 @@ export default function AlarmKeypad() {
                     </button>
                   </div>
                                  </div>
+
+                 {/* Alarm Zones Configuration */}
+                 {useTestDesign && areas.length > 0 && (
+                   <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+                     <div className="flex items-center justify-between mb-4">
+                       <div>
+                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🏠 Alarm Zones Configuration</h3>
+                         <p className="text-sm text-gray-600 dark:text-gray-400">
+                           Organize your areas into security zones for easier management.
+                         </p>
+                       </div>
+                       <button
+                         onClick={() => {
+                           const newZone: AlarmZone = {
+                             id: `zone-${Date.now()}`,
+                             name: `Zone ${alarmZones.length + 1}`,
+                             color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'][alarmZones.length % 6],
+                             areas: []
+                           };
+                           const updatedZones = [...alarmZones, newZone];
+                           setAlarmZones(updatedZones);
+                           localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                         }}
+                         className="px-3 py-2 bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f] rounded-md text-sm hover:bg-[#22c55f]/20 transition-all font-medium flex items-center gap-2"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                         </svg>
+                         Add Zone
+                       </button>
+                     </div>
+                     
+                     <div className="space-y-4">
+                       {alarmZones.map((zone, zoneIndex) => (
+                         <div key={zone.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                           <div className="flex items-center gap-3 mb-3">
+                             {/* Color Picker */}
+                             <div className="relative">
+                               <input
+                                 type="color"
+                                 value={zone.color}
+                                 onChange={(e) => {
+                                   const updatedZones = [...alarmZones];
+                                   updatedZones[zoneIndex].color = e.target.value;
+                                   setAlarmZones(updatedZones);
+                                   localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                                 }}
+                                 className="w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
+                                 style={{ backgroundColor: zone.color }}
+                               />
+                             </div>
+                             
+                             {/* Editable Zone Name */}
+                             <input
+                               type="text"
+                               value={zone.name}
+                               onChange={(e) => {
+                                 const updatedZones = [...alarmZones];
+                                 updatedZones[zoneIndex].name = e.target.value;
+                                 setAlarmZones(updatedZones);
+                                 localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                               }}
+                               className="text-base font-semibold text-gray-900 dark:text-white bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-[#22c55f] rounded px-2 py-1"
+                               placeholder="Zone Name"
+                             />
+                             
+                             <span className="text-xs text-gray-500 dark:text-gray-400">
+                               ({areas.filter(area => zone.areas.includes(area.id)).length} areas)
+                             </span>
+                             
+                             {/* Delete Zone Button */}
+                             {alarmZones.length > 1 && (
+                               <button
+                                 onClick={() => {
+                                   if (confirm(`Are you sure you want to delete "${zone.name}"? Areas in this zone will be unassigned.`)) {
+                                     const updatedZones = alarmZones.filter((_, index) => index !== zoneIndex);
+                                     setAlarmZones(updatedZones);
+                                     localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                                   }
+                                 }}
+                                 className="ml-auto p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                 title="Delete Zone"
+                               >
+                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                 </svg>
+                               </button>
+                             )}
+                           </div>
+                           
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                             {areas.map((area) => (
+                               <label key={area.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
+                                 <input
+                                   type="checkbox"
+                                   checked={zone.areas.includes(area.id)}
+                                   onChange={(e) => {
+                                     const updatedZones = [...alarmZones];
+                                     if (e.target.checked) {
+                                       // Remove from other zones first
+                                       updatedZones.forEach(z => {
+                                         z.areas = z.areas.filter(id => id !== area.id);
+                                       });
+                                       // Add to current zone
+                                       updatedZones[zoneIndex].areas.push(area.id);
+                                     } else {
+                                       // Remove from current zone
+                                       updatedZones[zoneIndex].areas = updatedZones[zoneIndex].areas.filter(id => id !== area.id);
+                                     }
+                                     setAlarmZones(updatedZones);
+                                     localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                                   }}
+                                   className="rounded border-gray-300 dark:border-gray-600 text-[#22c55f] focus:ring-[#22c55f]"
+                                 />
+                                 <span className="text-sm text-gray-700 dark:text-gray-300">{area.name}</span>
+                                 <div className={`ml-auto w-2 h-2 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-rose-500' : 'bg-green-500'}`} />
+                               </label>
+                             ))}
+                           </div>
+                         </div>
+                       ))}
+                       
+                       {/* Quick Actions */}
+                       <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                         <button
+                           onClick={() => {
+                             if (confirm('This will reset all zones to default configuration. Continue?')) {
+                               const defaultZones = [
+                                 {
+                                   id: 'critical',
+                                   name: 'Critical Alarm Zone',
+                                   color: '#ef4444',
+                                   areas: []
+                                 },
+                                 {
+                                   id: 'secondary', 
+                                   name: 'Secondary Zone',
+                                   color: '#f59e0b',
+                                   areas: []
+                                 },
+                                 {
+                                   id: 'perimeter',
+                                   name: 'Perimeter Zone', 
+                                   color: '#3b82f6',
+                                   areas: []
+                                 }
+                               ];
+                               setAlarmZones(defaultZones);
+                               localStorage.setItem('alarm_zones', JSON.stringify(defaultZones));
+                             }
+                           }}
+                           className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                         >
+                           Reset to Defaults
+                         </button>
+                         
+                         <button
+                           onClick={() => {
+                             // Auto-assign all unassigned areas based on smart naming
+                             const updatedZones = [...alarmZones];
+                             const assignedAreaIds = updatedZones.flatMap(zone => zone.areas);
+                             const unassignedAreas = areas.filter(area => !assignedAreaIds.includes(area.id));
+                             
+                             unassignedAreas.forEach(area => {
+                               const areaName = area.name.toLowerCase();
+                               let assigned = false;
+                               
+                               // Try to find the best matching zone
+                               for (let i = 0; i < updatedZones.length && !assigned; i++) {
+                                 const zoneName = updatedZones[i].name.toLowerCase();
+                                 
+                                 if ((zoneName.includes('critical') || zoneName.includes('main')) && 
+                                     (areaName.includes('critical') || areaName.includes('main') || areaName.includes('primary') || 
+                                      areaName.includes('vault') || areaName.includes('server'))) {
+                                   updatedZones[i].areas.push(area.id);
+                                   assigned = true;
+                                 } else if ((zoneName.includes('secondary') || zoneName.includes('office')) && 
+                                           (areaName.includes('office') || areaName.includes('secondary') || areaName.includes('storage') || 
+                                            areaName.includes('utility'))) {
+                                   updatedZones[i].areas.push(area.id);
+                                   assigned = true;
+                                 } else if ((zoneName.includes('perimeter') || zoneName.includes('entry')) && 
+                                           (areaName.includes('perimeter') || areaName.includes('entry') || areaName.includes('door') || 
+                                            areaName.includes('window') || areaName.includes('garage'))) {
+                                   updatedZones[i].areas.push(area.id);
+                                   assigned = true;
+                                 }
+                               }
+                               
+                               // If not assigned to any specific zone, add to first zone
+                               if (!assigned && updatedZones.length > 0) {
+                                 updatedZones[0].areas.push(area.id);
+                               }
+                             });
+                             
+                             setAlarmZones(updatedZones);
+                             localStorage.setItem('alarm_zones', JSON.stringify(updatedZones));
+                           }}
+                           className="px-3 py-2 text-sm text-[#22c55f] border border-[#22c55f] rounded-md hover:bg-[#22c55f]/10 transition-colors"
+                         >
+                           Auto-Assign Areas
+                         </button>
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
                 {/* App Updates */}
                 <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
@@ -1405,7 +2703,29 @@ export default function AlarmKeypad() {
   // Main Alarm Panel
   return (
     <main className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f] flex flex-col">
-      {/* Header */}
+      {/* Header - Minimal for test design */}
+      {useTestDesign || useTestDesign2 ? (
+        // Floating settings button for test design
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => setShowSettings(true)}
+            className={`p-3 backdrop-blur-md rounded-full border shadow-lg transition-all ${
+              useTestDesign2 
+                ? 'bg-white/10 border-white/20 hover:bg-white/15 text-white' 
+                : 'bg-white/20 dark:bg-gray-800/20 border-white/30 dark:border-gray-700/30 hover:bg-white/30 dark:hover:bg-gray-800/30 text-gray-700 dark:text-gray-300'
+            }`}
+            title="Settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        // Full header for regular design
       <div className="bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 px-3 md:px-6 py-3 md:py-4 relative z-10">
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
@@ -1474,6 +2794,7 @@ export default function AlarmKeypad() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-8 relative z-20">
@@ -1495,7 +2816,11 @@ export default function AlarmKeypad() {
         )}
         
         {!isAuthenticated ? (
-          isMobile ? (
+          useTestDesign2 ? (
+            testDesign2VisionProLayout()
+          ) : useTestDesign ? (
+            testDesignPinLayout()
+          ) : isMobile ? (
             // Mobile/iPhone Layout - Vertical stacked design
             <div className="w-full h-full flex flex-col">
               {/* Mobile Header with Time */}
