@@ -76,6 +76,20 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Temporarily disable Service Worker registration to prevent SSE interference
+                console.log('Service Worker registration disabled for SSE compatibility');
+                
+                // Unregister any existing Service Worker
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                      registration.unregister().then(() => {
+                        console.log('Service Worker unregistered for SSE compatibility');
+                      });
+                    }
+                  });
+                }
+                /*
                 if (!('serviceWorker' in navigator)) return;
                 // Wait for full page load so routing isn't blocked
                 window.addEventListener('load', () => {
@@ -92,8 +106,9 @@ export default function RootLayout({
                           });
                       }
                     })
-                    .catch(() => {/* no sw present */});
+                    .catch(() => {});
                 });
+                */
               })();
             `,
           }}

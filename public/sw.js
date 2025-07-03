@@ -20,18 +20,45 @@ self.addEventListener('install', event => {
   );
 });
 
-// Fetch event - serve from cache when offline
+// Fetch event - serve from cache when offline, but bypass SSE requests
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // Bypass Service Worker for:
+  // 1. SSE/EventSource requests
+  // 2. Requests with Accept: text/event-stream header
+  // 3. Requests to /api/events/stream
+  // 4. External API requests (not same origin)
+  const shouldBypass = 
+    event.request.headers.get('Accept')?.includes('text/event-stream') ||
+    url.pathname.includes('/api/events/stream') ||
+    url.pathname.includes('/events/') ||
+    url.hostname !== self.location.hostname ||
+    event.request.headers.get('X-Bypass-Service-Worker') === 'true';
+
+  if (shouldBypass) {
+    console.log('SW: Bypassing cache for:', url.pathname);
+    // Let the request go directly to the network
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         // Cache hit - return response
         if (response) {
+          console.log('SW: Serving from cache:', url.pathname);
           return response;
         }
+        
+        console.log('SW: Fetching from network:', url.pathname);
         return fetch(event.request);
-      }
-    )
+      })
+      .catch(error => {
+        console.error('SW: Fetch failed:', error);
+        // Return the original fetch request as fallback
+        return fetch(event.request);
+      })
   );
 });
 

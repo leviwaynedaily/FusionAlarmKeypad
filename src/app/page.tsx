@@ -13,6 +13,7 @@ import {
   clearCache,
   SmartPoller 
 } from '@/lib/api-optimized';
+import { createSSEClient, FusionSSEClient } from '@/lib/sse';
 
 // API keys from environment variables
 const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
@@ -44,12 +45,21 @@ export default function AlarmKeypad() {
   const useDesign2 = true; // Design 2.0 is now default
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // NEW: Test Design (v3) functionality - like Outlook vs New Outlook
   const [useTestDesign, setUseTestDesign] = useState(false);
   
   // NEW: Test Design 2.0 (Apple Vision Pro style)
   const [useTestDesign2, setUseTestDesign2] = useState(false);
+  
+  // NEW: SSE (Server-Sent Events) state
+  const [sseClient, setSSEClient] = useState<FusionSSEClient | null>(null);
+  const [sseConnected, setSSEConnected] = useState(false);
+  const [sseEnabled, setSSEEnabled] = useState(true); // Can be toggled in settings
+  const [lastSSEEvent, setLastSSEEvent] = useState<string>('');
+  const [showLiveEvents, setShowLiveEvents] = useState(false); // NEW: Toggle for live event display
+  const [recentEvents, setRecentEvents] = useState<string[]>([]); // NEW: Store recent events
   
   // NEW: Alarm Zones functionality
   interface AlarmZone {
@@ -97,24 +107,45 @@ export default function AlarmKeypad() {
   const [weatherApiKeyInput, setWeatherApiKeyInput] = useState('');
   const [weatherSaveStatus, setWeatherSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
-
+  // NEW: System Health Monitoring
+  const [systemStatus, setSystemStatus] = useState<'online' | 'degraded' | 'offline'>('online');
+  const [deviceConnectivity, setDeviceConnectivity] = useState<'all_online' | 'some_offline' | 'all_offline'>('all_online');
+  const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
+  const [offlineDevices, setOfflineDevices] = useState<string[]>([]);
 
   const loadOrganizationAndLocations = async (savedLocation: string | null) => {
+    console.log('🏢 Loading organization and locations...');
     try {
       // First, get API key details to get organization info
+      console.log('🏢 Calling getApiKeyDetails...');
       const apiKeyDetails = await getApiKeyDetails();
+      console.log('🏢 getApiKeyDetails RAW response:', apiKeyDetails);
+      console.log('🏢 getApiKeyDetails response analysis:', {
+        hasError: !!apiKeyDetails.error,
+        hasData: !!apiKeyDetails.data,
+        hasOrganizationInfo: !!apiKeyDetails.data?.organizationInfo,
+        organizationId: apiKeyDetails.data?.organizationInfo?.id,
+        dataKeys: apiKeyDetails.data ? Object.keys(apiKeyDetails.data) : []
+      });
       
       if (apiKeyDetails.error) {
         logger.error('Error fetching API key details:', apiKeyDetails.error);
+        console.error('❌ API Key Details Error:', apiKeyDetails.error);
         setError(`API Error: ${apiKeyDetails.error}`);
       } else if (apiKeyDetails.data) {
         if (apiKeyDetails.data.organizationInfo) {
+          console.log('✅ Organization loaded:', apiKeyDetails.data.organizationInfo.id);
           setOrganization(apiKeyDetails.data.organizationInfo);
           localStorage.setItem('fusion_organization', JSON.stringify(apiKeyDetails.data.organizationInfo));
+        } else {
+          console.log('❌ No organization info in API key details');
         }
+      } else {
+        console.log('❌ No data in API key details response');
       }
     } catch (error) {
       logger.error('Exception in getApiKeyDetails:', error);
+      console.error('💥 Exception in getApiKeyDetails:', error);
       setError(`Failed to validate API key: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     
@@ -148,17 +179,31 @@ export default function AlarmKeypad() {
 
   // Initialize on mount
   useEffect(() => {
+    // Mark as client-side rendered to prevent hydration issues
+    setIsClient(true);
+    
     // Track page view
     analytics.trackPageView('main-keypad');
     
     // Load existing API key or use default
     const existingApiKey = localStorage.getItem('fusion_api_key');
+    console.log('🔑 API Key loading:', {
+      hasExistingApiKey: !!existingApiKey,
+      existingApiKeyLength: existingApiKey?.length || 0,
+      hasDefaultApiKey: !!DEFAULT_API_KEY,
+      defaultApiKeyLength: DEFAULT_API_KEY?.length || 0
+    });
+    
     if (existingApiKey) {
+      console.log('🔑 Using existing API key from localStorage');
       setApiKey(existingApiKey);
     } else if (DEFAULT_API_KEY) {
       // Only set default if no existing key and we have a default
+      console.log('🔑 Using default API key from environment');
       localStorage.setItem('fusion_api_key', DEFAULT_API_KEY);
       setApiKey(DEFAULT_API_KEY);
+    } else {
+      console.log('❌ No API key found in localStorage or environment');
     }
     
     const savedLocation = localStorage.getItem('selected_location');
@@ -189,6 +234,8 @@ export default function AlarmKeypad() {
 
     const savedShowSeconds = localStorage.getItem('show_seconds');
     const savedHighlightPinButtons = localStorage.getItem('highlight_pin_buttons');
+    const savedSSEEnabled = localStorage.getItem('sse_enabled');
+    const savedShowLiveEvents = localStorage.getItem('show_live_events');
     const savedOrganization = localStorage.getItem('fusion_organization');
     
     if (savedTheme) {
@@ -220,6 +267,14 @@ export default function AlarmKeypad() {
       setHighlightPinButtons(savedHighlightPinButtons === 'true');
     }
     
+    if (savedSSEEnabled !== null) {
+      setSSEEnabled(savedSSEEnabled === 'true');
+    }
+    
+    if (savedShowLiveEvents !== null) {
+      setShowLiveEvents(savedShowLiveEvents === 'true');
+    }
+    
     if (savedOrganization) {
       try {
         setOrganization(JSON.parse(savedOrganization));
@@ -229,6 +284,7 @@ export default function AlarmKeypad() {
     }
     
     // Load organization info and locations
+    console.log('🚀 INIT: About to call loadOrganizationAndLocations with savedLocation:', !!savedLocation);
     loadOrganizationAndLocations(savedLocation);
   }, []);
 
@@ -236,8 +292,14 @@ export default function AlarmKeypad() {
   useEffect(() => {
     const updateEffectiveTheme = () => {
       if (theme === 'system') {
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setEffectiveTheme(systemPrefersDark ? 'dark' : 'light');
+        // Check if we're in the browser before accessing window
+        if (typeof window !== 'undefined') {
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setEffectiveTheme(systemPrefersDark ? 'dark' : 'light');
+        } else {
+          // Default to dark for SSR
+          setEffectiveTheme('dark');
+        }
       } else {
         setEffectiveTheme(theme);
       }
@@ -245,12 +307,14 @@ export default function AlarmKeypad() {
 
     updateEffectiveTheme();
 
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => updateEffectiveTheme();
-    mediaQuery.addEventListener('change', handleChange);
+    // Listen for system theme changes (only in browser)
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => updateEffectiveTheme();
+      mediaQuery.addEventListener('change', handleChange);
 
-    return () => mediaQuery.removeEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
   }, [theme]);
 
   // Apply theme class to document
@@ -265,12 +329,17 @@ export default function AlarmKeypad() {
   // Detect mobile screen size
   useEffect(() => {
     const updateMobileState = () => {
-      setIsMobile(window.innerWidth < 768);
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 768);
+      }
     };
     
     updateMobileState();
-    window.addEventListener('resize', updateMobileState);
-    return () => window.removeEventListener('resize', updateMobileState);
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', updateMobileState);
+      return () => window.removeEventListener('resize', updateMobileState);
+    }
   }, []);
 
   // Update clock every second
@@ -301,8 +370,19 @@ export default function AlarmKeypad() {
     return () => clearInterval(timer);
   }, [showSeconds, selectedLocation?.timeZone]);
 
-  // Auto-refresh areas and devices with smart polling
+  // Auto-refresh areas and devices with smart polling OR SSE
   useEffect(() => {
+    console.log('🔄 Auto-refresh useEffect triggered:', {
+      showSettings,
+      showLocationSelect,
+      selectedLocation: !!selectedLocation,
+      sseEnabled,
+      organizationId: organization?.id,
+      apiKeyLength: apiKey?.length,
+      hasApiKey: !!apiKey,
+      hasOrganization: !!organization
+    });
+
     if (!showSettings && !showLocationSelect && selectedLocation) {
       // Initial load for PIN screen preview
       const initialLoad = async () => {
@@ -315,28 +395,222 @@ export default function AlarmKeypad() {
       
       initialLoad();
       
-      // Set up smart polling with exponential backoff
-      const poller = new SmartPoller(5000, 30000); // Start at 5s, max 30s
-      
-      poller.start(async () => {
-        if (selectedLocation && selectedLocation.id) {
-          // Use batch operation for efficiency
-          const dashboardData = await optimizedGetDashboardData(selectedLocation.id);
-          
-          if (!dashboardData.areas.error) {
-            setAreas(dashboardData.areas.data || []);
+      // NEW: Use SSE if enabled and we have organization info
+      if (sseEnabled && organization?.id && apiKey && isClient) {
+        console.log('✅ SSE Prerequisites met, setting up connection...');
+        
+        // Add a delay to prevent race conditions during React strict mode
+        const setupTimer = setTimeout(async () => {
+          try {
+            await setupSSEConnection();
+          } catch (error) {
+            console.error('Failed to setup SSE connection:', error);
           }
-          if (!dashboardData.devices.error) {
-            setDevices(dashboardData.devices.data || []);
+        }, 500);
+        
+        // Cleanup function
+        return () => {
+          console.log('🧹 Cleaning up SSE connection...');
+          clearTimeout(setupTimer);
+          if (sseClient) {
+            sseClient.disconnect();
           }
-          
-          return dashboardData;
-        }
+        };
+      } else {
+        console.log('❌ SSE Prerequisites not met:', {
+          sseEnabled,
+          hasOrganization: !!organization?.id,
+          hasApiKey: !!apiKey,
+          isClient,
+          organizationId: organization?.id,
+          apiKeyLength: apiKey?.length
+        });
+        
+        // Fallback to polling if SSE is disabled or not available
+        const poller = new SmartPoller(5000, 30000); // Start at 5s, max 30s
+        
+        poller.start(async () => {
+          if (selectedLocation && selectedLocation.id) {
+            // Use batch operation for efficiency
+            const dashboardData = await optimizedGetDashboardData(selectedLocation.id);
+            
+            if (!dashboardData.areas.error) {
+              setAreas(dashboardData.areas.data || []);
+            }
+            if (!dashboardData.devices.error) {
+              setDevices(dashboardData.devices.data || []);
+            }
+            
+            return dashboardData;
+          }
+        });
+        
+        return () => poller.stop();
+      }
+    }
+  }, [showSettings, showLocationSelect, selectedLocation, isAuthenticated, sseEnabled, organization, apiKey, isClient]);
+
+  // NEW: Set up SSE connection
+  const setupSSEConnection = async () => {
+    if (!organization?.id || !apiKey) {
+      logger.warn('Cannot setup SSE: missing organization ID or API key');
+      return;
+    }
+
+    try {
+      // Disconnect existing client if any
+      if (sseClient) {
+        console.log('🔌 Disconnecting existing SSE client...');
+        sseClient.disconnect();
+        setSSEClient(null);
+      }
+
+      logger.info('Setting up SSE connection for organization:', organization.id);
+      console.log('🚀 Setting up SSE with:', {
+        organizationId: organization.id,
+        apiKeyLength: apiKey.length,
+        hasApiKey: !!apiKey
       });
       
-      return () => poller.stop();
+      const client = createSSEClient(organization.id, apiKey);
+      
+      // Set up event listeners
+      client.on('connected', () => {
+        logger.info('SSE connected successfully');
+        console.log('✅ SSE CLIENT: Connected successfully');
+        setSSEConnected(true);
+        setLastSSEEvent('Connected');
+        analytics.track({
+          action: 'sse_connection_established',
+          category: 'realtime',
+          properties: {
+            organizationId: organization.id
+          }
+        });
+      });
+
+      client.on('connection_confirmed', (data: any) => {
+        logger.info('SSE: Connection confirmed by server:', data);
+        console.log('🤝 SSE: Server confirmed connection:', data);
+        setSSEConnected(true);
+        setLastSSEEvent(`Connected to org: ${data.organizationId}`);
+      });
+
+      client.on('disconnected', () => {
+        logger.info('SSE disconnected');
+        console.log('❌ SSE CLIENT: Disconnected');
+        setSSEConnected(false);
+        setLastSSEEvent('Disconnected');
+      });
+
+      client.on('error', (error: Error) => {
+        logger.error('SSE connection error:', error);
+        console.error('❌ SSE CLIENT: Error:', error);
+        setSSEConnected(false);
+        setLastSSEEvent(`Error: ${error.message}`);
+        
+        // Show more detailed error information
+        const errorDetails = error.message.includes('Connection failed') 
+          ? 'Failed to connect to SSE endpoint'
+          : error.message.includes('Max retry attempts')
+          ? 'Connection failed after multiple attempts'
+          : error.message;
+        
+        setError(`SSE Error: ${errorDetails}`);
+      });
+
+      // Handle area state changes
+      client.on('area_state_change', (eventData: any) => {
+        logger.info('SSE: Area state change received:', eventData);
+        console.log('🏠 SSE: Area state change:', eventData);
+        const eventMessage = `Area: ${eventData.areaName || eventData.areaId} - ${eventData.type}`;
+        setLastSSEEvent(eventMessage);
+        
+        // Add to recent events list
+        setRecentEvents(prev => {
+          const newEvents = [eventMessage, ...prev.slice(0, 4)]; // Keep last 5 events
+          return newEvents;
+        });
+        
+        // Refresh areas to get latest state
+        if (selectedLocation) {
+          loadAreas(selectedLocation);
+        }
+      });
+
+      // Handle device state changes
+      client.on('device_state_change', (eventData: any) => {
+        logger.info('SSE: Device state change received:', eventData);
+        console.log('📱 SSE: Device state change:', eventData.deviceName, eventData.payload);
+        setLastSSEEvent(`Device: ${eventData.deviceName} - ${eventData.type}`);
+        
+        // Refresh devices to get latest state
+        loadDevices();
+      });
+
+      // Handle alarm events
+      client.on('alarm_event', (eventData: any) => {
+        logger.warn('SSE: Alarm event received:', eventData);
+        console.log('🚨 SSE: Alarm event:', eventData.deviceName, eventData.payload?.caption);
+        setLastSSEEvent(`🚨 ALARM: ${eventData.payload?.caption || eventData.type}`);
+        
+        // Refresh both areas and devices for alarm events
+        if (selectedLocation) {
+          loadAreas(selectedLocation);
+          loadDevices();
+        }
+      });
+
+      // Handle device check-ins
+      client.on('device_check_in', (eventData: any) => {
+        console.log('📋 SSE: Device check-in:', eventData.deviceName);
+        setLastSSEEvent(`Check-in: ${eventData.deviceName}`);
+      });
+
+      // Handle heartbeats
+      client.on('heartbeat', (data: any) => {
+        console.log('💓 SSE: Heartbeat received');
+        setLastHeartbeat(Date.now());
+        // Don't update UI for heartbeats to avoid spam
+      });
+
+      // Handle all security events (catch-all)
+      client.on('security_event', (eventData: any) => {
+        logger.info('SSE: Security event received:', eventData);
+        console.log('🔔 SSE: Security event:', {
+          category: eventData.category,
+          type: eventData.type,
+          device: eventData.deviceName
+        });
+        
+        // Update last event time for display only if it's not a heartbeat
+        if (eventData.category !== 'heartbeat') {
+          const eventTime = new Date().toLocaleTimeString();
+          setLastSSEEvent(`${eventTime}: ${eventData.category} - ${eventData.type}`);
+        }
+      });
+
+      setSSEClient(client);
+      
+      // Connect to the stream
+      console.log('🔌 SSE: Attempting to connect...');
+      
+      // Add a small delay to ensure state is updated
+      setTimeout(async () => {
+        try {
+          await client.connect();
+        } catch (error) {
+          console.error('💥 SSE: Connection failed:', error);
+        }
+      }, 100);
+      
+    } catch (error) {
+      logger.error('Failed to setup SSE connection:', error);
+      console.error('💥 SSE: Setup failed:', error);
+      setSSEConnected(false);
+      setLastSSEEvent(`Setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [showSettings, showLocationSelect, selectedLocation, isAuthenticated]);
+  };
 
   // Check area warnings when devices or areas change
   useEffect(() => {
@@ -390,6 +664,65 @@ export default function AlarmKeypad() {
     }
   }, [areas, devices, isAuthenticated]);
 
+  // Monitor device connectivity and system health
+  useEffect(() => {
+    if (devices.length > 0) {
+      const now = Date.now();
+      const offlineThreshold = 10 * 60 * 1000; // 10 minutes
+      
+      const offline = devices.filter(device => {
+        // Check if device has online property (if available)
+        if (device.online !== undefined) {
+          return !device.online;
+        }
+        
+        // Check if device has lastStateUpdate timestamp
+        if (device.lastStateUpdate) {
+          const lastUpdate = new Date(device.lastStateUpdate).getTime();
+          return (now - lastUpdate) > offlineThreshold;
+        }
+        
+        // If no connectivity info available, assume online
+        return false;
+      });
+      
+      setOfflineDevices(offline.map(d => d.name));
+      
+      // Update device connectivity status
+      if (offline.length === 0) {
+        setDeviceConnectivity('all_online');
+      } else if (offline.length < devices.length) {
+        setDeviceConnectivity('some_offline');
+      } else {
+        setDeviceConnectivity('all_offline');
+      }
+    }
+  }, [devices]);
+
+  // Monitor overall system status based on SSE and device connectivity
+  useEffect(() => {
+    const now = Date.now();
+    const heartbeatTimeout = 2 * 60 * 1000; // 2 minutes without heartbeat
+    const heartbeatAge = now - lastHeartbeat;
+    
+    if (!sseConnected && !sseEnabled) {
+      // SSE disabled, use polling - system is online but degraded
+      setSystemStatus('degraded');
+    } else if (!sseConnected || heartbeatAge > heartbeatTimeout) {
+      // SSE should be connected but isn't, or no recent heartbeat
+      setSystemStatus('offline');
+    } else if (deviceConnectivity === 'all_offline') {
+      // SSE working but all devices offline
+      setSystemStatus('offline');
+    } else if (deviceConnectivity === 'some_offline') {
+      // SSE working but some devices offline
+      setSystemStatus('degraded');
+    } else {
+      // Everything working
+      setSystemStatus('online');
+    }
+  }, [sseConnected, sseEnabled, lastHeartbeat, deviceConnectivity]);
+
   // Auto-authenticate when PIN is 6 digits
   useEffect(() => {
     if (pin.length === 6 && !isAuthenticated) {
@@ -401,7 +734,7 @@ export default function AlarmKeypad() {
 
   // Keyboard support for PIN entry
   useEffect(() => {
-    if (!isAuthenticated && !showSettings && !showLocationSelect && !showEvents && !showAutomation) {
+    if (!isAuthenticated && !showSettings && !showLocationSelect && !showEvents && !showAutomation && typeof window !== 'undefined') {
       const handleKeyPress = (e: KeyboardEvent) => {
         // Prevent keyboard entry while processing
         if (isProcessing) return;
@@ -839,8 +1172,8 @@ export default function AlarmKeypad() {
     setLastUpdateCheck('Checking...');
     
     try {
-      // Check if service worker is available
-      if ('serviceWorker' in navigator) {
+      // Check if service worker is available (only in browser)
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
           console.log('[SW] Manual update check triggered');
@@ -2260,6 +2593,73 @@ export default function AlarmKeypad() {
                       </button>
                     </div>
 
+                    {/* Real-time Events (SSE) */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white">Real-time Updates (SSE)</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Use real-time event streaming instead of polling
+                          {sseConnected && <span className="text-[#22c55f] ml-1">• Connected</span>}
+                          {!sseConnected && sseEnabled && <span className="text-amber-500 ml-1">• Connecting...</span>}
+                        </p>
+                        {lastSSEEvent && (
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            Last: {lastSSEEvent}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newValue = !sseEnabled;
+                          setSSEEnabled(newValue);
+                          localStorage.setItem('sse_enabled', newValue.toString());
+                          
+                          if (newValue && organization?.id && apiKey) {
+                            // Re-enable SSE
+                            setupSSEConnection();
+                          } else if (!newValue && sseClient) {
+                            // Disable SSE
+                            sseClient.disconnect();
+                            setSSEConnected(false);
+                            setLastSSEEvent('Disabled');
+                          }
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                          sseEnabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            sseEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Show Live Events on Main Screen */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white">Show Live Events on Main Screen</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Display recent activity ticker on alarm screen</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newValue = !showLiveEvents;
+                          setShowLiveEvents(newValue);
+                          localStorage.setItem('show_live_events', newValue.toString());
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                          showLiveEvents ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            showLiveEvents ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
                     {/* Test Design Toggle */}
                     <div className="flex items-center justify-between">
                       <div>
@@ -2318,6 +2718,109 @@ export default function AlarmKeypad() {
                       </button>
                     </div>
 
+                    {/* SYSTEM STATUS MONITOR - Enhanced */}
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                        🖥️ System Status Monitor
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                          systemStatus === 'online' ? 'bg-[#22c55f]' :
+                          systemStatus === 'degraded' ? 'bg-amber-500' :
+                          'bg-red-500'
+                        }`}></div>
+                      </h4>
+                      <div className="space-y-2">
+                        {/* Overall Status */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Overall Status:</span>
+                          <span className={`text-xs font-semibold ${
+                            systemStatus === 'online' ? 'text-[#22c55f]' :
+                            systemStatus === 'degraded' ? 'text-amber-500' :
+                            'text-red-500'
+                          }`}>
+                            {systemStatus === 'online' ? '✅ ONLINE' :
+                             systemStatus === 'degraded' ? '⚠️ DEGRADED' :
+                             '❌ OFFLINE'}
+                          </span>
+                        </div>
+
+                        {/* SSE Connection */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Real-time Events:</span>
+                          <span className={`text-xs ${sseConnected ? 'text-[#22c55f]' : 'text-amber-500'}`}>
+                            {sseEnabled ? (sseConnected ? '✅ Connected' : '⏳ Connecting...') : '⚠️ Disabled (Polling)'}
+                          </span>
+                        </div>
+
+                        {/* Device Connectivity */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Device Connectivity:</span>
+                          <span className={`text-xs ${
+                            deviceConnectivity === 'all_online' ? 'text-[#22c55f]' :
+                            deviceConnectivity === 'some_offline' ? 'text-amber-500' :
+                            'text-red-500'
+                          }`}>
+                            {deviceConnectivity === 'all_online' ? '✅ All Online' :
+                             deviceConnectivity === 'some_offline' ? `⚠️ ${offlineDevices.length} Offline` :
+                             '❌ All Offline'}
+                          </span>
+                        </div>
+
+                        {/* Organization */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Organization:</span>
+                          <span className={`text-xs ${organization?.id ? 'text-[#22c55f]' : 'text-red-500'}`}>
+                            {organization?.id ? `✅ ${organization.name}` : '❌ Not loaded'}
+                          </span>
+                        </div>
+
+                        {/* Last Heartbeat */}
+                        {sseConnected && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Last Heartbeat:</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-500">
+                              {Math.round((Date.now() - lastHeartbeat) / 1000)}s ago
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Offline Devices List */}
+                        {offlineDevices.length > 0 && (
+                          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+                            <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">
+                              📱 Offline Devices:
+                            </p>
+                            <div className="space-y-1">
+                              {offlineDevices.slice(0, 3).map((deviceName, idx) => (
+                                <p key={idx} className="text-xs text-amber-600 dark:text-amber-400">
+                                  • {deviceName}
+                                </p>
+                              ))}
+                              {offlineDevices.length > 3 && (
+                                <p className="text-xs text-amber-500 dark:text-amber-500">
+                                  ... and {offlineDevices.length - 3} more
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Last Event */}
+                        {lastSSEEvent && (
+                          <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded border">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              🔔 Last Event:
+                            </p>
+                            <p className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                              {lastSSEEvent}
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                          💡 Monitor system health and device connectivity in real-time
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2389,7 +2892,7 @@ export default function AlarmKeypad() {
                        <button
                          onClick={() => {
                            const newZone: AlarmZone = {
-                             id: `zone-${Date.now()}`,
+                             id: `zone-${alarmZones.length + 1}-${new Date().getTime()}`,
                              name: `Zone ${alarmZones.length + 1}`,
                              color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'][alarmZones.length % 6],
                              areas: []
@@ -2754,18 +3257,56 @@ export default function AlarmKeypad() {
           </div>
           
           <div className="flex items-center gap-2 md:gap-6">
-            {/* System Active Indicator - Simplified on mobile */}
+            {/* Smart System Status Indicator */}
             <div className="hidden md:flex items-center gap-2">
               <div className="relative">
-                <div className="w-2 h-2 bg-[#22c55f] rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 w-2 h-2 bg-[#22c55f] rounded-full animate-ping"></div>
+                <div className={`w-2 h-2 rounded-full ${
+                  systemStatus === 'online' ? 'bg-[#22c55f] animate-pulse' :
+                  systemStatus === 'degraded' ? 'bg-amber-500 animate-pulse' :
+                  'bg-red-500 animate-pulse'
+                }`}></div>
+                <div className={`absolute inset-0 w-2 h-2 rounded-full ${
+                  systemStatus === 'online' ? 'bg-[#22c55f] animate-ping' :
+                  systemStatus === 'degraded' ? 'bg-amber-500 animate-ping' :
+                  'bg-red-500 animate-ping'
+                }`}></div>
               </div>
-              <span className="text-xs text-[#22c55f] font-medium">SYSTEM ACTIVE</span>
+              <span className={`text-xs font-medium ${
+                systemStatus === 'online' ? 'text-[#22c55f]' :
+                systemStatus === 'degraded' ? 'text-amber-500' :
+                'text-red-500'
+              }`}>
+                {systemStatus === 'online' ? 'SYSTEM ONLINE' :
+                 systemStatus === 'degraded' ? 'SYSTEM DEGRADED' :
+                 'SYSTEM OFFLINE'}
+              </span>
+              {/* Device Status Details on Hover */}
+              {(systemStatus === 'degraded' || systemStatus === 'offline') && (
+                <div className="group relative">
+                  <svg className="w-3 h-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    {!sseConnected && sseEnabled ? 'SSE Disconnected' :
+                     !sseEnabled ? 'Using Polling Mode' :
+                     offlineDevices.length > 0 ? `${offlineDevices.length} Device(s) Offline` :
+                     'Connection Issues'}
+                  </div>
+                </div>
+              )}
             </div>
-            {/* Mobile - Just show indicator */}
-            <div className="block md:hidden relative">
-              <div className="w-2 h-2 bg-[#22c55f] rounded-full animate-pulse"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-[#22c55f] rounded-full animate-ping"></div>
+            {/* Mobile - Just show status indicator */}
+            <div className="block md:hidden relative group">
+              <div className={`w-2 h-2 rounded-full ${
+                systemStatus === 'online' ? 'bg-[#22c55f] animate-pulse' :
+                systemStatus === 'degraded' ? 'bg-amber-500 animate-pulse' :
+                'bg-red-500 animate-pulse'
+              }`}></div>
+              <div className={`absolute inset-0 w-2 h-2 rounded-full ${
+                systemStatus === 'online' ? 'bg-[#22c55f] animate-ping' :
+                systemStatus === 'degraded' ? 'bg-amber-500 animate-ping' :
+                'bg-red-500 animate-ping'
+              }`}></div>
             </div>
             
             {isAuthenticated && !isMobile && (
@@ -3066,7 +3607,7 @@ export default function AlarmKeypad() {
                             <span className="text-sm text-gray-700 dark:text-gray-300">{area.name}</span>
                               {useDesign2 && (
                                 <p className="text-xs text-gray-500 dark:text-gray-500">
-                                  {area.armedState === 'DISARMED' ? 'Disarmed' : 'Armed'} • {formatRelativeTime(Date.now() - 5 * 60 * 1000)}
+                                  {area.armedState === 'DISARMED' ? 'Disarmed' : 'Armed'}{isClient && ` • ${formatRelativeTime(Date.now() - 5 * 60 * 1000)}`}
                                 </p>
                               )}
                           </div>
@@ -3319,8 +3860,8 @@ export default function AlarmKeypad() {
                               <p className={`text-xs ${
                                 area.armedState !== 'DISARMED' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-400'
                               }`}>
-                                {area.armedState === 'DISARMED' ? 'Disarmed' : 'Armed'}
-                                                              {useDesign2 && area.updatedAt && (
+                                                              {area.armedState === 'DISARMED' ? 'Disarmed' : 'Armed'}
+                              {useDesign2 && area.updatedAt && isClient && (
                                 <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">
                                   • {formatRelativeTime(new Date(area.updatedAt).getTime())}
                                 </span>
@@ -3676,7 +4217,7 @@ export default function AlarmKeypad() {
                               area.armedState !== 'DISARMED' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-400'
                             }`}>
                               {area.armedState === 'DISARMED' ? 'Disarmed' : 'Armed'}
-                              {useDesign2 && area.updatedAt && (
+                              {useDesign2 && area.updatedAt && isClient && (
                                 <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">
                                   • {formatRelativeTime(new Date(area.updatedAt).getTime())}
                                 </span>

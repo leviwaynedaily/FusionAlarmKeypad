@@ -170,13 +170,34 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
 };
 
 export const getApiKeyDetails = async (): Promise<ApiResponse<ApiKeyTestResponse>> => {
-  const response = await apiFetch<{ success: boolean; data: ApiKeyTestResponse }>('/api/admin/api-keys/test', {
+  const response = await apiFetch<any>('/api/admin/api-keys/test', {
     method: 'GET',
   });
+  
+  // Debug: Log the actual response structure
+  console.log('🔍 API Raw Response from /api/admin/api-keys/test:', response);
+  console.log('🔍 API Response data structure:', response.data);
+  
   if (response.error) {
     return { data: null as unknown as ApiKeyTestResponse, error: response.error };
   }
-  return { data: response.data.data };
+  
+  // Try to handle different response structures
+  if (response.data && typeof response.data === 'object') {
+    // If response.data.data exists, use it (nested structure)
+    if ((response.data as any).data) {
+      console.log('🔍 Using nested data structure:', (response.data as any).data);
+      return { data: (response.data as any).data };
+    }
+    // If response.data has organizationInfo directly, use it (flat structure)
+    else if ((response.data as any).organizationInfo !== undefined) {
+      console.log('🔍 Using flat data structure:', response.data);
+      return { data: response.data as unknown as ApiKeyTestResponse };
+    }
+  }
+  
+  console.log('🔍 Fallback: returning original response.data');
+  return { data: response.data as unknown as ApiKeyTestResponse };
 };
 
 export const validateApiKey = async (key: string): Promise<ApiResponse<boolean>> => {
