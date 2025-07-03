@@ -1,7 +1,5 @@
 // Server-Sent Events (SSE) client for real-time event streaming
 import { logger } from './logger';
-import { analytics } from './analytics';
-import { Area, Device, Event } from './api';
 
 // Event types that we want to listen for
 const MONITORED_CATEGORIES = [
@@ -59,14 +57,14 @@ export interface FusionSSEConfig {
 export interface FusionSSEClient {
   connect(): Promise<void>;
   disconnect(): void;
-  on(event: string, callback: Function): void;
-  off(event: string, callback: Function): void;
+  on(event: string, callback: (...args: any[]) => void): void;
+  off(event: string, callback: (...args: any[]) => void): void;
   isConnected(): boolean;
 }
 
 class SSEClient implements FusionSSEClient {
   private config: Required<FusionSSEConfig>;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private eventListeners: Map<string, ((...args: any[]) => void)[]> = new Map();
   private connected: boolean = false;
   private lastEventTime: number = 0;
   private reconnectAttempts: number = 0;
@@ -426,14 +424,14 @@ class SSEClient implements FusionSSEClient {
   }
 
   // Event emitter methods
-  on(event: string, callback: Function): void {
+  on(event: string, callback: (...args: any[]) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
     this.eventListeners.get(event)!.push(callback);
   }
 
-  off(event: string, callback: Function): void {
+  off(event: string, callback: (...args: any[]) => void): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);

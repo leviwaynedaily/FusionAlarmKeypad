@@ -59,7 +59,6 @@ export default function AlarmKeypad() {
   const [sseEnabled, setSSEEnabled] = useState(true); // Can be toggled in settings
   const [lastSSEEvent, setLastSSEEvent] = useState<string>('');
   const [showLiveEvents, setShowLiveEvents] = useState(false); // NEW: Toggle for live event display
-  const [recentEvents, setRecentEvents] = useState<string[]>([]); // NEW: Store recent events
   
   // NEW: Alarm Zones functionality
   interface AlarmZone {
@@ -525,12 +524,6 @@ export default function AlarmKeypad() {
         console.log('🏠 SSE: Area state change:', eventData);
         const eventMessage = `Area: ${eventData.areaName || eventData.areaId} - ${eventData.type}`;
         setLastSSEEvent(eventMessage);
-        
-        // Add to recent events list
-        setRecentEvents(prev => {
-          const newEvents = [eventMessage, ...prev.slice(0, 4)]; // Keep last 5 events
-          return newEvents;
-        });
         
         // Refresh areas to get latest state
         if (selectedLocation) {
