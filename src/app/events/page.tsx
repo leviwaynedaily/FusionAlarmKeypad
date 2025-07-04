@@ -44,7 +44,21 @@ export default function EventsPage() {
 
   // Helper function to extract device state from multiple possible locations
   // Helper function to map raw device states to display states (extensible for future devices)
-  const mapRawStateToDisplayState = (rawState: string): string => {
+  const mapRawStateToDisplayState = (rawState: string | boolean | number): string => {
+    // Handle non-string values
+    if (typeof rawState === 'boolean') {
+      return rawState ? 'On' : 'Off';
+    }
+    
+    if (typeof rawState === 'number') {
+      return rawState === 1 ? 'On' : rawState === 0 ? 'Off' : rawState.toString();
+    }
+    
+    // Handle null/undefined
+    if (rawState === null || rawState === undefined) {
+      return 'Unknown';
+    }
+    
     const stateMap: { [key: string]: string } = {
       // YoLink states
       'closed': 'Off',
@@ -70,107 +84,76 @@ export default function EventsPage() {
       'normal': 'Normal',
       'alarm': 'Alarm',
       'ok': 'OK',
-      'error': 'Error'
+      'error': 'Error',
+      // Power states (various formats)
+      'power_on': 'On',
+      'power_off': 'Off',
+      'powered_on': 'On',
+      'powered_off': 'Off',
+      'turned_on': 'On',
+      'turned_off': 'Off',
+      'switch_on': 'On',
+      'switch_off': 'Off',
+      'light_on': 'On',
+      'light_off': 'Off',
+      // Active/inactive states
+      'active': 'On',
+      'inactive': 'Off',
+      'enabled': 'On',
+      'disabled': 'Off',
+      // Numeric strings
+      'yes': 'On',
+      'no': 'Off',
+      // Other common states
+      'up': 'On',
+      'down': 'Off',
+      'high': 'On',
+      'low': 'Off'
     };
     
-    return stateMap[rawState.toLowerCase()] || rawState;
+    const normalizedState = rawState.toString().toLowerCase().trim();
+    return stateMap[normalizedState] || rawState.toString();
   };
 
   const extractDeviceState = (rawData: any): string => {
-    // Check multiple locations for device state
-    let state = 'Unknown';
-    
-    // Debug logging for troubleshooting
-    if (rawData.deviceName && rawData.deviceName.toLowerCase().includes('light')) {
-      console.log('🔍 DEBUG - Light device found:', {
-        deviceName: rawData.deviceName,
-        eventDisplayState: rawData.event?.displayState,
-        eventIntermediateState: rawData.event?.intermediateState,
-        rawEventDataState: rawData.rawEvent?.data?.state,
-        eventRawEventPayloadState: rawData.event?.rawEventPayload?.state,
-        dataState: rawData.data?.state,
-        fullRawData: rawData
-      });
-    }
-    
-    // Check in event.displayState or event.intermediateState first (preferred)
+    // With normalized data, we primarily use event.displayState
     if (rawData.event?.displayState) {
-      state = rawData.event.displayState;
-      console.log('✅ Found state in event.displayState:', state);
-    } else if (rawData.event?.intermediateState) {
-      state = rawData.event.intermediateState;
-      console.log('✅ Found state in event.intermediateState:', state);
-    }
-    // Check in rawEvent.data.state (YoLink and other IoT platforms)
-    else if (rawData.rawEvent?.data?.state) {
-      const rawState = rawData.rawEvent.data.state;
-      state = mapRawStateToDisplayState(rawState);
-      console.log('✅ Found state in rawEvent.data.state:', rawState, '→', state);
-    }
-    // Check in event.rawEventPayload.state (alternative format)
-    else if (rawData.event?.rawEventPayload?.state) {
-      const rawState = rawData.event.rawEventPayload.state;
-      state = mapRawStateToDisplayState(rawState);
-      console.log('✅ Found state in event.rawEventPayload.state:', rawState, '→', state);
-    }
-    // Check in data.state (direct format)
-    else if (rawData.data?.state) {
-      const rawState = rawData.data.state;
-      state = mapRawStateToDisplayState(rawState);
-      console.log('✅ Found state in data.state:', rawState, '→', state);
-    } else {
-      console.log('❌ No state found in any location for device:', rawData.deviceName);
+      return rawData.event.displayState;
     }
     
-    return state;
+    // Fallback to intermediateState if displayState is not available
+    if (rawData.event?.intermediateState) {
+      return mapRawStateToDisplayState(rawData.event.intermediateState);
+    }
+    
+    // Default fallback
+    return 'Unknown';
   };
 
   // Helper function to check if an event should be treated as a device state change
   const isDeviceStateEvent = (rawData: any): boolean => {
-    const deviceName = (rawData.deviceName || '').toLowerCase();
-    const eventCategory = rawData.event?.categoryId || rawData.event?.category || '';
-    const eventType = rawData.event?.type || '';
+    // With normalized data, we can check the categoryId directly
+    const categoryId = rawData.event?.categoryId;
+    const typeId = rawData.event?.typeId;
     
-    // Device type keywords to look for
-    const deviceKeywords = [
-      'light', 'switch', 'outlet', 'plug', 'socket',
-      'fan', 'dimmer', 'relay', 'controller',
-      'bulb', 'lamp', 'fixture'
-    ];
-    
-    // Check if device name contains any device keywords
-    const isDeviceByName = deviceKeywords.some(keyword => deviceName.includes(keyword));
-    
-    // Check if it's a diagnostic/check-in event with state information
-    const isDiagnosticWithState = (
-      (eventCategory === 'DIAGNOSTICS' || eventType === 'Device Check-in') &&
-      (rawData.rawEvent?.data?.state || rawData.event?.rawEventPayload?.state || rawData.data?.state)
-    );
-    
-    const result = isDeviceByName || isDiagnosticWithState;
-    
-    // Debug logging for light devices
-    if (deviceName.includes('light')) {
-      console.log('🔍 DEBUG - Device detection for light:', {
-        deviceName: rawData.deviceName,
-        eventCategory,
-        eventType,
-        isDeviceByName,
-        isDiagnosticWithState,
-        finalResult: result,
-        hasRawEventDataState: !!rawData.rawEvent?.data?.state,
-        hasEventRawEventPayloadState: !!rawData.event?.rawEventPayload?.state,
-        hasDataState: !!rawData.data?.state
-      });
+    // Check if it's a device state event based on normalized categoryId
+    if (categoryId === 'DEVICE_STATE' || categoryId === 'Device State') {
+      return true;
     }
     
-    return result;
+    // Check if it's a state change event based on normalized typeId
+    if (typeId === 'STATE_CHANGED' || typeId === 'State Changed') {
+      return true;
+    }
+    
+    // Fallback: check if device name suggests it's a controllable device
+    const deviceName = (rawData.deviceName || '').toLowerCase();
+    const deviceKeywords = ['light', 'switch', 'outlet', 'plug', 'socket', 'fan', 'dimmer', 'bulb', 'lamp'];
+    
+    return deviceKeywords.some(keyword => deviceName.includes(keyword));
   };
 
   const processEvent = (rawData: any, eventType: string): ProcessedEvent => {
-    // Force rebuild - version 2.0
-    console.log('🚀 PROCESSVENT V2.0 - Starting event processing:', { deviceName: rawData.deviceName, eventType });
-    
     const timestamp = new Date(rawData.timestamp || Date.now());
     const eventUuid = rawData.eventUuid || `${eventType}-${Date.now()}`;
     
@@ -179,32 +162,57 @@ export default function EventsPage() {
     let category = '';
     let severity: 'low' | 'medium' | 'high' = 'low';
 
-    // Check if this is actually a device state event regardless of event type
+    // Check if this is a device state event using normalized data
     if (isDeviceStateEvent(rawData)) {
       const deviceName = rawData.deviceName || 'Unknown Device';
       const deviceState = extractDeviceState(rawData);
       const lowerDeviceName = deviceName.toLowerCase();
       
-      console.log('🎯 DEBUG - Processing as device state event:', {
-        deviceName,
-        deviceState,
-        eventType
-      });
-      
-      // Determine device type and create appropriate title/description
+      // Create clean event messages based on device type and state
       if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
-        title = deviceState === 'On' ? 'Light Turned On' : 'Light Turned Off';
-        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
-        console.log('✅ DEBUG - Light processed:', { title, description });
+        if (deviceState === 'On') {
+          title = 'Light Turned On';
+          description = `${deviceName} turned on`;
+        } else if (deviceState === 'Off') {
+          title = 'Light Turned Off';
+          description = `${deviceName} turned off`;
+        } else {
+          title = 'Light State Changed';
+          description = `${deviceName} changed to ${deviceState}`;
+        }
       } else if (lowerDeviceName.includes('switch')) {
-        title = deviceState === 'On' ? 'Switch Turned On' : 'Switch Turned Off';
-        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+        if (deviceState === 'On') {
+          title = 'Switch Turned On';
+          description = `${deviceName} turned on`;
+        } else if (deviceState === 'Off') {
+          title = 'Switch Turned Off';
+          description = `${deviceName} turned off`;
+        } else {
+          title = 'Switch State Changed';
+          description = `${deviceName} changed to ${deviceState}`;
+        }
       } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
-        title = deviceState === 'On' ? 'Outlet Turned On' : 'Outlet Turned Off';
-        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+        if (deviceState === 'On') {
+          title = 'Outlet Turned On';
+          description = `${deviceName} turned on`;
+        } else if (deviceState === 'Off') {
+          title = 'Outlet Turned Off';
+          description = `${deviceName} turned off`;
+        } else {
+          title = 'Outlet State Changed';
+          description = `${deviceName} changed to ${deviceState}`;
+        }
       } else if (lowerDeviceName.includes('fan')) {
-        title = deviceState === 'On' ? 'Fan Turned On' : 'Fan Turned Off';
-        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+        if (deviceState === 'On') {
+          title = 'Fan Turned On';
+          description = `${deviceName} turned on`;
+        } else if (deviceState === 'Off') {
+          title = 'Fan Turned Off';
+          description = `${deviceName} turned off`;
+        } else {
+          title = 'Fan State Changed';
+          description = `${deviceName} changed to ${deviceState}`;
+        }
       } else if (lowerDeviceName.includes('dimmer')) {
         title = 'Dimmer State Changed';
         description = `${deviceName} changed to ${deviceState}`;
@@ -245,23 +253,55 @@ export default function EventsPage() {
             category = 'security';
             severity = 'medium';
           } else if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
-            title = displayState === 'On' ? 'Light Turned On' : 'Light Turned Off';
-            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            if (displayState === 'On') {
+              title = 'Light Turned On';
+              description = `${deviceName} turned on`;
+            } else if (displayState === 'Off') {
+              title = 'Light Turned Off';
+              description = `${deviceName} turned off`;
+            } else {
+              title = 'Light State Changed';
+              description = `${deviceName} changed to ${displayState}`;
+            }
             category = 'device';
             severity = 'low';
           } else if (lowerDeviceName.includes('switch')) {
-            title = displayState === 'On' ? 'Switch Turned On' : 'Switch Turned Off';
-            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            if (displayState === 'On') {
+              title = 'Switch Turned On';
+              description = `${deviceName} turned on`;
+            } else if (displayState === 'Off') {
+              title = 'Switch Turned Off';
+              description = `${deviceName} turned off`;
+            } else {
+              title = 'Switch State Changed';
+              description = `${deviceName} changed to ${displayState}`;
+            }
             category = 'device';
             severity = 'low';
           } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
-            title = displayState === 'On' ? 'Outlet Turned On' : 'Outlet Turned Off';
-            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            if (displayState === 'On') {
+              title = 'Outlet Turned On';
+              description = `${deviceName} turned on`;
+            } else if (displayState === 'Off') {
+              title = 'Outlet Turned Off';
+              description = `${deviceName} turned off`;
+            } else {
+              title = 'Outlet State Changed';
+              description = `${deviceName} changed to ${displayState}`;
+            }
             category = 'device';
             severity = 'low';
           } else if (lowerDeviceName.includes('fan')) {
-            title = displayState === 'On' ? 'Fan Turned On' : 'Fan Turned Off';
-            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            if (displayState === 'On') {
+              title = 'Fan Turned On';
+              description = `${deviceName} turned on`;
+            } else if (displayState === 'Off') {
+              title = 'Fan Turned Off';
+              description = `${deviceName} turned off`;
+            } else {
+              title = 'Fan State Changed';
+              description = `${deviceName} changed to ${displayState}`;
+            }
             category = 'device';
             severity = 'low';
           } else {
@@ -359,6 +399,8 @@ export default function EventsPage() {
       // Events with images are likely more important
       if (severity === 'low') severity = 'medium';
     }
+
+
 
     return {
       id: eventUuid,
