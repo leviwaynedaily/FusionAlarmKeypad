@@ -182,8 +182,8 @@ export default function SSEDebugPage() {
 
   // Get unique values for filter dropdowns
   const uniqueTypes = [...new Set(events.map((e: SSEEvent) => e.type))].sort();
-  const uniqueCategories = [...new Set(events.map((e: SSEEvent) => e.category).filter(Boolean))].sort();
-  const uniqueDevices = [...new Set(events.map((e: SSEEvent) => e.deviceName).filter(Boolean))].sort();
+  const uniqueCategories = [...new Set(events.map((e: SSEEvent) => e.category).filter((cat): cat is string => Boolean(cat)))].sort();
+  const uniqueDevices = [...new Set(events.map((e: SSEEvent) => e.deviceName).filter((device): device is string => Boolean(device)))].sort();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
