@@ -168,6 +168,9 @@ export default function EventsPage() {
   };
 
   const processEvent = (rawData: any, eventType: string): ProcessedEvent => {
+    // Force rebuild - version 2.0
+    console.log('🚀 PROCESSVENT V2.0 - Starting event processing:', { deviceName: rawData.deviceName, eventType });
+    
     const timestamp = new Date(rawData.timestamp || Date.now());
     const eventUuid = rawData.eventUuid || `${eventType}-${Date.now()}`;
     
