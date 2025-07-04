@@ -2,25 +2,401 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Event } from '@/lib/api';
-import { optimizedGetAreas, SmartPoller, clearCache } from '@/lib/api-optimized';
+import { createSSEClient, FusionSSEClient } from '@/lib/sse';
 import Header from '@/components/Header';
 import TabNav from '@/components/TabNav';
 
+interface ProcessedEvent {
+  id: string;
+  timestamp: Date;
+  type: string;
+  category: string;
+  title: string;
+  description: string;
+  deviceName?: string;
+  areaName?: string;
+  locationName?: string;
+  image?: {
+    data: string;
+    contentType: string;
+    size: number;
+  };
+  severity: 'low' | 'medium' | 'high';
+  rawData?: any;
+}
+
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<ProcessedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [location, setLocation] = useState<{ id: string; name: string; addressPostalCode: string } | null>(null);
   const [organization, setOrganization] = useState<{ name: string } | null>(null);
-  const [smartPoller, setSmartPoller] = useState<SmartPoller | null>(null);
+  const [sseClient, setSSEClient] = useState<FusionSSEClient | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const router = useRouter();
 
+  // Filtering state
+  const [filterType, setFilterType] = useState('all');
+  const [filterSeverity, setFilterSeverity] = useState('all');
+  const [filterDevice, setFilterDevice] = useState('all');
+  const [showDebug, setShowDebug] = useState(false);
+  const [maxEvents, setMaxEvents] = useState(100);
+
+  // Helper function to extract device state from multiple possible locations
+  // Helper function to map raw device states to display states (extensible for future devices)
+  const mapRawStateToDisplayState = (rawState: string): string => {
+    const stateMap: { [key: string]: string } = {
+      // YoLink states
+      'closed': 'Off',
+      'open': 'On',
+      // Common switch/outlet states
+      'on': 'On',
+      'off': 'Off',
+      'true': 'On',
+      'false': 'Off',
+      '1': 'On',
+      '0': 'Off',
+      // Door/sensor states
+      'opened': 'Open',
+      'locked': 'Locked',
+      'unlocked': 'Unlocked',
+      'triggered': 'Triggered',
+      'clear': 'Clear',
+      // Motion/presence states
+      'detected': 'Detected',
+      'no_motion': 'Clear',
+      'motion': 'Detected',
+      // Environmental states
+      'normal': 'Normal',
+      'alarm': 'Alarm',
+      'ok': 'OK',
+      'error': 'Error'
+    };
+    
+    return stateMap[rawState.toLowerCase()] || rawState;
+  };
+
+  const extractDeviceState = (rawData: any): string => {
+    // Check multiple locations for device state
+    let state = 'Unknown';
+    
+    // Debug logging for troubleshooting
+    if (rawData.deviceName && rawData.deviceName.toLowerCase().includes('light')) {
+      console.log('🔍 DEBUG - Light device found:', {
+        deviceName: rawData.deviceName,
+        eventDisplayState: rawData.event?.displayState,
+        eventIntermediateState: rawData.event?.intermediateState,
+        rawEventDataState: rawData.rawEvent?.data?.state,
+        eventRawEventPayloadState: rawData.event?.rawEventPayload?.state,
+        dataState: rawData.data?.state,
+        fullRawData: rawData
+      });
+    }
+    
+    // Check in event.displayState or event.intermediateState first (preferred)
+    if (rawData.event?.displayState) {
+      state = rawData.event.displayState;
+      console.log('✅ Found state in event.displayState:', state);
+    } else if (rawData.event?.intermediateState) {
+      state = rawData.event.intermediateState;
+      console.log('✅ Found state in event.intermediateState:', state);
+    }
+    // Check in rawEvent.data.state (YoLink and other IoT platforms)
+    else if (rawData.rawEvent?.data?.state) {
+      const rawState = rawData.rawEvent.data.state;
+      state = mapRawStateToDisplayState(rawState);
+      console.log('✅ Found state in rawEvent.data.state:', rawState, '→', state);
+    }
+    // Check in event.rawEventPayload.state (alternative format)
+    else if (rawData.event?.rawEventPayload?.state) {
+      const rawState = rawData.event.rawEventPayload.state;
+      state = mapRawStateToDisplayState(rawState);
+      console.log('✅ Found state in event.rawEventPayload.state:', rawState, '→', state);
+    }
+    // Check in data.state (direct format)
+    else if (rawData.data?.state) {
+      const rawState = rawData.data.state;
+      state = mapRawStateToDisplayState(rawState);
+      console.log('✅ Found state in data.state:', rawState, '→', state);
+    } else {
+      console.log('❌ No state found in any location for device:', rawData.deviceName);
+    }
+    
+    return state;
+  };
+
+  // Helper function to check if an event should be treated as a device state change
+  const isDeviceStateEvent = (rawData: any): boolean => {
+    const deviceName = (rawData.deviceName || '').toLowerCase();
+    const eventCategory = rawData.event?.categoryId || rawData.event?.category || '';
+    const eventType = rawData.event?.type || '';
+    
+    // Device type keywords to look for
+    const deviceKeywords = [
+      'light', 'switch', 'outlet', 'plug', 'socket',
+      'fan', 'dimmer', 'relay', 'controller',
+      'bulb', 'lamp', 'fixture'
+    ];
+    
+    // Check if device name contains any device keywords
+    const isDeviceByName = deviceKeywords.some(keyword => deviceName.includes(keyword));
+    
+    // Check if it's a diagnostic/check-in event with state information
+    const isDiagnosticWithState = (
+      (eventCategory === 'DIAGNOSTICS' || eventType === 'Device Check-in') &&
+      (rawData.rawEvent?.data?.state || rawData.event?.rawEventPayload?.state || rawData.data?.state)
+    );
+    
+    const result = isDeviceByName || isDiagnosticWithState;
+    
+    // Debug logging for light devices
+    if (deviceName.includes('light')) {
+      console.log('🔍 DEBUG - Device detection for light:', {
+        deviceName: rawData.deviceName,
+        eventCategory,
+        eventType,
+        isDeviceByName,
+        isDiagnosticWithState,
+        finalResult: result,
+        hasRawEventDataState: !!rawData.rawEvent?.data?.state,
+        hasEventRawEventPayloadState: !!rawData.event?.rawEventPayload?.state,
+        hasDataState: !!rawData.data?.state
+      });
+    }
+    
+    return result;
+  };
+
+  const processEvent = (rawData: any, eventType: string): ProcessedEvent => {
+    const timestamp = new Date(rawData.timestamp || Date.now());
+    const eventUuid = rawData.eventUuid || `${eventType}-${Date.now()}`;
+    
+    let title = '';
+    let description = '';
+    let category = '';
+    let severity: 'low' | 'medium' | 'high' = 'low';
+
+    // Check if this is actually a device state event regardless of event type
+    if (isDeviceStateEvent(rawData)) {
+      const deviceName = rawData.deviceName || 'Unknown Device';
+      const deviceState = extractDeviceState(rawData);
+      const lowerDeviceName = deviceName.toLowerCase();
+      
+      console.log('🎯 DEBUG - Processing as device state event:', {
+        deviceName,
+        deviceState,
+        eventType
+      });
+      
+      // Determine device type and create appropriate title/description
+      if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
+        title = deviceState === 'On' ? 'Light Turned On' : 'Light Turned Off';
+        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+        console.log('✅ DEBUG - Light processed:', { title, description });
+      } else if (lowerDeviceName.includes('switch')) {
+        title = deviceState === 'On' ? 'Switch Turned On' : 'Switch Turned Off';
+        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+      } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
+        title = deviceState === 'On' ? 'Outlet Turned On' : 'Outlet Turned Off';
+        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+      } else if (lowerDeviceName.includes('fan')) {
+        title = deviceState === 'On' ? 'Fan Turned On' : 'Fan Turned Off';
+        description = `${deviceName} is now ${deviceState.toLowerCase()}`;
+      } else if (lowerDeviceName.includes('dimmer')) {
+        title = 'Dimmer State Changed';
+        description = `${deviceName} changed to ${deviceState}`;
+      } else {
+        title = 'Device State Changed';
+        description = `${deviceName} changed to ${deviceState}`;
+      }
+      
+      category = 'device';
+      severity = 'low';
+    } else {
+      // Process different event types
+      switch (eventType) {
+        case 'heartbeat':
+          title = 'System Heartbeat';
+          description = 'System is running normally';
+          category = 'system';
+          severity = 'low';
+          break;
+
+        case 'connection':
+        case 'connection_confirmed':
+          title = 'Connection Established';
+          description = 'Successfully connected to event stream';
+          category = 'system';
+          severity = 'low';
+          break;
+
+        case 'device_state_change':
+          const deviceName = rawData.deviceName || 'Unknown Device';
+          const displayState = extractDeviceState(rawData);
+          const lowerDeviceName = deviceName.toLowerCase();
+          
+          if (lowerDeviceName.includes('door')) {
+            const mappedState = mapRawStateToDisplayState(displayState);
+            title = mappedState === 'Open' || mappedState === 'On' ? 'Door Opened' : 'Door Closed';
+            description = `${deviceName} was ${mappedState === 'Open' || mappedState === 'On' ? 'opened' : 'closed'}`;
+            category = 'security';
+            severity = 'medium';
+          } else if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
+            title = displayState === 'On' ? 'Light Turned On' : 'Light Turned Off';
+            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            category = 'device';
+            severity = 'low';
+          } else if (lowerDeviceName.includes('switch')) {
+            title = displayState === 'On' ? 'Switch Turned On' : 'Switch Turned Off';
+            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            category = 'device';
+            severity = 'low';
+          } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
+            title = displayState === 'On' ? 'Outlet Turned On' : 'Outlet Turned Off';
+            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            category = 'device';
+            severity = 'low';
+          } else if (lowerDeviceName.includes('fan')) {
+            title = displayState === 'On' ? 'Fan Turned On' : 'Fan Turned Off';
+            description = `${deviceName} is now ${displayState.toLowerCase()}`;
+            category = 'device';
+            severity = 'low';
+          } else {
+            title = 'Device State Changed';
+            description = `${deviceName} changed to ${displayState}`;
+            category = 'device';
+            severity = 'low';
+          }
+          break;
+
+        case 'security_event':
+          title = 'Security Event';
+          description = `Security event detected${rawData.deviceName ? ` on ${rawData.deviceName}` : ''}`;
+          category = 'security';
+          severity = 'medium';
+          break;
+
+        case 'unknown_event':
+          // Handle arming events that come as unknown_event
+          if (rawData.type === 'arming' && rawData.area) {
+            const area = rawData.area;
+            const previousState = area.previousStateDisplayName || area.previousState;
+            const currentState = area.currentStateDisplayName || area.currentState;
+            
+            if (currentState === 'Armed' || currentState === 'ARMED_AWAY' || currentState === 'ARMED_HOME') {
+              title = 'Area Armed';
+              description = `${area.name} has been armed (${currentState})`;
+              category = 'security';
+              severity = 'high';
+            } else if (currentState === 'Disarmed' || currentState === 'DISARMED') {
+              title = 'Area Disarmed';
+              description = `${area.name} has been disarmed`;
+              category = 'security';
+              severity = 'medium';
+            } else {
+              title = 'Area State Changed';
+              description = `${area.name} changed from ${previousState} to ${currentState}`;
+              category = 'security';
+              severity = 'medium';
+            }
+          } else {
+            title = 'Unknown Event';
+            description = 'An unrecognized event occurred';
+            category = 'other';
+            severity = 'low';
+          }
+          break;
+
+        case 'area_state_change':
+          const areaName = rawData.areaName || 'Unknown Area';
+          const eventTypeId = rawData.event?.typeId || rawData.event?.type;
+          
+          if (eventTypeId === 'ARMED' || eventTypeId === 'armed') {
+            title = 'Area Armed';
+            description = `${areaName} has been armed`;
+            category = 'security';
+            severity = 'high';
+          } else if (eventTypeId === 'DISARMED' || eventTypeId === 'disarmed') {
+            title = 'Area Disarmed';
+            description = `${areaName} has been disarmed`;
+            category = 'security';
+            severity = 'medium';
+          } else {
+            title = 'Area State Changed';
+            description = `${areaName} state changed`;
+            category = 'security';
+            severity = 'medium';
+          }
+          break;
+
+        case 'alarm_event':
+          title = 'Alarm Triggered';
+          description = `Alarm event detected${rawData.deviceName ? ` on ${rawData.deviceName}` : ''}`;
+          category = 'alarm';
+          severity = 'high';
+          break;
+
+        default:
+          title = 'System Event';
+          description = `${eventType} event occurred`;
+          category = 'other';
+          severity = 'low';
+          break;
+      }
+    }
+
+    // Handle images (thumbnailData)
+    let image: ProcessedEvent['image'] = undefined;
+    if (rawData.thumbnailData) {
+      image = {
+        data: rawData.thumbnailData.data,
+        contentType: rawData.thumbnailData.contentType,
+        size: rawData.thumbnailData.size
+      };
+      // Events with images are likely more important
+      if (severity === 'low') severity = 'medium';
+    }
+
+    return {
+      id: eventUuid,
+      timestamp,
+      type: eventType,
+      category,
+      title,
+      description,
+      deviceName: rawData.deviceName,
+      areaName: rawData.areaName || rawData.area?.name,
+      locationName: rawData.locationName,
+      image,
+      severity,
+      rawData: showDebug ? rawData : undefined
+    };
+  };
+
+  // Add new event to the list
+  const addEvent = (rawData: any, eventType: string) => {
+    const processedEvent = processEvent(rawData, eventType);
+    
+    setEvents(prev => {
+      const updated = [processedEvent, ...prev];
+      return updated.slice(0, maxEvents); // Keep only last N events
+    });
+  };
+
   useEffect(() => {
-    // Check if we have a user ID
+    // Check if we have a user ID and organization
     const userId = localStorage.getItem('user_id');
+    const organizationStr = localStorage.getItem('fusion_organization');
+    const apiKey = localStorage.getItem('fusion_api_key');
+
     if (!userId) {
       router.push('/pin');
+      return;
+    }
+
+    if (!organizationStr || !apiKey) {
+      setError('Missing organization or API key');
+      setLoading(false);
       return;
     }
 
@@ -35,116 +411,92 @@ export default function EventsPage() {
     setLocation(loc);
 
     // Get organization from localStorage
-    const storedOrganization = localStorage.getItem('fusion_organization');
-    if (storedOrganization) {
-      try {
-        setOrganization(JSON.parse(storedOrganization));
-      } catch (e) {
-        console.error('Failed to parse organization:', e);
-      }
-    }
-
-    const fetchEvents = async () => {
-      try {
-        // Get areas for filtering
-        const areasResponse = await optimizedGetAreas(loc.id);
-        const areas = areasResponse.data || [];
-        const areaIds = areas.map(area => area.id);
-
-        // TODO: Implement events API
-        const response = { data: [], error: null };
-        if (response.error) {
-          if (loading) setError('Failed to fetch events');
-          return { events: [], hasChanges: false };
-        }
-
-        // Filter for security-relevant events only from configured areas
-        const relevantEvents = (response.data || []).filter((event: any) => {
-          // Only show events from configured areas (allow events without areaId for location-wide events)
-          if (event.areaId && areaIds.length > 0 && !areaIds.includes(event.areaId)) {
-            return false;
-          }
-          
-          const type = event.eventType.toLowerCase();
-          const subtype = (event.eventSubtype || '').toLowerCase();
-          const deviceName = (event.deviceName || '').toLowerCase();
-          const displayState = (event.displayState || '').toLowerCase();
-          
-          // Include door, motion, alarm, intrusion, arm/disarm, lock events
-          return (
-            type.includes('door') ||
-            type.includes('motion') ||
-            type.includes('alarm') ||
-            type.includes('intrusion') ||
-            type.includes('contact') ||
-            type.includes('entry') ||
-            type.includes('arm') ||
-            type.includes('disarm') ||
-            type.includes('trigger') ||
-            type.includes('tamper') ||
-            type.includes('armed') ||
-            type.includes('disarmed') ||
-            type.includes('lock') ||
-            type.includes('unlock') ||
-            type.includes('opened') ||
-            type.includes('closed') ||
-            subtype.includes('open') ||
-            subtype.includes('close') ||
-            subtype.includes('lock') ||
-            subtype.includes('unlock') ||
-            displayState.includes('open') ||
-            displayState.includes('close') ||
-            displayState.includes('lock') ||
-            displayState.includes('unlock') ||
-            deviceName.includes('door') ||
-            deviceName.includes('lock')
-          );
-        });
-
-        // Sort by timestamp descending (most recent first)
-        relevantEvents.sort((a: any, b: any) => b.timestamp - a.timestamp);
-
-        // Only update if there are changes (prevents unnecessary re-renders)
-        const existingIds = new Set(events.map((e: any) => e.id));
-        const newIds = new Set(relevantEvents.map((e: any) => e.id));
-        const hasChanges = relevantEvents.length !== events.length || 
-                          relevantEvents.some((e: any) => !existingIds.has(e.id)) ||
-                          events.some((e: any) => !newIds.has(e.id));
-
-        if (hasChanges) {
-          setEvents(relevantEvents);
-        }
-        setError(''); // Clear any previous errors
-        
-        return { events: relevantEvents, hasChanges };
-      } catch (err) {
-        if (loading) setError('An error occurred while fetching events');
-        return { events: [], hasChanges: false };
-      } finally {
+    try {
+      const org = JSON.parse(organizationStr);
+      setOrganization(org);
+      
+      // Connect to SSE
+      const client = createSSEClient(org.id, apiKey);
+      
+      // Set up event listeners
+      client.on('connected', () => {
+        setIsConnected(true);
+        setError('');
         setLoading(false);
-      }
-    };
+        addEvent({ type: 'connection', message: 'Connected to event stream' }, 'connection');
+      });
 
-    // Initial fetch
-    fetchEvents();
+      client.on('disconnected', () => {
+        setIsConnected(false);
+        addEvent({ type: 'connection', message: 'Disconnected from event stream' }, 'connection');
+      });
 
-    // Set up smart polling
-    const poller = new SmartPoller(5000, 30000);
-    poller.start(async () => {
-      const result = await fetchEvents();
-      return result.events; // Return data for change detection
-    });
-    setSmartPoller(poller);
+      client.on('error', (error: any) => {
+        setError(`Connection error: ${error.message || error}`);
+        setLoading(false);
+        addEvent({ type: 'error', message: error.message || error, error }, 'error');
+      });
+
+      client.on('heartbeat', (data: any) => {
+        addEvent(data, 'heartbeat');
+      });
+
+      client.on('connection_confirmed', (data: any) => {
+        addEvent(data, 'connection_confirmed');
+      });
+
+      client.on('security_event', (data: any) => {
+        addEvent(data, 'security_event');
+      });
+
+      client.on('device_state_change', (data: any) => {
+        addEvent(data, 'device_state_change');
+      });
+
+      client.on('area_state_change', (data: any) => {
+        addEvent(data, 'area_state_change');
+      });
+
+      client.on('alarm_event', (data: any) => {
+        addEvent(data, 'alarm_event');
+      });
+
+      client.on('unknown_event', (data: any) => {
+        addEvent(data, 'unknown_event');
+      });
+
+      setSSEClient(client);
+      
+      // Connect to the stream
+      client.connect().catch(err => {
+        setError(`Failed to connect: ${err.message}`);
+        setLoading(false);
+      });
+
+    } catch (e) {
+      setError('Failed to parse organization data');
+      setLoading(false);
+    }
 
     // Cleanup on unmount
     return () => {
-      poller.stop();
+      if (sseClient) {
+        sseClient.disconnect();
+      }
     };
   }, [router]);
 
-  // Filter events from the last 24 hours for display
-  const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-  const recentEvents = events.filter(event => event.timestamp >= twentyFourHoursAgo);
+  // Filter events based on current filters
+  const filteredEvents = events.filter(event => {
+    if (filterType !== 'all' && event.category !== filterType) return false;
+    if (filterSeverity !== 'all' && event.severity !== filterSeverity) return false;
+    if (filterDevice !== 'all' && event.deviceName !== filterDevice) return false;
+    return true;
+  });
+
+  // Get unique values for filter dropdowns
+  const uniqueDevices = [...new Set(events.map(e => e.deviceName).filter(Boolean))].sort();
+  const uniqueCategories = [...new Set(events.map(e => e.category))].sort();
 
   if (loading) {
     return (
@@ -177,119 +529,128 @@ export default function EventsPage() {
       <main className="min-h-screen bg-gray-100 pb-16">
         <div className="max-w-screen-xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Event History</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {location?.name} • Last 24 hours • {recentEvents.length} total events
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Live Events</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {location?.name} • {filteredEvents.length} events
+                  <span className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm"
+              >
+                {showDebug ? 'Hide Debug' : 'Show Debug'}
+              </button>
+            </div>
+            
             {error && (
-              <div className="mt-2 text-red-500 text-sm">{error}</div>
+              <div className="mt-2 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {error}
+              </div>
             )}
+
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="security">Security</option>
+                  <option value="device">Device</option>
+                  <option value="alarm">Alarm</option>
+                  <option value="system">System</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                <select
+                  value={filterSeverity}
+                  onChange={(e) => setFilterSeverity(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Severities</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Device</label>
+                <select
+                  value={filterDevice}
+                  onChange={(e) => setFilterDevice(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Devices</option>
+                  {uniqueDevices.map(device => (
+                    <option key={device} value={device}>{device}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Events</label>
+                <select
+                  value={maxEvents}
+                  onChange={(e) => setMaxEvents(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                </select>
+              </div>
+            </div>
           </div>
-
-
 
           {/* Events List */}
           <div className="space-y-4">
-            {recentEvents.map((event) => {
-              const eventType = event.eventType.toLowerCase();
-              const eventSubtype = (event.eventSubtype || '').toLowerCase();
-              const displayState = (event.displayState || '').toLowerCase();
-              const deviceName = (event.deviceName || '').toLowerCase();
+            {filteredEvents.map((event) => {
+              // Get colors based on category and severity
+              let bgColor = 'bg-gray-50 border-gray-200';
+              let iconColor = 'text-gray-500';
               
-              const isAlarm = eventType.includes('alarm') || eventType.includes('trigger') || eventType.includes('intrusion');
-              const isMotion = eventType.includes('motion');
-              const isDoor = eventType.includes('door') || eventType.includes('contact') || eventType.includes('entry') || deviceName.includes('door');
-              const isLock = eventType.includes('lock') || deviceName.includes('lock');
-              const isArm = eventType.includes('arm') && !eventType.includes('disarm');
-              const isDisarm = eventType.includes('disarm');
-              
-              // Determine event description
-              let eventDescription = event.eventType;
-              if (isDoor) {
-                if (displayState.includes('open') || eventSubtype.includes('open') || eventType.includes('opened')) {
-                  eventDescription = 'Door Opened';
-                } else if (displayState.includes('closed') || eventSubtype.includes('close') || eventType.includes('closed')) {
-                  eventDescription = 'Door Closed';
-                } else {
-                  eventDescription = 'Door Activity';
-                }
-              } else if (isLock) {
-                if (eventType.includes('unlock') || displayState.includes('unlock')) {
-                  eventDescription = 'Door Unlocked';
-                } else if (eventType.includes('lock') || displayState.includes('lock')) {
-                  eventDescription = 'Door Locked';
-                } else {
-                  eventDescription = 'Lock Activity';
-                }
-              } else if (isMotion) {
-                eventDescription = 'Motion Detected';
-              } else if (isAlarm) {
-                // Parse intrusion type from payload caption
-                if (event.eventType === 'INTRUSION' && event.payload?.caption) {
-                  const caption = event.payload.caption;
-                  if (caption.includes('- Person -')) {
-                    eventDescription = 'Person Detected';
-                  } else if (caption.includes('- Animal -')) {
-                    eventDescription = 'Animal Detected';
-                  } else if (caption.includes('- Vehicle -')) {
-                    eventDescription = 'Vehicle Detected';
-                  } else {
-                    eventDescription = 'Intrusion Detected';
-                  }
-                } else {
-                  eventDescription = 'Alarm Triggered';
-                }
-              } else if (isArm) {
-                eventDescription = 'System Armed';
-              } else if (isDisarm) {
-                eventDescription = 'System Disarmed';
+              if (event.category === 'security') {
+                bgColor = event.severity === 'high' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200';
+                iconColor = event.severity === 'high' ? 'text-red-500' : 'text-orange-500';
+              } else if (event.category === 'alarm') {
+                bgColor = 'bg-red-50 border-red-200';
+                iconColor = 'text-red-500';
+              } else if (event.category === 'device') {
+                bgColor = 'bg-blue-50 border-blue-200';
+                iconColor = 'text-blue-500';
+              } else if (event.category === 'system') {
+                bgColor = 'bg-green-50 border-green-200';
+                iconColor = 'text-green-500';
               }
 
-              // Get event colors
-              const eventColors = isAlarm ? {
-                bg: 'bg-rose-50 border-rose-200',
-                icon: 'text-rose-500'
-              } : isMotion ? {
-                bg: 'bg-blue-50 border-blue-200',
-                icon: 'text-blue-500'
-              } : isDoor ? {
-                bg: 'bg-amber-50 border-amber-200',
-                icon: 'text-amber-500'
-              } : isLock ? {
-                bg: 'bg-purple-50 border-purple-200',
-                icon: 'text-purple-500'
-              } : (isArm || isDisarm) ? {
-                bg: 'bg-green-50 border-green-200',
-                icon: 'text-green-500'
-              } : {
-                bg: 'bg-gray-50 border-gray-200',
-                icon: 'text-gray-500'
-              };
-
               return (
-                <div key={event.id} className={`bg-white p-4 rounded-lg shadow border ${eventColors.bg} ${eventColors.bg.replace('bg-', 'border-')}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`${eventColors.icon}`}>
-                        {isAlarm ? (
+                <div key={event.id} className={`bg-white p-4 rounded-lg shadow border ${bgColor}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      {/* Icon */}
+                      <div className={`${iconColor} mt-1`}>
+                        {event.category === 'security' ? (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                        ) : event.category === 'alarm' ? (
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                           </svg>
-                        ) : isDoor ? (
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                        ) : isMotion ? (
+                        ) : event.category === 'device' ? (
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        ) : isLock ? (
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                          </svg>
-                        ) : (isArm || isDisarm) ? (
-                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
                           </svg>
                         ) : (
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,23 +658,71 @@ export default function EventsPage() {
                           </svg>
                         )}
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{eventDescription}</h3>
-                        <p className="text-sm text-gray-600">{event.deviceName}</p>
-                        <p className="text-xs text-gray-500">Area: {event.areaName}</p>
+                      
+                      {/* Event Content */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            event.severity === 'high' ? 'bg-red-100 text-red-800' :
+                            event.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {event.severity}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">{event.description}</p>
+                        
+                        {/* Device and Area info */}
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                          {event.deviceName && (
+                            <span>Device: {event.deviceName}</span>
+                          )}
+                          {event.areaName && (
+                            <span>Area: {event.areaName}</span>
+                          )}
+                          {event.locationName && (
+                            <span>Location: {event.locationName}</span>
+                          )}
+                        </div>
+
+                        {/* Debug info */}
+                        {showDebug && event.rawData && (
+                          <details className="mt-3">
+                            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
+                              Raw Event Data
+                            </summary>
+                            <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-x-auto">
+                              {JSON.stringify(event.rawData, null, 2)}
+                            </pre>
+                          </details>
+                        )}
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(event.timestamp).toLocaleString()}
+
+                    {/* Image */}
+                    {event.image && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={`data:${event.image.contentType};base64,${event.image.data}`}
+                          alt="Event image"
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
+
+                    {/* Timestamp */}
+                    <div className="flex-shrink-0 text-sm text-gray-500">
+                      {event.timestamp.toLocaleString()}
                     </div>
                   </div>
                 </div>
               );
             })}
 
-            {recentEvents.length === 0 && !error && (
+            {filteredEvents.length === 0 && !error && (
               <div className="text-center py-8 text-gray-500">
-                No events found in the last 24 hours
+                {events.length === 0 ? 'No events received yet' : 'No events match current filters'}
               </div>
             )}
           </div>
