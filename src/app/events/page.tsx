@@ -672,8 +672,8 @@ export default function EventsPage() {
                 bgColor = 'bg-red-50 border-red-200';
                 iconColor = 'text-red-500';
               } else if (event.category === 'device') {
-                bgColor = 'bg-blue-50 border-blue-200';
-                iconColor = 'text-blue-500';
+                bgColor = 'bg-[#22c55f]/5 border-[#22c55f]/20';
+                iconColor = 'text-[#22c55f]';
               } else if (event.category === 'system') {
                 bgColor = 'bg-green-50 border-green-200';
                 iconColor = 'text-green-500';
