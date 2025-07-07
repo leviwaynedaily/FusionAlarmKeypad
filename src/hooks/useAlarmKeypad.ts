@@ -330,26 +330,40 @@ export function useAlarmKeypad() {
       const result = await validatePin(pin);
       const duration = performance.now() - startTime;
       
-      if (result.success) {
+      if (!result.error && result.data?.valid) {
         setIsAuthenticated(true);
         setAuthenticatedUser(result.data?.userName || 'User');
         setPin('');
         
         // Track successful authentication
-        analytics.trackEvent('pin_authentication_success', {
-          duration: Math.round(duration),
-          location: selectedLocation?.name || 'unknown'
+        analytics.track({
+          action: 'pin_authentication_success',
+          category: 'authentication',
+          label: 'success',
+          properties: {
+            duration: Math.round(duration),
+            location: selectedLocation?.name || 'unknown'
+          }
         });
         
-        performanceMonitor.recordMetric('pin_authentication_duration', duration);
+        performanceMonitor.trackMetric({
+          name: 'pin_authentication_duration',
+          value: duration,
+          rating: duration > 3000 ? 'poor' : duration > 1000 ? 'needs-improvement' : 'good'
+        });
       } else {
         setError('Invalid PIN');
         setPin('');
         
         // Track failed authentication
-        analytics.trackEvent('pin_authentication_failed', {
-          duration: Math.round(duration),
-          location: selectedLocation?.name || 'unknown'
+        analytics.track({
+          action: 'pin_authentication_failed',
+          category: 'authentication',
+          label: 'failed',
+          properties: {
+            duration: Math.round(duration),
+            location: selectedLocation?.name || 'unknown'
+          }
         });
       }
     } catch (error) {
@@ -358,10 +372,15 @@ export function useAlarmKeypad() {
       setError('Authentication failed');
       setPin('');
       
-      analytics.trackEvent('pin_authentication_error', {
-        duration: Math.round(duration),
-        error: error instanceof Error ? error.message : 'Unknown error',
-        location: selectedLocation?.name || 'unknown'
+      analytics.track({
+        action: 'pin_authentication_error',
+        category: 'authentication',
+        label: 'error',
+        properties: {
+          duration: Math.round(duration),
+          error: error instanceof Error ? error.message : 'Unknown error',
+          location: selectedLocation?.name || 'unknown'
+        }
       });
     } finally {
       setIsProcessing(false);
@@ -375,8 +394,13 @@ export function useAlarmKeypad() {
     setPin('');
     setError('');
     
-    analytics.trackEvent('user_logout', {
-      location: selectedLocation?.name || 'unknown'
+    analytics.track({
+      action: 'user_logout',
+      category: 'authentication',
+      label: 'logout',
+      properties: {
+        location: selectedLocation?.name || 'unknown'
+      }
     });
   };
 
@@ -386,12 +410,14 @@ export function useAlarmKeypad() {
     const warnings: string[] = [];
     
     areas.forEach(area => {
-      if (!area.devices || area.devices.length === 0) {
+      // Filter devices by area ID since Area interface doesn't have devices property
+      const areaDevices = devices.filter(device => device.areaId === area.id);
+      if (!areaDevices || areaDevices.length === 0) {
         warnings.push(`${area.name}: No devices found`);
         return;
       }
       
-      area.devices.forEach(device => {
+      areaDevices.forEach((device: Device) => {
         const type = device.type.toLowerCase();
         const deviceType = device.deviceTypeInfo?.type?.toLowerCase() || '';
         const status = device.status?.toLowerCase() || '';
@@ -439,20 +465,29 @@ export function useAlarmKeypad() {
       const result = await updateAreaState(area.id, newState);
       const duration = performance.now() - startTime;
       
-      if (result.success) {
+      if (!result.error) {
         // Update local state
         setAreas(prev => prev.map(a => 
           a.id === area.id ? { ...a, armedState: newState } : a
         ));
         
-        analytics.trackEvent('area_state_change', {
-          area: area.name,
-          newState,
-          duration: Math.round(duration),
-          location: selectedLocation?.name || 'unknown'
+        analytics.track({
+          action: 'area_state_change',
+          category: 'security',
+          label: newState,
+          properties: {
+            area: area.name,
+            newState,
+            duration: Math.round(duration),
+            location: selectedLocation?.name || 'unknown'
+          }
         });
         
-        performanceMonitor.recordMetric('area_toggle_duration', duration);
+        performanceMonitor.trackMetric({
+          name: 'area_toggle_duration',
+          value: duration,
+          rating: duration > 5000 ? 'poor' : duration > 2000 ? 'needs-improvement' : 'good'
+        });
       } else {
         setError(`Failed to ${newState.toLowerCase()} ${area.name}`);
       }
@@ -461,12 +496,17 @@ export function useAlarmKeypad() {
       logger.error('Area toggle error:', error);
       setError(`Failed to ${newState.toLowerCase()} ${area.name}`);
       
-      analytics.trackEvent('area_state_change_error', {
-        area: area.name,
-        newState,
-        duration: Math.round(duration),
-        error: error instanceof Error ? error.message : 'Unknown error',
-        location: selectedLocation?.name || 'unknown'
+      analytics.track({
+        action: 'area_state_change_error',
+        category: 'security',
+        label: 'error',
+        properties: {
+          area: area.name,
+          newState,
+          duration: Math.round(duration),
+          error: error instanceof Error ? error.message : 'Unknown error',
+          location: selectedLocation?.name || 'unknown'
+        }
       });
     } finally {
       setIsProcessing(false);
@@ -500,30 +540,44 @@ export function useAlarmKeypad() {
       const duration = performance.now() - startTime;
       
       // Update local state for successful updates
-      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && r.value.success);
+      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && !r.value.error);
       if (successfulUpdates.length > 0) {
         setAreas(prev => prev.map(area => ({ ...area, armedState: newState })));
       }
       
-      analytics.trackEvent('toggle_all_areas', {
-        newState,
-        totalAreas: areas.length,
-        successfulUpdates: successfulUpdates.length,
-        duration: Math.round(duration),
-        location: selectedLocation?.name || 'unknown'
+      analytics.track({
+        action: 'toggle_all_areas',
+        category: 'security',
+        label: newState,
+        properties: {
+          newState,
+          totalAreas: areas.length,
+          successfulUpdates: successfulUpdates.length,
+          duration: Math.round(duration),
+          location: selectedLocation?.name || 'unknown'
+        }
       });
       
-      performanceMonitor.recordMetric('toggle_all_duration', duration);
+      performanceMonitor.trackMetric({
+        name: 'toggle_all_duration',
+        value: duration,
+        rating: duration > 10000 ? 'poor' : duration > 5000 ? 'needs-improvement' : 'good'
+      });
     } catch (error) {
       const duration = performance.now() - startTime;
       logger.error('Toggle all error:', error);
       setError(`Failed to ${newState.toLowerCase()} all areas`);
       
-      analytics.trackEvent('toggle_all_areas_error', {
-        newState,
-        duration: Math.round(duration),
-        error: error instanceof Error ? error.message : 'Unknown error',
-        location: selectedLocation?.name || 'unknown'
+      analytics.track({
+        action: 'toggle_all_areas_error',
+        category: 'security',
+        label: 'error',
+        properties: {
+          newState,
+          duration: Math.round(duration),
+          error: error instanceof Error ? error.message : 'Unknown error',
+          location: selectedLocation?.name || 'unknown'
+        }
       });
     } finally {
       setIsProcessing(false);
@@ -534,13 +588,18 @@ export function useAlarmKeypad() {
   const handleApiKeyUpdate = async (newKey: string) => {
     try {
       const apiKeyDetails = await getApiKeyDetails();
-      if (apiKeyDetails.success) {
+      if (!apiKeyDetails.error && apiKeyDetails.data) {
         setApiKey(newKey);
         localStorage.setItem('fusion_api_key', newKey);
         setShowSettings(false);
         
-        analytics.trackEvent('api_key_updated', {
-          location: selectedLocation?.name || 'unknown'
+        analytics.track({
+          action: 'api_key_updated',
+          category: 'settings',
+          label: 'success',
+          properties: {
+            location: selectedLocation?.name || 'unknown'
+          }
         });
       } else {
         setError('Invalid API key');
@@ -617,7 +676,7 @@ export function useAlarmKeypad() {
       );
       
       // Update local state for successful updates
-      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && r.value.success);
+      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && !r.value.error);
       if (successfulUpdates.length > 0) {
         setAreas(prev => prev.map(area => {
           const isInZone = zoneData.areas.some(zoneArea => zoneArea.id === area.id);

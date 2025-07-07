@@ -18,7 +18,8 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build",
-    "railway:build": "npm run clean:safe && npm run type-check && npm run lint && npm run build"
+    "railway:build": "npm run clean:safe && npm run type-check && npm run lint && npm run build",
+    "railway:build:simple": "npm run clean:safe && npm run build"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

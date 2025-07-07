@@ -345,7 +345,7 @@ export function VisionProLayout({
                   
                   {/* Zone Areas */}
                   <div className="space-y-2">
-                    {zone.areaObjects.slice(0, 3).map((area) => {
+                    {zone.areaObjects.slice(0, 3).map((area: Area) => {
                       const areaDevices = devices.filter(device => device.areaId === area.id);
                       return (
                         <div
