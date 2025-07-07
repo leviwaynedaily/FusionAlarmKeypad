@@ -36,6 +36,10 @@ export default function SSEDebugPage() {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const eventIdCounter = useRef(0);
 
+  // Helper to safely access localStorage during client-side render only
+  const isBrowser = typeof window !== 'undefined';
+  const fusionOrganizationStored = isBrowser ? localStorage.getItem('fusion_organization') : null;
+
   // Load saved credentials from localStorage and environment
   useEffect(() => {
     // Get API key from environment variable first, then localStorage
@@ -240,7 +244,7 @@ export default function SSEDebugPage() {
           </h1>
 
           {/* Auto-populate Info */}
-          {(process.env.NEXT_PUBLIC_FUSION_API_KEY || localStorage.getItem('fusion_organization')) && (
+          {(process.env.NEXT_PUBLIC_FUSION_API_KEY || fusionOrganizationStored) && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -257,7 +261,7 @@ export default function SSEDebugPage() {
                       {process.env.NEXT_PUBLIC_FUSION_API_KEY && (
                         <li>API Key automatically loaded from NEXT_PUBLIC_FUSION_API_KEY environment variable</li>
                       )}
-                      {localStorage.getItem('fusion_organization') && (
+                      {fusionOrganizationStored && (
                         <li>Organization ID loaded from main application session</li>
                       )}
                     </ul>
@@ -272,7 +276,7 @@ export default function SSEDebugPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Organization ID
-                {organizationId && localStorage.getItem('fusion_organization') && (
+                {organizationId && fusionOrganizationStored && (
                   <span className="text-xs text-blue-600 dark:text-blue-400 ml-1">(from main app)</span>
                 )}
               </label>
