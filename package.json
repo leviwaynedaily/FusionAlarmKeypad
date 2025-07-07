@@ -19,7 +19,8 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build",
     "railway:build": "npm run clean:safe && npm run type-check && npm run lint && npm run build",
-    "railway:build:simple": "npm run clean:safe && npm run build"
+    "railway:build:simple": "npm run clean:safe && npm run build",
+    "db:migrate": "libsql-cli $TURSO_DATABASE_URL < migrations/001_init.sql"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -35,7 +36,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.3.0",
-    "web-vitals": "^5.0.2"
+    "web-vitals": "^5.0.2",
+    "@libsql/client": "^0.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

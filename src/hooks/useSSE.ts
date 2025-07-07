@@ -102,8 +102,15 @@ export function useSSE() {
             payload: event.payload || {},
           };
           
-          return [newEvent, ...prev].slice(0, 10); // Reduced from 20 to 10
+          return [newEvent, ...prev].slice(0, 10);
         });
+
+        // Persist event to database (non-blocking)
+        void fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(event),
+        }).catch(() => {});
 
         // Reduce analytics tracking frequency
         if (event.type !== 'heartbeat' && event.type !== 'connection') {
