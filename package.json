@@ -11,12 +11,14 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next",
+    "clean": "(rm -rf .next 2>/dev/null || true)",
+    "clean:safe": "mkdir -p .next && rm -rf .next/static .next/server .next/standalone .next/types .next/trace .next/*.json 2>/dev/null || true",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build"
+    "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build",
+    "railway:build": "npm run clean:safe && npm run type-check && npm run lint && npm run build"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
