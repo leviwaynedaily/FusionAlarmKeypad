@@ -1,3 +1,13 @@
+/**
+ * Fusion Alarm Keypad - Main Application Component
+ * 
+ * This is the primary interface for the Fusion Alarm Keypad system,
+ * providing a modern, responsive UI for security system control.
+ * Features include PIN authentication, real-time event monitoring,
+ * weather integration, and comprehensive system status display.
+ * 
+ * Last updated: January 2025
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
