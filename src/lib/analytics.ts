@@ -1,4 +1,4 @@
-// Analytics tracking utility
+// Analytics tracking utility - OPTIMIZED VERSION
 import * as Sentry from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -21,107 +21,148 @@ interface UserProperties {
 
 class Analytics {
   private userProperties: UserProperties = {};
+  private eventBuffer: AnalyticsEvent[] = [];
+  private batchSize = 10;
+  private flushInterval = 30000; // 30 seconds
+  private lastFlush = Date.now();
 
-  // Set user properties for analytics context
+  constructor() {
+    // Only enable batching in production
+    if (isProduction) {
+      setInterval(() => this.flushEvents(), this.flushInterval);
+    }
+  }
+
   setUserProperties(properties: UserProperties) {
     this.userProperties = { ...this.userProperties, ...properties };
     
-    // Send to Sentry for user context
-    Sentry.setUser({
-      id: properties.userId,
-      organizationId: properties.organizationId,
-      locationId: properties.locationId,
-    });
+    // Only send to Sentry in production
+    if (isProduction) {
+      Sentry.setUser({
+        id: properties.userId,
+        organizationId: properties.organizationId,
+        locationId: properties.locationId,
+      });
+    }
   }
 
-  // Track events with optional Google Analytics integration
+  // Optimized track method with reduced overhead
   track(event: AnalyticsEvent) {
+    // Skip non-essential events in development
+    if (!isProduction) {
+      // Only log important events in development
+      if (this.isImportantEvent(event)) {
+        console.log('[ANALYTICS]', event.action, event.category);
+      }
+      return;
+    }
+
+    // In production, batch events for efficiency
+    this.eventBuffer.push(event);
+    
+    if (this.eventBuffer.length >= this.batchSize) {
+      this.flushEvents();
+    }
+  }
+
+  private isImportantEvent(event: AnalyticsEvent): boolean {
+    const importantCategories = ['authentication', 'security', 'errors'];
+    const importantActions = ['login_success', 'login_failure', 'error_occurred', 'sse_connected'];
+    
+    return importantCategories.includes(event.category) || 
+           importantActions.includes(event.action);
+  }
+
+  private flushEvents() {
+    if (this.eventBuffer.length === 0) return;
+
+    const events = [...this.eventBuffer];
+    this.eventBuffer = [];
+    this.lastFlush = Date.now();
+
+    // Batch process events
+    for (const event of events) {
+      this.processEvent(event);
+    }
+  }
+
+  private processEvent(event: AnalyticsEvent) {
     const eventData = {
       ...event,
       timestamp: new Date().toISOString(),
       userProperties: this.userProperties,
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
-      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
     };
 
-    // Console log in development
-    if (!isProduction) {
-      console.log('[ANALYTICS]', eventData);
+    // Send to Sentry only for critical events
+    if (this.isCriticalEvent(event)) {
+      Sentry.addBreadcrumb({
+        category: 'user-action',
+        message: `${event.category}: ${event.action}`,
+        level: event.category === 'errors' ? 'error' : 'info',
+        data: {
+          label: event.label,
+          value: event.value,
+        },
+      });
     }
 
-    // Send to Sentry as breadcrumb for context
-    Sentry.addBreadcrumb({
-      category: 'user-action',
-      message: `${event.category}: ${event.action}`,
-      level: 'info',
-      data: {
-        label: event.label,
-        value: event.value,
-        properties: event.properties,
-      },
-    });
-
-    // Google Analytics 4 (gtag) integration
+    // Google Analytics integration
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', event.action, {
         event_category: event.category,
         event_label: event.label,
         value: event.value,
-        custom_properties: event.properties,
       });
     }
 
-    // Send to custom analytics endpoint if configured
-    if (isProduction && process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
+    // Send to custom analytics endpoint (batched)
+    if (process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
       fetch(process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
       }).catch(() => {
-        // Silently fail analytics to not affect user experience
+        // Silent fail
       });
     }
   }
 
-  // Common event tracking methods
+  private isCriticalEvent(event: AnalyticsEvent): boolean {
+    return event.category === 'errors' || 
+           event.category === 'security' || 
+           event.action === 'sse_error' ||
+           event.action === 'login_failure';
+  }
+
+  // Simplified tracking methods with reduced calls
   trackAuthentication(success: boolean, method: string = 'pin') {
     this.track({
       action: success ? 'login_success' : 'login_failure',
       category: 'authentication',
       label: method,
-      properties: {
-        method,
-        timestamp: new Date().toISOString(),
-      },
     });
   }
 
   trackAreaAction(action: string, areaId: string, armedState: string) {
-    this.track({
-      action: 'area_control',
-      category: 'security',
-      label: action,
-      properties: {
-        areaId,
-        armedState,
-        action,
-      },
-    });
+    // Only track in production to reduce noise
+    if (isProduction) {
+      this.track({
+        action: 'area_control',
+        category: 'security',
+        label: action,
+      });
+    }
   }
 
   trackDeviceInteraction(action: string, deviceId: string, deviceType: string) {
-    this.track({
-      action: 'device_interaction',
-      category: 'devices',
-      label: action,
-      properties: {
-        deviceId,
-        deviceType,
-        action,
-      },
-    });
+    // Only track in production
+    if (isProduction) {
+      this.track({
+        action: 'device_interaction',
+        category: 'devices',
+        label: action,
+      });
+    }
   }
 
   trackError(error: Error, context?: string) {
@@ -131,70 +172,68 @@ class Analytics {
       label: context || 'unknown',
       properties: {
         error: error.message,
-        stack: error.stack,
         context,
       },
     });
   }
 
   trackPerformance(metric: string, value: number, context?: string) {
-    this.track({
-      action: 'performance_metric',
-      category: 'performance',
-      label: metric,
-      value,
-      properties: {
-        metric,
-        context,
-      },
-    });
+    // Only track significant performance issues
+    if (value > 5000) { // Only track slow operations (>5s)
+      this.track({
+        action: 'performance_issue',
+        category: 'performance',
+        label: metric,
+        value,
+      });
+    }
   }
 
   trackWeatherUpdate(location: string, success: boolean) {
-    this.track({
-      action: 'weather_update',
-      category: 'integrations',
-      label: success ? 'success' : 'failure',
-      properties: {
-        location,
-        success,
-      },
-    });
+    // Reduce frequency - only track failures
+    if (!success) {
+      this.track({
+        action: 'weather_update',
+        category: 'integrations',
+        label: 'failure',
+      });
+    }
   }
 
   trackAPICall(endpoint: string, method: string, success: boolean, duration: number) {
-    this.track({
-      action: 'api_call',
-      category: 'api',
-      label: endpoint,
-      value: duration,
-      properties: {
-        endpoint,
-        method,
-        success,
-        duration,
-      },
-    });
+    // Only track failures or very slow calls
+    if (!success || duration > 3000) {
+      this.track({
+        action: 'api_call',
+        category: 'api',
+        label: endpoint,
+        value: duration,
+        properties: {
+          endpoint,
+          method,
+          success,
+          duration,
+        },
+      });
+    }
   }
 
-  // Page view tracking
   trackPageView(page: string) {
-    this.track({
-      action: 'page_view',
-      category: 'navigation',
-      label: page,
-      properties: {
-        page,
-        timestamp: new Date().toISOString(),
-      },
-    });
-
-    // Google Analytics page view
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '', {
-        page_title: page,
-        page_location: window.location.href,
+    // Reduce page view tracking frequency
+    if (isProduction) {
+      this.track({
+        action: 'page_view',
+        category: 'navigation',
+        label: page,
       });
+
+      // Google Analytics page view
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '', {
+          page_title: page,
+          page_location: window.location.href,
+        });
+      }
     }
   }
 }

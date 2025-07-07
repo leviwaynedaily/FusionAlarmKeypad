@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClientLayout } from "@/components/ClientLayout";
 import "./globals.css";
+import { SSEProvider } from '@/hooks/SSEContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -76,21 +77,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Temporarily disable Service Worker registration to prevent SSE interference
-                console.log('Service Worker registration disabled for SSE compatibility');
-                
-                // Unregister any existing Service Worker
-                if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister().then(() => {
-                        console.log('Service Worker unregistered for SSE compatibility');
-                      });
-                    }
-                  });
-                }
-                /*
+                // Register Service Worker with SSE bypass support
                 if (!('serviceWorker' in navigator)) return;
+                
                 // Wait for full page load so routing isn't blocked
                 window.addEventListener('load', () => {
                   // Verify that /sw.js is reachable before trying to register
@@ -98,17 +87,22 @@ export default function RootLayout({
                     .then((res) => {
                       if (res.ok) {
                         navigator.serviceWorker.register('/sw.js')
-                          .then(() => {
-                            // ServiceWorker registered successfully
+                          .then((registration) => {
+                            if (process.env.NODE_ENV === 'development') {
+                              console.log('ServiceWorker registered successfully');
+                            }
                           })
-                          .catch(() => {
-                            // ServiceWorker registration failed
+                          .catch((error) => {
+                            if (process.env.NODE_ENV === 'development') {
+                              console.error('ServiceWorker registration failed:', error);
+                            }
                           });
                       }
                     })
-                    .catch(() => {});
+                    .catch(() => {
+                      // Service worker file not found, continue without it
+                    });
                 });
-                */
               })();
             `,
           }}
@@ -126,9 +120,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <SSEProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </SSEProvider>
       </body>
     </html>
   );

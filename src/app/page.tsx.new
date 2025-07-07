@@ -6,6 +6,7 @@ import { performanceMonitor } from '@/lib/performance';
 import { 
   useAlarmKeypad,
   useAuthentication,
+  useSSE,
   useWeather,
   useTheme,
   useSystemHealth,
@@ -18,40 +19,17 @@ import {
   TestDesignLayout,
   VisionProLayout
 } from '@/components';
-import { SettingsModal } from '@/components/ui/SettingsModal';
 import { updateClock, isMobileDevice } from '@/lib/alarmKeypadUtils';
-import { SSEProvider, useSSEContext } from '@/hooks/SSEContext';
 
 // API keys from environment variables
 const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
 const DEFAULT_WEATHER_API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY || '';
-const FUSION_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
 
-export default function AlarmKeypadPage() {
-  return (
-    <SSEProvider>
-      <AlarmKeypad />
-    </SSEProvider>
-  );
-}
-
-function SSEConnectionManager({ organization, apiKey }: { organization: any; apiKey: string }) {
-  const sse = useSSEContext();
-  
-  useEffect(() => {
-    if (organization && apiKey) {
-      sse.setupSSEConnection(organization.id, apiKey);
-    }
-  }, [organization, apiKey, sse]);
-
-  return null; // This component doesn't render anything
-}
-
-function AlarmKeypad() {
+export default function AlarmKeypad() {
   // Core hooks
   const alarmKeypad = useAlarmKeypad();
   const auth = useAuthentication();
-  const sse = useSSEContext();
+  const sse = useSSE();
   const weather = useWeather();
   const theme = useTheme();
   const systemHealth = useSystemHealth();
@@ -62,66 +40,95 @@ function AlarmKeypad() {
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [requireApiKey, setRequireApiKey] = useState(false);
-
-  // Extract header props
-  const locationName = alarmKeypad.selectedLocation?.name;
-  const postalCode = alarmKeypad.selectedLocation?.addressPostalCode;
-  const organizationName = alarmKeypad.organization?.name;
 
   // Initialize on mount
   useEffect(() => {
+    // Mark as client-side rendered to prevent hydration issues
     setIsClient(true);
+    
+    // Track page view
     analytics.trackPageView('main-keypad');
-
-    if (!FUSION_API_KEY) {
-      alarmKeypad.setError('Fusion API key is not set. Please add NEXT_PUBLIC_FUSION_API_KEY to your .env file.');
-      return;
+    
+    // Load existing API key or use default
+    const existingApiKey = localStorage.getItem('fusion_api_key');
+    console.log('🔑 API Key loading:', {
+      hasExistingApiKey: !!existingApiKey,
+      existingApiKeyLength: existingApiKey?.length || 0,
+      hasDefaultApiKey: !!DEFAULT_API_KEY,
+      defaultApiKeyLength: DEFAULT_API_KEY?.length || 0
+    });
+    
+    if (existingApiKey) {
+      console.log('🔑 Using existing API key from localStorage');
+      alarmKeypad.setApiKey(existingApiKey);
+    } else if (DEFAULT_API_KEY) {
+      console.log('🔑 Using default API key from environment');
+      alarmKeypad.setApiKey(DEFAULT_API_KEY);
+    } else {
+      console.log('❌ No API key available');
     }
-    alarmKeypad.setApiKey(FUSION_API_KEY);
 
+    // Load weather API key
+    weather.loadWeatherApiKey();
+
+    // Load saved location
     const savedLocation = localStorage.getItem('fusion_selected_location');
+    
+    // Initialize data loading
     const initialLoad = async () => {
       try {
         alarmKeypad.setLoading(true);
+        
+        // Load organization and locations
         await alarmKeypad.loadOrganizationAndLocations(savedLocation);
         
-        // Wait for areas to be loaded before continuing
-        if (alarmKeypad.selectedLocation) {
-          // Give a small delay to ensure areas are loaded from the previous call
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Load weather data if we have the required info and API key
-          if (alarmKeypad.selectedLocation.addressPostalCode && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
-            await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
-          }
+        // Setup SSE connection if we have organization
+        if (alarmKeypad.organization) {
+          await sse.setupSSEConnection(alarmKeypad.organization.id, alarmKeypad.apiKey);
         }
+        
+        // Try to fetch weather if we have API key and location
+        if (alarmKeypad.selectedLocation?.addressPostalCode && weather.weatherApiKey) {
+          await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
+        }
+        
       } catch (error) {
-        console.error('Initialization error:', error);
+        console.error('Initial load error:', error);
         alarmKeypad.setError('Failed to initialize application');
       } finally {
         alarmKeypad.setLoading(false);
       }
     };
+
     initialLoad();
+
+    // Register service worker update listener
     serviceWorker.registerUpdateListener();
+
+    // Setup clock update
     const updateClockInterval = setInterval(() => {
       const { timeString, dateString } = updateClock();
       setCurrentTime(timeString);
       setCurrentDate(dateString);
     }, 1000);
+
+    // Setup mobile detection
     const updateMobileState = () => {
       setIsMobile(isMobileDevice());
     };
+    
     updateMobileState();
     window.addEventListener('resize', updateMobileState);
+
+    // Setup system health monitoring
     const healthInterval = setInterval(() => {
       if (alarmKeypad.devices.length > 0) {
         systemHealth.checkDeviceStatus(alarmKeypad.devices);
         systemHealth.updateHeartbeat();
       }
-    }, 30000);
+    }, 30000); // Check every 30 seconds
+
+    // Cleanup
     return () => {
       clearInterval(updateClockInterval);
       clearInterval(healthInterval);
@@ -159,19 +166,6 @@ function AlarmKeypad() {
     alarmKeypad.setPressedButton(button);
   };
 
-  // Handle settings button click
-  const handleSettingsClick = () => {
-    setSettingsModalOpen(true);
-  };
-
-  // Auto-authenticate when PIN is complete
-  useEffect(() => {
-    if (auth.pin.length === 6 && !auth.isProcessing) {
-      handleAuthenticate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.pin, auth.isProcessing]);
-
   // Don't render until client-side
   if (!isClient) {
     return null;
@@ -198,35 +192,20 @@ function AlarmKeypad() {
             Select Location
           </h2>
           <div className="space-y-2">
-            {alarmKeypad.locations.length === 0 ? (
-              <div className="text-center">
-                <p className="text-gray-700 dark:text-gray-300 mb-4">
-                  No locations available.<br />
-                  Please check your API key or network connection.
-                </p>
-                <button
-                  onClick={alarmKeypad.loadLocations}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              alarmKeypad.locations.map((location) => (
-                <button
-                  key={location.id}
-                  onClick={() => alarmKeypad.handleLocationSelect(location)}
-                  className="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="font-medium text-gray-900 dark:text-white">{location.name}</div>
-                  {location.addressCity && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {location.addressCity}, {location.addressState}
-                    </div>
-                  )}
-                </button>
-              ))
-            )}
+            {alarmKeypad.locations.map((location) => (
+              <button
+                key={location.id}
+                onClick={() => alarmKeypad.handleLocationSelect(location)}
+                className="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <div className="font-medium text-gray-900 dark:text-white">{location.name}</div>
+                {location.addressCity && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {location.addressCity}, {location.addressState}
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -340,24 +319,16 @@ function AlarmKeypad() {
   // Show PIN entry interface
   return (
     <div className="w-full h-full relative">
-      {/* SSE Connection Manager */}
-      <SSEConnectionManager 
-        organization={alarmKeypad.organization} 
-        apiKey={alarmKeypad.apiKey} 
-      />
-      
-
       {/* Live Events Ticker */}
       <LiveEventsTicker
         showLiveEvents={sse.showLiveEvents}
-        recentEvents={sse.recentEvents}
+        isAuthenticated={auth.isAuthenticated}
+        lastSSEEvent={sse.lastSSEEvent}
       />
+
       {/* Layout Selection */}
       {alarmKeypad.useTestDesign2 ? (
         <VisionProLayout
-          locationName={locationName}
-          postalCode={postalCode}
-          organizationName={organizationName}
           isMobile={isMobile}
           currentTime={currentTime}
           currentDate={currentDate}
@@ -376,13 +347,9 @@ function AlarmKeypad() {
           onClear={handlePinClear}
           onBackspace={handlePinBackspace}
           onPressedButtonChange={handlePressedButtonChange}
-          onSettingsClick={handleSettingsClick}
         />
       ) : alarmKeypad.useTestDesign ? (
         <TestDesignLayout
-          locationName={locationName}
-          postalCode={postalCode}
-          organizationName={organizationName}
           isMobile={isMobile}
           currentTime={currentTime}
           currentDate={currentDate}
@@ -402,13 +369,9 @@ function AlarmKeypad() {
           onClear={handlePinClear}
           onBackspace={handlePinBackspace}
           onPressedButtonChange={handlePressedButtonChange}
-          onSettingsClick={handleSettingsClick}
         />
       ) : isMobile ? (
         <MobileLayout
-          locationName={locationName}
-          postalCode={postalCode}
-          organizationName={organizationName}
           currentTime={currentTime}
           currentDate={currentDate}
           selectedLocation={alarmKeypad.selectedLocation}
@@ -426,13 +389,9 @@ function AlarmKeypad() {
           onClear={handlePinClear}
           onBackspace={handlePinBackspace}
           onPressedButtonChange={handlePressedButtonChange}
-          onSettingsClick={handleSettingsClick}
         />
       ) : (
         <DesktopLayout
-          locationName={locationName}
-          postalCode={postalCode}
-          organizationName={organizationName}
           currentTime={currentTime}
           currentDate={currentDate}
           selectedLocation={alarmKeypad.selectedLocation}
@@ -450,50 +409,15 @@ function AlarmKeypad() {
           onClear={handlePinClear}
           onBackspace={handlePinBackspace}
           onPressedButtonChange={handlePressedButtonChange}
-          onSettingsClick={handleSettingsClick}
         />
       )}
-      
-      {/* Settings Modal */}
-      <SettingsModal 
-        open={settingsModalOpen} 
-        onClose={() => setSettingsModalOpen(false)}
-        apiKey={alarmKeypad.apiKey}
-        onApiKeyUpdate={alarmKeypad.setApiKey}
-        weather={weather.weather}
-        selectedLocation={alarmKeypad.selectedLocation}
-        organization={alarmKeypad.organization}
-        showZonesPreview={alarmKeypad.showZonesPreview}
-        onShowZonesPreviewChange={alarmKeypad.setShowZonesPreview}
-        showSeconds={alarmKeypad.showSeconds}
-        onShowSecondsChange={alarmKeypad.setShowSeconds}
-        highlightPinButtons={alarmKeypad.highlightPinButtons}
-        onHighlightPinButtonsChange={alarmKeypad.setHighlightPinButtons}
-        sseEnabled={sse.sseEnabled}
-        onSSEEnabledChange={sse.setSSEEnabled}
-        sseConnected={sse.sseConnected}
-        lastSSEEvent={sse.lastSSEEvent}
-        showLiveEvents={sse.showLiveEvents}
-        onShowLiveEventsChange={sse.setShowLiveEvents}
-        useTestDesign={alarmKeypad.useTestDesign}
-        onUseTestDesignChange={alarmKeypad.setUseTestDesign}
-        useTestDesign2={alarmKeypad.useTestDesign2}
-        onUseTestDesign2Change={alarmKeypad.setUseTestDesign2}
-        systemStatus={systemHealth.systemStatus}
-        deviceConnectivity={systemHealth.deviceConnectivity}
-        offlineDevices={systemHealth.offlineDevices}
-        lastHeartbeat={systemHealth.lastHeartbeat}
-        theme={theme.theme}
-        onThemeChange={theme.setTheme}
-        areas={alarmKeypad.areas}
-        alarmZones={alarmKeypad.alarmZones}
-        onAlarmZonesChange={alarmKeypad.setAlarmZones}
-        onLocationChange={() => {
-          setSettingsModalOpen(false);
-          alarmKeypad.setShowLocationSelect(true);
-        }}
-        requireApiKey={requireApiKey}
-      />
+
+      {/* Auto-authenticate when PIN is complete */}
+      {auth.pin.length === 6 && !auth.isProcessing && (
+        <div className="hidden">
+          {handleAuthenticate()}
+        </div>
+      )}
     </div>
   );
 } 

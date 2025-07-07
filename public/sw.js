@@ -14,7 +14,6 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );
@@ -37,7 +36,6 @@ self.addEventListener('fetch', event => {
     event.request.headers.get('X-Bypass-Service-Worker') === 'true';
 
   if (shouldBypass) {
-    console.log('SW: Bypassing cache for:', url.pathname);
     // Let the request go directly to the network
     return;
   }
@@ -47,15 +45,12 @@ self.addEventListener('fetch', event => {
       .then(response => {
         // Cache hit - return response
         if (response) {
-          console.log('SW: Serving from cache:', url.pathname);
           return response;
         }
         
-        console.log('SW: Fetching from network:', url.pathname);
         return fetch(event.request);
       })
       .catch(error => {
-        console.error('SW: Fetch failed:', error);
         // Return the original fetch request as fallback
         return fetch(event.request);
       })

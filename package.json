@@ -19,6 +19,7 @@
     "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",

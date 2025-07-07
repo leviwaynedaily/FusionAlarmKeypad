@@ -191,3 +191,11 @@ html {
 .animate-marquee {
   animation: marquee 15s linear infinite;
 }
+
+html, body {
+  @apply bg-gray-100;
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

@@ -7,9 +7,10 @@ interface HeaderProps {
   locationName?: string;
   postalCode?: string;
   organizationName?: string;
+  onSettingsClick?: () => void;
 }
 
-export default function Header({ locationName, postalCode, organizationName }: HeaderProps) {
+export default function Header({ locationName, postalCode, organizationName, onSettingsClick }: HeaderProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -75,6 +76,17 @@ export default function Header({ locationName, postalCode, organizationName }: H
               )}
             </div>
           )}
+          {/* Settings button */}
+          <button
+            onClick={onSettingsClick}
+            aria-label="Settings"
+            className="ml-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-700 dark:text-gray-300">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.527-.878 3.276.87 2.398 2.398a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.878 1.527-.87 3.276-2.398 2.398a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.527.878-3.276-.87-2.398-2.398a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.878-1.527.87-3.276 2.398-2.398.996.574 2.25.096 2.573-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

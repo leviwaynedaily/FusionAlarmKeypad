@@ -44,7 +44,7 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_API_BASE_URL=https://fusion-bridge-production.up.railway.app
 NEXT_PUBLIC_APP_ENV=production
 
-# Default API Keys (Optional - can be set in UI instead)
+# Required API Keys
 NEXT_PUBLIC_FUSION_API_KEY=your_fusion_api_key_here
 NEXT_PUBLIC_WEATHER_API_KEY=your_openweathermap_api_key_here
 
@@ -92,8 +92,8 @@ npm run build:analyze
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `NEXT_PUBLIC_API_BASE_URL` | Fusion API base URL | No | `https://fusion-bridge-production.up.railway.app` |
-| `NEXT_PUBLIC_FUSION_API_KEY` | Default Fusion API key | No | Empty (user enters in UI) |
-| `NEXT_PUBLIC_WEATHER_API_KEY` | Default OpenWeatherMap API key | No | Empty (user enters in UI) |
+| `NEXT_PUBLIC_FUSION_API_KEY` | Fusion API key (required) | Yes | - |
+| `NEXT_PUBLIC_WEATHER_API_KEY` | OpenWeatherMap API key (required for weather) | Yes | - |
 | `NEXT_PUBLIC_MAX_REQUESTS_PER_MINUTE` | API rate limiting | No | `20` |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN | No | Empty (monitoring disabled) |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics measurement ID | No | Empty (analytics disabled) |

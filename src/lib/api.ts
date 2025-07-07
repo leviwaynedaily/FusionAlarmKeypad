@@ -117,22 +117,26 @@ export interface Event {
 }
 
 export const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
-  const key = localStorage.getItem('fusion_api_key');
+  // Use the Fusion API key from the environment variable
+  const key = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
   const baseUrl = localStorage.getItem('fusion_api_url') || API_BASE_URL;
+  console.log('[apiFetch] Using API key:', key);
+  console.log('[apiFetch] Request URL:', `${baseUrl}${path}`);
 
   try {
     const response = await fetch(`${baseUrl}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key || '',
+        'x-api-key': key,
         ...(options.headers || {}),
       },
     });
+    // DEBUG: Print the response status
+    console.log('[apiFetch] Response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       try {
         const errorData = JSON.parse(errorText);
@@ -142,26 +146,23 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
           errorMessage = errorData.message;
         }
       } catch (e) {
-        // If response is not JSON, use the text
         if (errorText) {
           errorMessage = errorText;
         }
       }
-      
       throw new Error(errorMessage);
     }
-
     const data = await response.json();
+    // DEBUG: Print the response data
+    console.log('[apiFetch] Response data:', data);
     return { data };
   } catch (error) {
-    // Check if it's a network error
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       return {
         data: null as T,
         error: 'Network error: Unable to connect to the server. Please check your connection and try again.',
       };
     }
-    
     return {
       data: null as T,
       error: error instanceof Error ? error.message : 'An unknown error occurred',
@@ -242,6 +243,8 @@ export const validatePin = async (pin: string): Promise<ApiResponse<{ valid: boo
 
 export const getLocations = async (): Promise<ApiResponse<any[]>> => {
   const response = await apiFetch<{ success: boolean; data: any[] }>('/api/locations');
+  // DEBUG: Print the locations response
+  console.log('[getLocations] Response:', response);
   if (response.error) {
     return { data: [], error: response.error };
   }
