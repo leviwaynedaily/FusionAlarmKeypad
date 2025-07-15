@@ -432,7 +432,7 @@ function AlarmKeypad() {
   const postalCode = alarmKeypad.selectedLocation?.addressPostalCode;
   const organizationName = alarmKeypad.organization?.name;
 
-  // Initialize on mount
+  // Initialize on mount - Railway deployment trigger
   useEffect(() => {
     setIsClient(true);
     analytics.trackPageView('main-keypad');
