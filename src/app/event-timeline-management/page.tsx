@@ -6,6 +6,10 @@ import { EventFilterSettings, EventTypeDisplaySettings, getEventTypes } from '@/
 import { EventTypeInfo } from '@/types/alarmKeypad';
 import { IconPicker } from '@/components/ui/IconPicker';
 
+interface CustomEventNames {
+  [eventType: string]: string;
+}
+
 export default function EventTimelineManagementPage() {
   const router = useRouter();
   const [availableEventTypes, setAvailableEventTypes] = useState<EventTypeInfo[]>([]);
@@ -18,9 +22,12 @@ export default function EventTimelineManagementPage() {
     categories: {},
     eventTypeSettings: {}
   });
+  const [customEventNames, setCustomEventNames] = useState<CustomEventNames>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showIconPicker, setShowIconPicker] = useState<string | null>(null);
+  const [editingEventName, setEditingEventName] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
 
   // Load settings from localStorage
   useEffect(() => {
@@ -30,6 +37,15 @@ export default function EventTimelineManagementPage() {
         setEventFilterSettings(JSON.parse(savedSettings));
       } catch (e) {
         console.error('Failed to parse saved event filter settings:', e);
+      }
+    }
+
+    const savedCustomNames = localStorage.getItem('custom_event_names');
+    if (savedCustomNames) {
+      try {
+        setCustomEventNames(JSON.parse(savedCustomNames));
+      } catch (e) {
+        console.error('Failed to parse saved custom event names:', e);
       }
     }
   }, []);
@@ -62,6 +78,10 @@ export default function EventTimelineManagementPage() {
     localStorage.setItem('event_filter_settings', JSON.stringify(eventFilterSettings));
   }, [eventFilterSettings]);
 
+  useEffect(() => {
+    localStorage.setItem('custom_event_names', JSON.stringify(customEventNames));
+  }, [customEventNames]);
+
   // Get display settings for an event type
   const getEventTypeSettings = (eventType: string): EventTypeDisplaySettings => {
     return eventFilterSettings.eventTypeSettings[eventType] || {
@@ -93,13 +113,52 @@ export default function EventTimelineManagementPage() {
     }));
   };
 
+  // Get custom name or default name
+  const getEventDisplayName = (eventType: EventTypeInfo): string => {
+    return customEventNames[eventType.eventType] || eventType.displayName;
+  };
+
+  // Start editing event name
+  const startEditingEventName = (eventType: string, currentName: string) => {
+    setEditingEventName(eventType);
+    setEditingValue(currentName);
+  };
+
+  // Save edited event name
+  const saveEventName = () => {
+    if (editingEventName && editingValue.trim()) {
+      setCustomEventNames(prev => ({
+        ...prev,
+        [editingEventName]: editingValue.trim()
+      }));
+    }
+    setEditingEventName(null);
+    setEditingValue('');
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingEventName(null);
+    setEditingValue('');
+  };
+
+  // Reset custom name to default
+  const resetEventName = (eventType: string) => {
+    setCustomEventNames(prev => {
+      const updated = { ...prev };
+      delete updated[eventType];
+      return updated;
+    });
+  };
+
   // Get unique categories
   const categories = Array.from(new Set(availableEventTypes.map(et => et.category).filter((cat): cat is string => Boolean(cat))));
 
   // Filter event types based on search and category
   const filteredEventTypes = availableEventTypes.filter(eventType => {
+    const customName = getEventDisplayName(eventType);
     const matchesSearch = searchTerm === '' || 
-      eventType.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eventType.eventType.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eventType.sampleDevices.some(device => device.toLowerCase().includes(searchTerm.toLowerCase()));
       
@@ -110,14 +169,10 @@ export default function EventTimelineManagementPage() {
 
   if (loadingEventTypes) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Loading event types...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading event types...</p>
         </div>
       </div>
     );
@@ -125,82 +180,72 @@ export default function EventTimelineManagementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-2"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Settings
+                Back
               </button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Event Timeline Management
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Control what events show in the timeline and how they appear
-              </p>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Event Timeline Management
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                  Customize event names and timeline appearance
+                </p>
+              </div>
             </div>
             
-            {/* Global Controls */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Show All Events
-                </label>
-                <button
-                  onClick={() => toggleShowAllEvents(!eventFilterSettings.showAllEvents)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    eventFilterSettings.showAllEvents 
-                      ? 'bg-blue-600' 
-                      : 'bg-gray-200 dark:bg-gray-700'
+            {/* Global Toggle - Compact */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">
+                Show All
+              </span>
+              <button
+                onClick={() => toggleShowAllEvents(!eventFilterSettings.showAllEvents)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  eventFilterSettings.showAllEvents 
+                    ? 'bg-blue-600' 
+                    : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    eventFilterSettings.showAllEvents ? 'translate-x-6' : 'translate-x-1'
                   }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      eventFilterSettings.showAllEvents ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
+                />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
+      {/* Filters - Compact */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Search Events
-              </label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by event name, type, or device..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search events..."
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
-            {/* Category Filter */}
-            <div className="sm:w-64">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
-              </label>
+            <div className="sm:w-48">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -210,220 +255,229 @@ export default function EventTimelineManagementPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Events Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Event Types ({filteredEventTypes.length})
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Configure how each event type appears in the timeline
-            </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-              💡 Each event type has its own card with all controls and a live preview
-            </p>
-          </div>
-
-          {/* Card-based layout for better mobile/responsive experience */}
-          <div className="space-y-4">
-            {filteredEventTypes.map((eventType, index) => {
-              const settings = getEventTypeSettings(eventType.eventType);
-              return (
-                <div key={`${eventType.eventType}-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{eventType.icon}</span>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          {eventType.displayName}
-                        </h3>
-                        <div className="flex items-center space-x-3 mt-1">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {eventType.count.toLocaleString()} events
-                          </span>
-                          {eventType.category && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
-                              {eventType.category}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Show in Timeline Toggle */}
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Show in Timeline:</span>
-                      <button
-                        onClick={() => updateEventTypeSettings(eventType.eventType, { 
-                          showInTimeline: !settings.showInTimeline 
-                        })}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          settings.showInTimeline 
-                            ? 'bg-blue-600' 
-                            : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                        disabled={eventFilterSettings.showAllEvents}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            settings.showInTimeline ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Sample Devices */}
-                  <div className="mb-4">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sample Devices: </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {eventType.sampleDevices.slice(0, 3).join(', ')}
-                      {eventType.sampleDevices.length > 3 && (
-                        <span className="text-gray-400"> +{eventType.sampleDevices.length - 3} more</span>
-                      )}
-                    </span>
-                  </div>
-
-                  {/* Display Controls */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Display Mode */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Display Mode:
-                      </label>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'thumbnail' })}
-                          className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-colors ${
-                            settings.displayMode === 'thumbnail'
-                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          📸 Camera Image
-                        </button>
-                        <button
-                          onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'icon' })}
-                          className={`flex-1 px-3 py-2 text-sm rounded-md font-medium transition-colors ${
-                            settings.displayMode === 'icon'
-                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          {settings.customIcon} Custom Icon
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Custom Icon */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Custom Icon:
-                      </label>
-                      <button
-                        onClick={() => setShowIconPicker(eventType.eventType)}
-                        className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={settings.displayMode !== 'icon'}
-                      >
-                        <span className="text-lg">{settings.customIcon}</span>
-                        <span className="text-sm">Choose Icon</span>
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Override Warning */}
-                  {eventFilterSettings.showAllEvents && (
-                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                      <div className="text-sm text-blue-800 dark:text-blue-200">
-                        ⚠️ Individual settings are overridden by &quot;Show All Events&quot; toggle above
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Preview */}
-                  <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Timeline Preview:</div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-8 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
-                        {settings.displayMode === 'thumbnail' ? (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                            📷
-                          </div>
-                        ) : (
-                          <span className="text-lg">{settings.customIcon}</span>
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {eventType.sampleDevices[0] || 'Sample Device'}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {eventType.displayName}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredEventTypes.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-400 dark:text-gray-500 text-lg mb-2">📋</div>
-              <p className="text-gray-600 dark:text-gray-400">
-                No events found matching your search criteria.
-              </p>
+      {/* Scrollable Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Event Types ({filteredEventTypes.length})
+          </h2>
+          {eventFilterSettings.showAllEvents && (
+            <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+              Global override active
             </div>
           )}
         </div>
 
-        {/* Help Section */}
-        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-            💡 How Event Display Works
-          </h3>
-          <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-            <p><strong>📸 Image Mode:</strong> Shows the base64 image from the event (if available)</p>
-            <p><strong>{getEventTypeSettings('').customIcon} Icon Mode:</strong> Shows your chosen icon instead of camera images</p>
-            <p><strong>Fallback:</strong> If image mode fails, it automatically shows the default icon</p>
-            <p><strong>Performance:</strong> Icon mode is faster and uses less bandwidth</p>
-            <p><strong>Perfect for:</strong> Device check-ins, heartbeats, and non-camera events</p>
+        {/* Optimized Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+          {filteredEventTypes.map((eventType, index) => {
+            const settings = getEventTypeSettings(eventType.eventType);
+            const displayName = getEventDisplayName(eventType);
+            const isEditing = editingEventName === eventType.eventType;
+
+            return (
+              <div key={`${eventType.eventType}-${index}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                    <span className="text-xl flex-shrink-0">{eventType.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                            autoFocus
+                          />
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={saveEventName}
+                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300"
+                            >
+                              Cancel
+                            </button>
+                            {customEventNames[eventType.eventType] && (
+                              <button
+                                onClick={() => resetEventName(eventType.eventType)}
+                                className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400"
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          className="cursor-pointer group"
+                          onClick={() => startEditingEventName(eventType.eventType, displayName)}
+                        >
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                            {displayName}
+                            {customEventNames[eventType.eventType] && (
+                              <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">✏️</span>
+                            )}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Click to rename • {eventType.count.toLocaleString()} events
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {!isEditing && (
+                    <button
+                      onClick={() => updateEventTypeSettings(eventType.eventType, { 
+                        showInTimeline: !settings.showInTimeline 
+                      })}
+                      className={`ml-2 flex-shrink-0 relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        settings.showInTimeline 
+                          ? 'bg-blue-600' 
+                          : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
+                      disabled={eventFilterSettings.showAllEvents}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          settings.showInTimeline ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {!isEditing && (
+                  <>
+                    {/* Category & Sample Devices - Compact */}
+                    <div className="mb-3">
+                      {eventType.category && (
+                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded mb-2">
+                          {eventType.category}
+                        </span>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {eventType.sampleDevices.slice(0, 2).join(', ')}
+                        {eventType.sampleDevices.length > 2 && ` +${eventType.sampleDevices.length - 2}`}
+                      </p>
+                    </div>
+
+                    {/* Display Controls - Compact */}
+                    <div className="space-y-2">
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'thumbnail' })}
+                          className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                            settings.displayMode === 'thumbnail'
+                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          📸 Image
+                        </button>
+                        <button
+                          onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'icon' })}
+                          className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                            settings.displayMode === 'icon'
+                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
+                          {settings.customIcon} Icon
+                        </button>
+                      </div>
+
+                      {settings.displayMode === 'icon' && (
+                        <button
+                          onClick={() => setShowIconPicker(eventType.eventType)}
+                          className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                        >
+                          <span>{settings.customIcon}</span>
+                          <span>Change Icon</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Mini Preview */}
+                    <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs">
+                          {settings.displayMode === 'thumbnail' ? '📷' : settings.customIcon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {displayName}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {filteredEventTypes.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 dark:text-gray-500 text-4xl mb-4">🔍</div>
+            <p className="text-gray-600 dark:text-gray-400">
+              No events found matching your search criteria.
+            </p>
           </div>
+        )}
+
+        {/* Help */}
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+            💡 Quick Guide
+          </h3>
+          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <li>• <strong>Click event names</strong> to rename them</li>
+            <li>• <strong>Toggle switches</strong> control timeline visibility</li>
+            <li>• <strong>Image mode</strong> shows camera screenshots when available</li>
+            <li>• <strong>Icon mode</strong> uses custom icons for faster loading</li>
+          </ul>
         </div>
       </div>
 
       {/* Icon Picker Modal */}
       {showIconPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
-                         <div className="p-6">
-               <div className="flex items-center justify-between mb-4">
-                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                   Choose Icon for {showIconPicker}
-                 </h3>
-                 <button
-                   onClick={() => setShowIconPicker(null)}
-                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                 >
-                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                   </svg>
-                 </button>
-               </div>
-               <IconPicker
-                 selectedIcon={getEventTypeSettings(showIconPicker).customIcon}
-                 onIconSelect={(icon) => {
-                   updateEventTypeSettings(showIconPicker, { customIcon: icon });
-                   setShowIconPicker(null);
-                 }}
-               />
-             </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Choose Icon
+                </h3>
+                <button
+                  onClick={() => setShowIconPicker(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-96">
+              <IconPicker
+                selectedIcon={getEventTypeSettings(showIconPicker).customIcon}
+                onIconSelect={(icon) => {
+                  updateEventTypeSettings(showIconPicker, { customIcon: icon });
+                  setShowIconPicker(null);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
