@@ -28,6 +28,7 @@ export default function EventTimelineManagementPage() {
   const [showIconPicker, setShowIconPicker] = useState<string | null>(null);
   const [editingEventName, setEditingEventName] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
+  const [showQuickGuide, setShowQuickGuide] = useState(false);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -171,7 +172,7 @@ export default function EventTimelineManagementPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#22c55f] mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading event types...</p>
         </div>
       </div>
@@ -204,7 +205,7 @@ export default function EventTimelineManagementPage() {
               </div>
             </div>
             
-            {/* Global Toggle - Compact */}
+            {/* Global Toggle - Using signature green */}
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">
                 Show All
@@ -213,7 +214,7 @@ export default function EventTimelineManagementPage() {
                 onClick={() => toggleShowAllEvents(!eventFilterSettings.showAllEvents)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   eventFilterSettings.showAllEvents 
-                    ? 'bg-blue-600' 
+                    ? 'bg-[#22c55f]' 
                     : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
@@ -228,7 +229,7 @@ export default function EventTimelineManagementPage() {
         </div>
       </div>
 
-      {/* Filters - Compact */}
+      {/* Filters - Updated styling */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -238,14 +239,14 @@ export default function EventTimelineManagementPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search events..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
               />
             </div>
             <div className="sm:w-48">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -264,7 +265,7 @@ export default function EventTimelineManagementPage() {
             Event Types ({filteredEventTypes.length})
           </h2>
           {eventFilterSettings.showAllEvents && (
-            <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+            <div className="text-xs text-[#22c55f] bg-[#22c55f]/10 border border-[#22c55f] px-2 py-1 rounded">
               Global override active
             </div>
           )}
@@ -290,13 +291,13 @@ export default function EventTimelineManagementPage() {
                             type="text"
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                            className="w-full px-2 py-1 text-sm border border-[#22c55f] rounded focus:outline-none focus:ring-2 focus:ring-[#22c55f] dark:bg-gray-700 dark:border-[#22c55f] dark:text-gray-100"
                             autoFocus
                           />
                           <div className="flex space-x-1">
                             <button
                               onClick={saveEventName}
-                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                              className="px-2 py-1 text-xs bg-[#22c55f] text-white rounded hover:bg-[#16a34a]"
                             >
                               Save
                             </button>
@@ -321,10 +322,10 @@ export default function EventTimelineManagementPage() {
                           className="cursor-pointer group"
                           onClick={() => startEditingEventName(eventType.eventType, displayName)}
                         >
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-[#22c55f]">
                             {displayName}
                             {customEventNames[eventType.eventType] && (
-                              <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">✏️</span>
+                              <span className="ml-1 text-xs text-[#22c55f]">✏️</span>
                             )}
                           </h3>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -342,7 +343,7 @@ export default function EventTimelineManagementPage() {
                       })}
                       className={`ml-2 flex-shrink-0 relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                         settings.showInTimeline 
-                          ? 'bg-blue-600' 
+                          ? 'bg-[#22c55f]' 
                           : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                       disabled={eventFilterSettings.showAllEvents}
@@ -371,14 +372,14 @@ export default function EventTimelineManagementPage() {
                       </p>
                     </div>
 
-                    {/* Display Controls - Compact */}
+                    {/* Display Controls - Updated colors */}
                     <div className="space-y-2">
                       <div className="flex space-x-1">
                         <button
                           onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'thumbnail' })}
                           className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
                             settings.displayMode === 'thumbnail'
-                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                              ? 'bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f]'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}
                         >
@@ -388,7 +389,7 @@ export default function EventTimelineManagementPage() {
                           onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'icon' })}
                           className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
                             settings.displayMode === 'icon'
-                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                              ? 'bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f]'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                           }`}
                         >
@@ -436,21 +437,60 @@ export default function EventTimelineManagementPage() {
           </div>
         )}
 
-        {/* Help */}
-        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-            💡 Quick Guide
-          </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• <strong>Click event names</strong> to rename them</li>
-            <li>• <strong>Toggle switches</strong> control timeline visibility</li>
-            <li>• <strong>Image mode</strong> shows camera screenshots when available</li>
-            <li>• <strong>Icon mode</strong> uses custom icons for faster loading</li>
-          </ul>
+        {/* Collapsible Help */}
+        <div className="mt-6">
+          <button
+            onClick={() => setShowQuickGuide(!showQuickGuide)}
+            className="w-full flex items-center justify-between p-4 bg-[#22c55f]/10 border border-[#22c55f] rounded-lg hover:bg-[#22c55f]/20 transition-all"
+          >
+            <div className="flex items-center">
+              <span className="text-[#22c55f] mr-2">💡</span>
+              <span className="font-medium text-[#22c55f]">Quick Guide</span>
+            </div>
+            <svg 
+              className={`w-5 h-5 text-[#22c55f] transform transition-transform ${showQuickGuide ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showQuickGuide && (
+            <div className="mt-2 p-4 bg-[#22c55f]/5 border border-[#22c55f]/20 rounded-lg">
+              <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Click event names</strong> to rename them for better recognition</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Toggle switches</strong> control which events appear in timeline</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Image mode</strong> shows camera screenshots when available</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Icon mode</strong> uses custom icons for faster loading and data savings</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Global "Show All"</strong> overrides individual settings when enabled</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
+                  <span><strong>Custom names & settings</strong> are saved locally to your browser</span>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Icon Picker Modal */}
+      {/* Icon Picker Modal - Updated colors */}
       {showIconPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
