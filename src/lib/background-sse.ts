@@ -292,8 +292,8 @@ class BackgroundSSEService {
             // Only broadcast if running in Next.js server context
             if (typeof window === 'undefined') {
               // Dynamic import to avoid issues with client-side rendering
-              import('@/app/api/events/live/route').then(({ broadcastEvent }) => {
-                broadcastEvent({
+                          import('@/lib/event-broadcast').then(({ broadcastEvent }) => {
+              broadcastEvent({
                   id: eventData.timestamp,
                   type: eventData.type,
                   deviceName: eventData.deviceName,

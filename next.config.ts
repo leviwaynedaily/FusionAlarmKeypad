@@ -53,16 +53,22 @@ const nextConfig: NextConfig = {
       ],
     },
   },
-  webpack: (config, { dev, isServer }) => {
-    // Only start background SSE service on server-side in development or production
-    if (isServer) {
-      // Import and start background SSE service
-      import('./src/lib/background-sse').then(({ startBackgroundSSE }) => {
-        startBackgroundSSE().catch(console.error);
-      });
-    }
-    return config;
-  },
+  // webpack: (config, { dev, isServer }) => {
+  //   // Only start background SSE service on server-side in development or production
+  //   if (isServer) {
+  //     // Import and start background SSE service
+  //     try {
+  //       import('./src/lib/background-sse').then(({ startBackgroundSSE }) => {
+  //         startBackgroundSSE().catch(console.error);
+  //       }).catch(err => {
+  //         console.error('Background SSE service failed to start:', err);
+  //       });
+  //     } catch (error) {
+  //       console.error('Failed to import background SSE service:', error);
+  //     }
+  //   }
+  //   return config;
+  // },
 
   // Allow dev server access from local network IPs
   ...(process.env.NODE_ENV === 'development' && {

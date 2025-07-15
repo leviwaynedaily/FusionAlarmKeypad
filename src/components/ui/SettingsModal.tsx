@@ -762,10 +762,17 @@ export function SettingsModal({
                         const newZone: AlarmZone = {
                           id: `zone-${alarmZones.length + 1}-${new Date().getTime()}`,
                           name: `Zone ${alarmZones.length + 1}`,
-                          color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'][alarmZones.length % 6],
-                          devices: [],
-                          armedState: 'DISARMED',
                           locationId: selectedLocation?.id || '',
+                          description: null,
+                          armedState: 'DISARMED',
+                          lastArmedStateChangeReason: null,
+                          triggerBehavior: 'INTRUSION',
+                          locationName: selectedLocation?.name || '',
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                          deviceIds: [],
+                          devices: [],
+                          color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'][alarmZones.length % 6],
                           isActive: true
                         };
                         const updatedZones = [...alarmZones, newZone];

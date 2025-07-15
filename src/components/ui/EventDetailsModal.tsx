@@ -302,7 +302,7 @@ export const EventDetailsModal: React.FC<Props> = ({ event, onClose, debugMode =
               <div className="space-y-3">
                 {/* Show all possible event data sources for debugging */}
                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  <strong>Help us find object detection data:</strong> Look for fields containing "vehicle", "person", "animal", "object", "caption", "detection", etc.
+                  <strong>Help us find object detection data:</strong> Look for fields containing &quot;vehicle&quot;, &quot;person&quot;, &quot;animal&quot;, &quot;object&quot;, &quot;caption&quot;, &quot;detection&quot;, etc.
                 </div>
                 
                 {/* Event Type (parsed if JSON) */}

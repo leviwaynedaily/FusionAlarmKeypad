@@ -107,7 +107,7 @@ export default function SSETestPage() {
             <div className="h-96 overflow-y-auto font-mono text-sm">
               {debug.debugLogs.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400">
-                  No logs yet. Click "Test SSE Endpoints" to start debugging.
+                  No logs yet. Click &quot;Test SSE Endpoints&quot; to start debugging.
                 </p>
               ) : (
                 debug.debugLogs.map((log, index) => (

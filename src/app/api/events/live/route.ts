@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analytics } from '@/lib/analytics';
 import { logger } from '@/lib/logger';
-
-// Store active connections
-const activeConnections = new Set<ReadableStreamDefaultController>();
-
-// Function to broadcast events to all connected clients
-export function broadcastEvent(event: any) {
-  const eventData = `data: ${JSON.stringify(event)}\n\n`;
-  
-  // Send to all active connections
-  activeConnections.forEach(controller => {
-    try {
-      controller.enqueue(new TextEncoder().encode(eventData));
-    } catch (error) {
-      // Connection closed, remove it
-      activeConnections.delete(controller);
-    }
-  });
-}
+import { addConnection, removeConnection } from '@/lib/event-broadcast';
 
 export async function GET(request: NextRequest) {
   const requestId = `live-sse-${Date.now()}`;
@@ -30,7 +13,7 @@ export async function GET(request: NextRequest) {
     const stream = new ReadableStream({
       start(controller) {
         // Add connection to active set
-        activeConnections.add(controller);
+        addConnection(controller);
         
         // Send initial connection message
         const welcomeMessage = `data: ${JSON.stringify({ 
@@ -50,20 +33,20 @@ export async function GET(request: NextRequest) {
             controller.enqueue(new TextEncoder().encode(heartbeat));
           } catch (error) {
             clearInterval(heartbeatInterval);
-            activeConnections.delete(controller);
+            removeConnection(controller);
           }
         }, 30000);
         
         // Cleanup when connection closes
         request.signal.addEventListener('abort', () => {
           clearInterval(heartbeatInterval);
-          activeConnections.delete(controller);
+          removeConnection(controller);
           logger.info(`🔴 [Live-SSE] ${requestId} - Client disconnected`);
         });
       },
       
       cancel(controller) {
-        activeConnections.delete(controller);
+        removeConnection(controller);
         logger.info(`🔴 [Live-SSE] ${requestId} - Stream cancelled`);
       }
     });
