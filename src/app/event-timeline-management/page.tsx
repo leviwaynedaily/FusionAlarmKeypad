@@ -478,11 +478,11 @@ export default function EventTimelineManagementPage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
-                  <span><strong>Global "Show All"</strong> overrides individual settings when enabled</span>
+                  <span><strong>Global &quot;Show All&quot;</strong> overrides individual settings when enabled</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-[#22c55f] mr-2 mt-0.5">•</span>
-                  <span><strong>Custom names & settings</strong> are saved locally to your browser</span>
+                  <span><strong>Custom names &amp; settings</strong> are saved locally to your browser</span>
                 </li>
               </ul>
             </div>
