@@ -442,6 +442,8 @@ function AlarmKeypad() {
       return;
     }
     alarmKeypad.setApiKey(FUSION_API_KEY);
+    // Store API key in localStorage for apiFetch to use
+    localStorage.setItem('fusion_api_key', FUSION_API_KEY);
 
     const savedLocation = localStorage.getItem('fusion_selected_location');
     const initialLoad = async () => {

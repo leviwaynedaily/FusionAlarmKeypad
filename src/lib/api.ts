@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://fusion-bridge-production.up.railway.app';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fusion-bridge-production.up.railway.app';
 
 export interface ApiResponse<T> {
   data: T;
@@ -192,8 +192,8 @@ export interface Event {
 }
 
 export const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
-  // Use the Fusion API key from the environment variable
-  const key = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
+  // Use the Fusion API key from localStorage first, then environment variable
+  const key = localStorage.getItem('fusion_api_key') || process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
   const baseUrl = localStorage.getItem('fusion_api_url') || API_BASE_URL;
   console.log('[apiFetch] Using API key:', key);
   console.log('[apiFetch] Request URL:', `${baseUrl}${path}`);
