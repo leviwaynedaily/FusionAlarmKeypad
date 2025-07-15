@@ -599,7 +599,7 @@ export function LiveEventsTicker({
         {/* Scrollable timeline */}
         <div
           ref={rowRef}
-          className="relative flex gap-4 py-4 px-8 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-t-3xl overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto border-t border-gray-200/50 dark:border-gray-800/50"
+          className="timeline-fade-effect relative flex gap-4 py-4 px-8 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-t-3xl overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto border-t border-gray-200/50 dark:border-gray-800/50"
         >
           {/* Timeline connector line - centered */}
           <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none transform -translate-y-1/2" />
