@@ -1,7 +1,7 @@
 import React from 'react';
 import Header from '../Header';
 import { WeatherWidget } from '../ui/WeatherWidget';
-import { Area, Device } from '@/lib/api';
+import { Area, Device, Space } from '@/lib/api';
 import { getWeatherStyle } from '@/lib/alarmKeypadUtils';
 
 interface WeatherData {
@@ -29,9 +29,9 @@ interface VisionProLayoutProps {
   weather: WeatherData | null;
   
   // Zone props
-  areas: Area[];
+  spaces: Space[];
   devices: Device[];
-  getZonesWithAreas: () => any[];
+  getZonesWithDevices: () => any[];
   
   // PIN entry props
   pin: string;
@@ -56,9 +56,9 @@ export function VisionProLayout({
   selectedLocation,
   showSeconds,
   weather,
-  areas,
+  spaces,
   devices,
-  getZonesWithAreas,
+  getZonesWithDevices,
   pin,
   isProcessing,
   error,
@@ -103,10 +103,10 @@ export function VisionProLayout({
         </div>
 
         {/* Floating Zone Status Cards - View Only */}
-        {areas.length > 0 && (
+        {spaces.length > 0 && (
           <div className="flex-shrink-0 px-4 mb-6">
             <div className="space-y-3 max-h-48 overflow-y-auto">
-              {getZonesWithAreas().filter(zone => zone.totalCount > 0).slice(0, 3).map((zone: any, index: number) => (
+              {getZonesWithDevices().filter(zone => zone.totalCount > 0).slice(0, 3).map((zone: any, index: number) => (
                 <div
                   key={zone.id}
                   className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-xl relative overflow-hidden"
@@ -138,36 +138,35 @@ export function VisionProLayout({
                       <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${zone.armedCount > 0 ? 'bg-red-400 animate-pulse shadow-red-400/50' : 'bg-green-400 shadow-green-400/50'}`} />
                     </div>
                     
-                    {/* Show first area only for mobile */}
-                    {zone.areaObjects.slice(0, 1).map((area: Area) => {
-                      const areaDevices = devices.filter(device => device.areaId === area.id);
+                    {/* Show first space only for mobile */}
+                    {zone.devices.slice(0, 3).map((device: Device) => {
+                      const space = spaces.find(s => s.id === device.spaceId);
                       return (
-                        <div key={area.id} className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-lg p-2">
+                        <div key={device.id} className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-lg p-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                              <span className="text-xs font-medium text-white/80 truncate">{area.name}</span>
-                              {area.armedState !== 'DISARMED' && (
+                              <span className="text-xs font-medium text-white/80 truncate">{device.name}</span>
+                              {device.armedState !== 'DISARMED' && (
                                 <svg className="w-2.5 h-2.5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
                                 </svg>
                               )}
                             </div>
-                            <div className={`w-1 h-1 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-red-400' : 'bg-green-400'}`} />
+                            <div className={`w-1 h-1 rounded-full ${device.armedState !== 'DISARMED' ? 'bg-red-400' : 'bg-green-400'}`} />
                           </div>
-                          {areaDevices.length > 0 && (
+                          {space && (
                             <div className="mt-1 text-xs text-white/50 truncate">
-                              {areaDevices.slice(0, 1).map(device => device.name).join(', ')}
-                              {areaDevices.length > 1 && ` +${areaDevices.length - 1}`}
+                              {space.name}
                             </div>
                           )}
                         </div>
                       );
                     })}
                     
-                    {zone.areaObjects.length > 1 && (
+                    {zone.devices.length > 3 && (
                       <div className="text-center mt-2">
                         <span className="text-xs text-white/40 italic">
-                          +{zone.areaObjects.length - 1} more
+                          +{zone.devices.length - 3} more devices
                         </span>
                       </div>
                     )}
@@ -311,7 +310,7 @@ export function VisionProLayout({
         <div className="w-full max-w-7xl grid grid-cols-2 gap-16 items-center">
           {/* Left Side - Floating Zone Cards */}
           <div className="space-y-6">
-            {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone) => (
+            {getZonesWithDevices().filter(zone => zone.totalCount > 0).map((zone) => (
               <div
                 key={zone.id}
                 className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden hover:shadow-3xl transition-all duration-300"
@@ -336,47 +335,46 @@ export function VisionProLayout({
                       <div>
                         <h3 className="text-lg font-semibold text-white/90">{zone.name}</h3>
                         <p className="text-sm text-white/60">
-                          {zone.totalCount} area{zone.totalCount !== 1 ? 's' : ''} • {zone.armedCount > 0 ? `${zone.armedCount} armed` : 'All clear'}
+                          {zone.totalCount} device{zone.totalCount !== 1 ? 's' : ''} • {zone.armedCount > 0 ? `${zone.armedCount} armed` : 'All clear'}
                         </p>
                       </div>
                     </div>
                     <div className={`w-4 h-4 rounded-full shadow-lg ${zone.armedCount > 0 ? 'bg-red-400 animate-pulse shadow-red-400/50' : 'bg-green-400 shadow-green-400/50'}`} />
                   </div>
                   
-                  {/* Zone Areas */}
+                  {/* Zone Devices */}
                   <div className="space-y-2">
-                    {zone.areaObjects.slice(0, 3).map((area: Area) => {
-                      const areaDevices = devices.filter(device => device.areaId === area.id);
+                    {zone.devices.slice(0, 5).map((device: Device) => {
+                      const space = spaces.find(s => s.id === device.spaceId);
                       return (
                         <div
-                          key={area.id}
+                          key={device.id}
                           className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-xl p-3 hover:bg-white/8 transition-colors"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-white/80 truncate">{area.name}</span>
-                              {area.armedState !== 'DISARMED' && (
+                              <span className="text-sm font-medium text-white/80 truncate">{device.name}</span>
+                              {device.armedState !== 'DISARMED' && (
                                 <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
                                 </svg>
                               )}
                             </div>
-                            <div className={`w-2 h-2 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-red-400' : 'bg-green-400'}`} />
+                            <div className={`w-2 h-2 rounded-full ${device.armedState !== 'DISARMED' ? 'bg-red-400' : 'bg-green-400'}`} />
                           </div>
-                          {areaDevices.length > 0 && (
+                          {space && (
                             <div className="mt-1 text-xs text-white/50 truncate">
-                              {areaDevices.slice(0, 2).map(device => device.name).join(', ')}
-                              {areaDevices.length > 2 && ` +${areaDevices.length - 2}`}
+                              Space: {space.name}
                             </div>
                           )}
                         </div>
                       );
                     })}
                     
-                    {zone.areaObjects.length > 3 && (
+                    {zone.devices.length > 5 && (
                       <div className="p-2 text-center">
                         <span className="text-xs text-white/40 italic">
-                          and {zone.areaObjects.length - 3} more area{zone.areaObjects.length - 3 !== 1 ? 's' : ''}
+                          and {zone.devices.length - 5} more device{zone.devices.length - 5 !== 1 ? 's' : ''}
                         </span>
                       </div>
                     )}

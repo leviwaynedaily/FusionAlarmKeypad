@@ -86,10 +86,10 @@ export function DesktopLayout({
           <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Zone Status</div>
           <div className="space-y-2 w-full">
             {areas.length === 0 && (
-              <div className="text-gray-400 text-sm">No areas configured</div>
+              <div className="text-gray-400 text-sm">No alarm zones configured</div>
             )}
             {areas.map((area) => (
-              <div key={area.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-4 py-3 shadow border border-gray-100 dark:border-gray-800">
+                              <div key={area.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg px-4 py-3 shadow border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <span className="text-base font-medium text-gray-900 dark:text-white">{area.name}</span>
                 </div>
@@ -104,8 +104,7 @@ export function DesktopLayout({
         </div>
         {/* Right column: PIN entry and keypad */}
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto md:mx-0">
-          <div className="w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8">
-            <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">Enter PIN to Access</h2>
+                      <div className="w-full bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-100 dark:border-transparent p-8">
             <PinEntry
               pin={pin}
               isProcessing={isProcessing}

@@ -143,15 +143,20 @@ class Analytics {
     });
   }
 
-  trackAreaAction(action: string, areaId: string, armedState: string) {
+  trackSpaceAction(action: string, spaceId: string, armedState: string) {
     // Only track in production to reduce noise
     if (isProduction) {
       this.track({
-        action: 'area_control',
+        action: 'space_control',
         category: 'security',
         label: action,
       });
     }
+  }
+
+  // Legacy method for backwards compatibility during migration
+  trackAreaAction(action: string, areaId: string, armedState: string) {
+    this.trackSpaceAction(action, areaId, armedState);
   }
 
   trackDeviceInteraction(action: string, deviceId: string, deviceType: string) {

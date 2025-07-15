@@ -106,7 +106,7 @@ export default function AlarmZoneCard({
           <div>
             <h3 className={`text-lg font-bold ${colors.header}`}>{zoneName}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {areas.length} area{areas.length !== 1 ? 's' : ''}
+              {areas.length} device{areas.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -149,8 +149,8 @@ export default function AlarmZoneCard({
           <div>
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Entire {zoneName}</h4>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {allArmed ? 'All areas armed' : 
-               allDisarmed ? 'All areas disarmed' : 
+              {allArmed ? 'All devices armed' : 
+               allDisarmed ? 'All devices disarmed' : 
                `${armedAreas.length} of ${areas.length} armed`}
             </p>
           </div>

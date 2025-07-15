@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Area, Device } from '@/lib/api';
+import React, { useState, useEffect } from 'react';
+import { Area, Device, EventFilterSettings, EventTypeDisplaySettings, AlarmZone, Space, getEventTypes } from '@/lib/api';
+import { EventTypeInfo } from '@/types/alarmKeypad';
+import { IconPicker } from './IconPicker';
 
 interface WeatherData {
   temp: number;
@@ -7,12 +9,7 @@ interface WeatherData {
   icon: string;
 }
 
-interface AlarmZone {
-  id: string;
-  name: string;
-  color: string;
-  areas: string[];
-}
+// Use AlarmZone from lib/api instead of local interface
 
 interface SettingsModalProps {
   open: boolean;
@@ -40,6 +37,12 @@ interface SettingsModalProps {
   lastSSEEvent: string;
   showLiveEvents: boolean;
   onShowLiveEventsChange: (value: boolean) => void;
+  debugMode: boolean;
+  onDebugModeChange: (value: boolean) => void;
+  
+  // Event filtering (NEW)
+  eventFilterSettings: EventFilterSettings;
+  onEventFilterSettingsChange: (settings: EventFilterSettings) => void;
   
   // Design options
   useTestDesign: boolean;
@@ -58,7 +61,7 @@ interface SettingsModalProps {
   onThemeChange: (theme: 'light' | 'dark' | 'system') => void;
   
   // Alarm zones
-  areas: Area[];
+  spaces: Space[];
   alarmZones: AlarmZone[];
   onAlarmZonesChange: (zones: AlarmZone[]) => void;
   
@@ -89,6 +92,10 @@ export function SettingsModal({
   lastSSEEvent,
   showLiveEvents,
   onShowLiveEventsChange,
+  debugMode,
+  onDebugModeChange,
+  eventFilterSettings,
+  onEventFilterSettingsChange,
   useTestDesign,
   onUseTestDesignChange,
   useTestDesign2,
@@ -99,12 +106,94 @@ export function SettingsModal({
   lastHeartbeat,
   theme,
   onThemeChange,
-  areas,
+  spaces,
   alarmZones,
   onAlarmZonesChange,
   onLocationChange,
   requireApiKey = false
 }: SettingsModalProps) {
+  const [availableEventTypes, setAvailableEventTypes] = useState<EventTypeInfo[]>([]);
+  const [loadingEventTypes, setLoadingEventTypes] = useState(false);
+
+  // Load available event types when component mounts or organization changes
+  useEffect(() => {
+    if (!open || !organization?.id) return;
+
+    const loadEventTypes = async () => {
+      setLoadingEventTypes(true);
+      try {
+        const response = await getEventTypes(organization.id, selectedLocation?.id);
+        if (response.data && response.data.eventTypes) {
+          setAvailableEventTypes(response.data.eventTypes);
+        }
+      } catch (error) {
+        console.error('Failed to load event types:', error);
+      } finally {
+        setLoadingEventTypes(false);
+      }
+    };
+
+    loadEventTypes();
+  }, [open, organization?.id, selectedLocation?.id]);
+
+  // Helper function to toggle individual event type
+  const toggleEventType = (eventType: string, enabled: boolean) => {
+    const newEventTypes = { ...eventFilterSettings.eventTypes, [eventType]: enabled };
+    onEventFilterSettingsChange({
+      ...eventFilterSettings,
+      eventTypes: newEventTypes
+    });
+  };
+
+  // Helper function to toggle category (affects all event types in that category)
+  const toggleCategory = (category: string, enabled: boolean) => {
+    const newCategories = { ...eventFilterSettings.categories, [category]: enabled };
+    
+    // Update individual event types in this category
+    const newEventTypes = { ...eventFilterSettings.eventTypes };
+    availableEventTypes
+      .filter(et => et.category === category)
+      .forEach(et => {
+        newEventTypes[et.eventType] = enabled;
+      });
+
+    onEventFilterSettingsChange({
+      ...eventFilterSettings,
+      categories: newCategories,
+      eventTypes: newEventTypes
+    });
+  };
+
+  // Helper function to check if all event types in a category are enabled
+  const isCategoryEnabled = (category: string): boolean => {
+    const categoryEventTypes = availableEventTypes.filter(et => et.category === category);
+    if (categoryEventTypes.length === 0) return false;
+    return categoryEventTypes.every(et => eventFilterSettings.eventTypes[et.eventType] !== false);
+  };
+
+  // Helper function to get event type settings with defaults
+  const getEventTypeSettings = (eventType: string): EventTypeDisplaySettings => {
+    return eventFilterSettings.eventTypeSettings[eventType] || {
+      showInTimeline: true,
+      displayMode: 'thumbnail',
+      customIcon: '🔔'
+    };
+  };
+
+  // Helper function to update event type settings
+  const updateEventTypeSettings = (eventType: string, settings: Partial<EventTypeDisplaySettings>) => {
+    const currentSettings = getEventTypeSettings(eventType);
+    const updatedSettings = { ...currentSettings, ...settings };
+    
+    onEventFilterSettingsChange({
+      ...eventFilterSettings,
+      eventTypeSettings: {
+        ...eventFilterSettings.eventTypeSettings,
+        [eventType]: updatedSettings
+      }
+    });
+  };
+
   if (!open) return null;
 
   return (
@@ -292,151 +381,160 @@ export function SettingsModal({
                       />
                     </button>
                   </div>
+
+                  {/* Debug Mode */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">Debug Mode</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Show detailed console logs and debug information
+                        {debugMode && <span className="text-amber-500 ml-1">• Active</span>}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => onDebugModeChange(!debugMode)}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                        debugMode ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          debugMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Timeline Event Settings */}
+              {/* Event Timeline Management - Simplified with link to dedicated page */}
               <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Timeline Event Settings</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Control which events appear in the timeline</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Event with Images */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Camera Events</h4>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-900 dark:text-white">Security Camera Events</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Motion detection, person detection, etc.</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Event Timeline Management</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Control what events show in the timeline and how they appear</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Show All Events:</span>
+                    <button
+                      onClick={() => onEventFilterSettingsChange({
+                        ...eventFilterSettings,
+                        showAllEvents: !eventFilterSettings.showAllEvents
+                      })}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                        eventFilterSettings.showAllEvents ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          eventFilterSettings.showAllEvents ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Stats and Link to Management Page */}
+                {loadingEventTypes ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#22c55f]"></div>
+                    <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">Loading event types from database...</span>
+                  </div>
+                ) : availableEventTypes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-4">📭</div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">No events found in the database yet.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Events will appear here as they are received from your devices.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {availableEventTypes.length}
+                        </div>
+                        <div className="text-sm text-blue-800 dark:text-blue-200">Event Types</div>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {availableEventTypes.reduce((sum, et) => sum + et.count, 0).toLocaleString()}
+                        </div>
+                        <div className="text-sm text-green-800 dark:text-green-200">Total Events</div>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {Array.from(new Set(availableEventTypes.map(et => et.category).filter(Boolean))).length}
+                        </div>
+                        <div className="text-sm text-purple-800 dark:text-purple-200">Categories</div>
+                      </div>
+                    </div>
+
+                    {/* Management Page Link */}
+                    <div className="text-center py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                      <div className="mb-4">
+                        <div className="text-4xl mb-2">⚙️</div>
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Advanced Event Management
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Use the dedicated management interface to configure individual event settings, display modes, and custom icons in a full table format.
+                        </p>
                       </div>
                       <button
                         onClick={() => {
-                          const current = JSON.parse(localStorage.getItem('timeline_events') || '{"camera": true, "lights": true, "doors": true, "motion": true, "security": true}');
-                          const updated = { ...current, camera: !current.camera };
-                          localStorage.setItem('timeline_events', JSON.stringify(updated));
-                          // Force re-render by updating a state or calling a callback
+                          window.open('/event-timeline-management', '_blank');
                         }}
-                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                          JSON.parse(localStorage.getItem('timeline_events') || '{"camera": true}').camera ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                        }`}
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                       >
-                        <span
-                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                            JSON.parse(localStorage.getItem('timeline_events') || '{"camera": true}').camera ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Open Event Timeline Management
                       </button>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Opens in a new tab with detailed table interface
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Device Events */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Device Events</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-900 dark:text-white">Light Switches</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Light on/off events</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const current = JSON.parse(localStorage.getItem('timeline_events') || '{"lights": true}');
-                            const updated = { ...current, lights: !current.lights };
-                            localStorage.setItem('timeline_events', JSON.stringify(updated));
-                          }}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                            JSON.parse(localStorage.getItem('timeline_events') || '{"lights": true}').lights ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              JSON.parse(localStorage.getItem('timeline_events') || '{"lights": true}').lights ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-900 dark:text-white">Door Events</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Door open/close, lock/unlock</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const current = JSON.parse(localStorage.getItem('timeline_events') || '{"doors": true}');
-                            const updated = { ...current, doors: !current.doors };
-                            localStorage.setItem('timeline_events', JSON.stringify(updated));
-                          }}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                            JSON.parse(localStorage.getItem('timeline_events') || '{"doors": true}').doors ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              JSON.parse(localStorage.getItem('timeline_events') || '{"doors": true}').doors ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-900 dark:text-white">Motion Sensors</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Motion detected events</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const current = JSON.parse(localStorage.getItem('timeline_events') || '{"motion": true}');
-                            const updated = { ...current, motion: !current.motion };
-                            localStorage.setItem('timeline_events', JSON.stringify(updated));
-                          }}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                            JSON.parse(localStorage.getItem('timeline_events') || '{"motion": true}').motion ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              JSON.parse(localStorage.getItem('timeline_events') || '{"motion": true}').motion ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-900 dark:text-white">Security Events</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Arm/disarm, alarms, etc.</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const current = JSON.parse(localStorage.getItem('timeline_events') || '{"security": true}');
-                            const updated = { ...current, security: !current.security };
-                            localStorage.setItem('timeline_events', JSON.stringify(updated));
-                          }}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                            JSON.parse(localStorage.getItem('timeline_events') || '{"security": true}').security ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              JSON.parse(localStorage.getItem('timeline_events') || '{"security": true}').security ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
+                    {/* Quick Preview of Top Events */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Top Event Types:
+                      </h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {availableEventTypes.slice(0, 5).map((eventType, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <span className="text-lg">{eventType.icon}</span>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {eventType.displayName}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {eventType.count.toLocaleString()} events
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {eventType.category && (
+                                <span className="px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded">
+                                  {eventType.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {availableEventTypes.length > 5 && (
+                          <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-2">
+                            +{availableEventTypes.length - 5} more event types available in management interface...
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">📌 Timeline Tips</p>
-                  <ul className="text-xs text-blue-600 dark:text-blue-400 mt-1 space-y-1">
-                    <li>• Events without images will show icons instead</li>
-                    <li>• Most recent events appear first (left side)</li>
-                    <li>• Scroll horizontally to see older events</li>
-                    <li>• Click any event to see details</li>
-                  </ul>
-                </div>
+                )}
               </div>
 
               {/* Display Options Continued */}
@@ -650,7 +748,7 @@ export function SettingsModal({
               </div>
 
               {/* Alarm Zones Configuration */}
-              {useTestDesign && areas.length > 0 && (
+              {useTestDesign && spaces.length > 0 && (
                 <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -665,7 +763,10 @@ export function SettingsModal({
                           id: `zone-${alarmZones.length + 1}-${new Date().getTime()}`,
                           name: `Zone ${alarmZones.length + 1}`,
                           color: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'][alarmZones.length % 6],
-                          areas: []
+                          devices: [],
+                          armedState: 'DISARMED',
+                          locationId: selectedLocation?.id || '',
+                          isActive: true
                         };
                         const updatedZones = [...alarmZones, newZone];
                         onAlarmZonesChange(updatedZones);
@@ -712,7 +813,7 @@ export function SettingsModal({
                           />
                           
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            ({areas.filter(area => zone.areas.includes(area.id)).length} areas)
+                            ({zone.devices?.length || 0} devices)
                           </span>
                           
                           {/* Delete Zone Button */}
@@ -734,33 +835,16 @@ export function SettingsModal({
                           )}
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {areas.map((area) => (
-                            <label key={area.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={zone.areas.includes(area.id)}
-                                onChange={(e) => {
-                                  const updatedZones = [...alarmZones];
-                                  if (e.target.checked) {
-                                    // Remove from other zones first
-                                    updatedZones.forEach(z => {
-                                      z.areas = z.areas.filter(id => id !== area.id);
-                                    });
-                                    // Add to current zone
-                                    updatedZones[zoneIndex].areas.push(area.id);
-                                  } else {
-                                    // Remove from current zone
-                                    updatedZones[zoneIndex].areas = updatedZones[zoneIndex].areas.filter(id => id !== area.id);
-                                  }
-                                  onAlarmZonesChange(updatedZones);
-                                }}
-                                className="rounded border-gray-300 dark:border-gray-600 text-[#22c55f] focus:ring-[#22c55f]"
-                              />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{area.name}</span>
-                              <div className={`ml-auto w-2 h-2 rounded-full ${area.armedState !== 'DISARMED' ? 'bg-rose-500' : 'bg-green-500'}`} />
-                            </label>
-                          ))}
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">🤖 Automatic Device Assignment</p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            Devices are automatically assigned to alarm zones based on their type and capabilities.
+                          </p>
+                          <ul className="text-xs text-blue-600 dark:text-blue-400 mt-2 space-y-1">
+                            <li>• <strong>Perimeter:</strong> Door contacts, window sensors, glass break detectors</li>
+                            <li>• <strong>Interior:</strong> Motion sensors, occupancy sensors, PIR detectors</li>
+                            <li>• <strong>Critical:</strong> Smoke detectors, panic buttons, emergency devices</li>
+                          </ul>
                         </div>
                       </div>
                     ))}

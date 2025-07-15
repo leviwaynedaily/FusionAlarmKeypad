@@ -1,8 +1,8 @@
 import React from 'react';
 import Header from '../Header';
 import { WeatherWidget } from '../ui/WeatherWidget';
-import { Area, Device } from '@/lib/api';
-import { AlarmZone } from '@/hooks/useAlarmKeypad';
+import { Area, Device, Space } from '@/lib/api';
+import { AlarmZone } from '@/lib/api';
 import { getWeatherStyle } from '@/lib/alarmKeypadUtils';
 import { ProcessingOverlay } from '../ui/ProcessingOverlay';
 import { PinEntry } from '../ui/PinEntry';
@@ -32,10 +32,10 @@ interface TestDesignLayoutProps {
   weather: WeatherData | null;
   
   // Zone props
-  areas: Area[];
+  spaces: Space[];
   devices: Device[];
   showZonesPreview: boolean;
-  getZonesWithAreas: () => any[];
+  getZonesWithDevices: () => any[];
   
   // PIN entry props
   pin: string;
@@ -60,10 +60,10 @@ export function TestDesignLayout({
   selectedLocation,
   showSeconds,
   weather,
-  areas,
+  spaces,
   devices,
   showZonesPreview,
-  getZonesWithAreas,
+  getZonesWithDevices,
   pin,
   isProcessing,
   error,
@@ -99,11 +99,11 @@ export function TestDesignLayout({
         </div>
 
         {/* Alarm Zones Preview */}
-        {showZonesPreview && areas.length > 0 && (
+        {showZonesPreview && spaces.length > 0 && (
           <div className="flex-shrink-0 px-4 mb-6">
             <h3 className="text-center text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Zones</h3>
             <div className="space-y-3">
-              {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone: any) => (
+              {getZonesWithDevices().filter(zone => zone.totalCount > 0).map((zone: any) => (
                 <div
                   key={zone.id}
                   className="bg-white dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700"
@@ -127,7 +127,7 @@ export function TestDesignLayout({
                   {/* Show first 2 areas on mobile */}
                   <div className="space-y-1">
                     {zone.areaObjects.slice(0, 2).map((area: Area) => {
-                      const areaDevices = devices.filter(device => device.areaId === area.id);
+                      const areaDevices = devices.filter(device => device.spaceId === area.id);
                       return (
                         <div key={area.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
                           <div className="flex items-center justify-between">
@@ -280,9 +280,9 @@ export function TestDesignLayout({
         <div className="w-full max-w-6xl grid grid-cols-2 gap-12 items-center">
           {/* Left Side - Alarm Zones */}
           <div className="space-y-4">
-            {getZonesWithAreas().filter(zone => zone.totalCount > 0).length > 0 ? (
+            {getZonesWithDevices().filter(zone => zone.totalCount > 0).length > 0 ? (
               <div className="space-y-4">
-                {getZonesWithAreas().filter(zone => zone.totalCount > 0).map((zone) => (
+                {getZonesWithDevices().filter(zone => zone.totalCount > 0).map((zone) => (
                   <div
                     key={zone.id}
                     className="bg-white dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all"
@@ -316,7 +316,7 @@ export function TestDesignLayout({
                     {/* Zone Areas */}
                     <div className="space-y-2">
                       {zone.areaObjects.slice(0, 5).map((area: Area) => {
-                        const areaDevices = devices.filter(device => device.areaId === area.id);
+                        const areaDevices = devices.filter(device => device.spaceId === area.id);
                         return (
                           <div
                             key={area.id}

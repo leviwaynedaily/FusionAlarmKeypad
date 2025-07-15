@@ -6,6 +6,8 @@ export function useTheme() {
 
   // Update effective theme based on system preference
   const updateEffectiveTheme = () => {
+    if (typeof window === 'undefined') return;
+    
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       setEffectiveTheme(systemTheme);
@@ -30,18 +32,47 @@ export function useTheme() {
     updateEffectiveTheme();
   }, [theme]);
 
+  // Apply theme classes to document
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const html = document.documentElement;
+      if (effectiveTheme === 'dark') {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+
+    }
+  }, [effectiveTheme]);
+
   // Initialize theme from localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('fusion_theme') as 'light' | 'dark' | 'system';
-    if (savedTheme) {
-      setTheme(savedTheme);
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('fusion_theme') as 'light' | 'dark' | 'system';
+      const themeToUse = savedTheme || 'system';
+      
+      if (!savedTheme) {
+        localStorage.setItem('fusion_theme', 'system');
+      }
+      
+      setTheme(themeToUse);
+      
+      // Set initial effective theme
+      if (themeToUse === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setEffectiveTheme(systemTheme);
+      } else {
+        setEffectiveTheme(themeToUse);
+      }
     }
   }, []);
 
   // Save theme to localStorage
   const saveTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
-    localStorage.setItem('fusion_theme', newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fusion_theme', newTheme);
+    }
   };
 
   return {

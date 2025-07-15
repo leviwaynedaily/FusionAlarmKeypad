@@ -1,7 +1,9 @@
 'use client';
 
+import React from 'react';
+
 import { useState } from 'react';
-import { Area, updateAreaState } from '@/lib/api';
+import { Area, updateDeviceState } from '@/lib/api';
 
 interface AreaCardProps {
   area: Area;
@@ -17,7 +19,7 @@ export default function AreaCard({ area, onStateChange }: AreaCardProps) {
     setError('');
 
     try {
-      const response = await updateAreaState(area.id, newState);
+      const response = await updateDeviceState(area.id, newState);
       if (response.error) {
         setError('Failed to update area state');
         return;

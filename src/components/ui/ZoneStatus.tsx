@@ -1,5 +1,5 @@
 import React from 'react';
-import { Area } from '@/lib/api';
+import { Area, Space } from '@/lib/api';
 
 interface WeatherData {
   temp: number;
@@ -8,23 +8,24 @@ interface WeatherData {
 }
 
 interface ZoneStatusProps {
-  areas: Area[];
+  spaces: Space[];
   weather: WeatherData | null;
   useDesign2: boolean;
   showZonesPreview: boolean;
 }
 
 export function ZoneStatus({ 
-  areas, 
+  spaces, 
   weather, 
   useDesign2, 
   showZonesPreview 
 }: ZoneStatusProps) {
-  if (!showZonesPreview || areas.length === 0) {
+  if (!showZonesPreview || spaces.length === 0) {
     return null;
   }
 
-  const armedAreasCount = areas.filter(a => a.armedState !== 'DISARMED').length;
+  // Note: spaces don't have armedState, so we'll show all as active
+  const activeSpacesCount = spaces.length;
 
   return (
     <div className="flex-shrink-0 px-4 mb-4">
@@ -51,17 +52,17 @@ export function ZoneStatus({
           ) : null}
           
           <div className="flex items-center gap-2">
-            {armedAreasCount > 0 ? (
+            {activeSpacesCount > 0 ? (
               <>
-                <span className="text-xs text-rose-600 dark:text-rose-400">
-                  {armedAreasCount} Armed
+                <span className="text-xs text-[#22c55f]">
+                  {activeSpacesCount} Space{activeSpacesCount !== 1 ? 's' : ''}
                 </span>
-                <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-[#22c55f] rounded-full"></div>
               </>
             ) : (
               <>
-                <span className="text-xs text-[#22c55f]">All Clear</span>
-                <div className="w-2 h-2 bg-[#22c55f] rounded-full"></div>
+                <span className="text-xs text-gray-500">No Spaces</span>
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               </>
             )}
           </div>

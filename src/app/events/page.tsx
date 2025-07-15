@@ -461,7 +461,7 @@ export default function EventsPage() {
       setOrganization(org);
       
       // Connect to SSE
-      const client = createSSEClient(org.id, apiKey);
+      const client = createSSEClient(apiKey);
       
       // Set up event listeners
       client.on('connected', () => {

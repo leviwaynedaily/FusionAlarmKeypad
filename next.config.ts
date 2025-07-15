@@ -41,6 +41,27 @@ const nextConfig: NextConfig = {
   // Bundle analyzer for optimization
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
+    turbo: {
+      resolveExtensions: [
+        '.mdx',
+        '.tsx',
+        '.ts',
+        '.jsx',
+        '.js',
+        '.mjs',
+        '.json',
+      ],
+    },
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Only start background SSE service on server-side in development or production
+    if (isServer) {
+      // Import and start background SSE service
+      import('./src/lib/background-sse').then(({ startBackgroundSSE }) => {
+        startBackgroundSSE().catch(console.error);
+      });
+    }
+    return config;
   },
 
   // Allow dev server access from local network IPs

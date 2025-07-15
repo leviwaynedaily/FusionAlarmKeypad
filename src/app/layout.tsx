@@ -41,6 +41,26 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('fusion_theme') || 'system';
+                  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {
+                  // Fallback to dark mode if there's an error
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -50,28 +70,6 @@ export default function RootLayout({
           Safely register the service-worker: check that the file exists first so we avoid 404 noise
           in the console when running locally or on deployments without an sw.js.
         */}
-        {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
-                    page_title: 'Fusion Alarm',
-                    custom_map: {'custom_parameter_1': 'fusion_alarm_app'}
-                  });
-                `,
-              }}
-            />
-          </>
-        )}
         
         <script
           dangerouslySetInnerHTML={{
@@ -88,12 +86,14 @@ export default function RootLayout({
                       if (res.ok) {
                         navigator.serviceWorker.register('/sw.js')
                           .then((registration) => {
-                            if (process.env.NODE_ENV === 'development') {
+                            // 🔥 FIX: Safe development check in browser
+                            if (window.location.hostname === 'localhost') {
                               console.log('ServiceWorker registered successfully');
                             }
                           })
                           .catch((error) => {
-                            if (process.env.NODE_ENV === 'development') {
+                            // 🔥 FIX: Safe development check in browser
+                            if (window.location.hostname === 'localhost') {
                               console.error('ServiceWorker registration failed:', error);
                             }
                           });

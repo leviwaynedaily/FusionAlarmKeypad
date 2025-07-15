@@ -57,35 +57,108 @@ export interface Location {
   updatedAt?: string;
 }
 
-export interface Area {
+export interface Space {
   id: string;
   name: string;
-  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
   locationId: string;
-  locationName: string;
-  lastArmedStateChangeReason?: string;
-  createdAt: string;
-  updatedAt: string;
+  locationName?: string;
+  description?: string | null;
+  deviceIds?: string[];
+  devices?: Device[];
+  cameras?: Camera[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Device {
   id: string;
   name: string;
   type: string;
-  online?: boolean;  // Made optional since it doesn't exist in API
-  lastStateUpdate?: string;  // Made optional
-  status: string | null;
-  displayState: string | null;
-  areaId: string | null;
-  locationId: string | null;
+  category?: string;
+  spaceId?: string | null;
+  spaceName?: string;
+  locationId?: string | null;
+  status?: 'online' | 'offline' | 'error';
+  armedState?: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  capabilities?: string[];
+  lastSeen?: string;
+  online?: boolean;
+  lastStateUpdate?: string;
+  displayState?: string | null;
   deviceTypeInfo?: {
     type: string;
     subtype?: string;
+    deviceType?: string;
+    category?: string;
+    displayName?: string;
+    supportedFeatures?: string[];
   };
   model?: string;
-  vendor?: string;
   connectorName?: string;
   connectorCategory?: string;
+  streamUrl?: string;
+  thumbnailUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Camera {
+  id: string;
+  name: string;
+  spaceId: string;
+  streamUrl?: string;
+  thumbnailUrl?: string;
+  isActive: boolean;
+}
+
+export interface AlarmZone {
+  id: string;
+  name: string;
+  locationId: string;
+  description: string | null;
+  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  lastArmedStateChangeReason: string | null;
+  triggerBehavior: string;
+  locationName: string;
+  createdAt: string;
+  updatedAt: string;
+  deviceIds: string[];
+  // Legacy fields for backwards compatibility - will be populated from deviceIds
+  devices?: Device[];
+  color?: string;
+  isActive?: boolean;
+}
+
+export interface ZoneWithDevices extends AlarmZone {
+  devices: Device[];
+  armedCount: number;
+  totalCount: number;
+}
+
+// Display preferences for individual event types
+export interface EventTypeDisplaySettings {
+  showInTimeline: boolean;
+  displayMode: 'thumbnail' | 'icon'; // thumbnail = base64 image, icon = custom icon
+  customIcon: string; // emoji or icon identifier
+}
+
+export interface EventFilterSettings {
+  showSpaceEvents: boolean;
+  showAlarmZoneEvents: boolean;
+  showAllEvents: boolean;
+  // Individual event type toggles (legacy - kept for backward compatibility)
+  eventTypes: Record<string, boolean>; // eventType -> enabled
+  // Category level toggles for bulk operations
+  categories: Record<string, boolean>; // category -> enabled
+  // NEW: Comprehensive per-event display settings
+  eventTypeSettings: Record<string, EventTypeDisplaySettings>; // eventType -> display settings
+}
+
+// Legacy interface for backwards compatibility
+export interface Area {
+  id: string;
+  name: string;
+  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
 }
 
 export interface Event {
@@ -96,8 +169,10 @@ export interface Event {
   connectorId: string;
   connectorName: string;
   connectorCategory: string;
-  areaId: string;
-  areaName: string;
+  spaceId: string;
+  spaceName: string;
+  alarmZoneId: string;
+  alarmZoneName: string;
   locationId: string;
   locationName: string;
   timestamp: number;
@@ -251,27 +326,172 @@ export const getLocations = async (): Promise<ApiResponse<any[]>> => {
   return { data: response.data.data };
 };
 
-export const getAreas = async (locationId: string): Promise<ApiResponse<Area[]>> => {
-  const response = await apiFetch<{ success: boolean; data: Area[] }>(`/api/areas?locationId=${locationId}`);
+export const getSpaces = async (locationId?: string): Promise<ApiResponse<Space[]>> => {
+  const url = locationId ? `/api/spaces?locationId=${locationId}` : '/api/spaces';
+  const response = await apiFetch<{ success: boolean; data: Space[] }>(url);
   if (response.error) {
     return { data: [], error: response.error };
   }
-  return { data: response.data.data };
+  return { data: response.data?.data || [] };
 };
 
-export const updateAreaState = async (areaId: string, armedState: Area['armedState']): Promise<ApiResponse<void>> => {
-  return apiFetch<void>(`/api/areas/${areaId}/arm-state`, {
-    method: 'PUT',
-    body: JSON.stringify({ armedState }),
-  });
+// Legacy function for backwards compatibility during migration
+export const getAreas = async (locationId: string): Promise<ApiResponse<Space[]>> => {
+  return getSpaces(locationId);
 };
+
+// Note: Armed state functionality has moved to Alarm Zones API
+// Use alarm zone endpoints for arming/disarming functionality
 
 export const getDevices = async (): Promise<ApiResponse<Device[]>> => {
   const response = await apiFetch<{ success: boolean; data: Device[] }>('/api/devices');
   if (response.error) {
     return { data: [], error: response.error };
   }
-  return { data: response.data.data };
+  return { data: response.data?.data || [] };
+};
+
+// Alarm Zone Management
+export const getAlarmZones = async (locationId: string): Promise<ApiResponse<AlarmZone[]>> => {
+  const response = await apiFetch<{ success: boolean; data: AlarmZone[] }>(`/api/alarm-zones?locationId=${locationId}`);
+  if (response.error) {
+    return { data: [], error: response.error };
+  }
+  return { data: response.data?.data || [] };
+};
+
+export const updateAlarmZone = async (zoneId: string, zoneData: Partial<AlarmZone>): Promise<ApiResponse<AlarmZone>> => {
+  const response = await apiFetch<{ success: boolean; data: AlarmZone }>(`/api/alarm/zones/${zoneId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(zoneData)
+  });
+  if (response.error) {
+    return { data: {} as AlarmZone, error: response.error };
+  }
+  return { data: response.data?.data || {} as AlarmZone };
+};
+
+// Device State Management
+export const updateDeviceState = async (deviceId: string, state: string): Promise<ApiResponse<{ success: boolean }>> => {
+  const response = await apiFetch<{ success: boolean; data: { success: boolean } }>(`/api/devices/${deviceId}/state`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      state: state,
+      timestamp: new Date().toISOString()
+    })
+  });
+  if (response.error) {
+    return { data: { success: false }, error: response.error };
+  }
+  return { data: response.data?.data || { success: true } };
+};
+
+export const armDevices = async (deviceIds: string[], armState: 'ARMED_AWAY' | 'ARMED_STAY'): Promise<ApiResponse<{ success: boolean; results: any[] }>> => {
+  const response = await apiFetch<{ success: boolean; data: { success: boolean; results: any[] } }>('/api/devices/arm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      deviceIds: deviceIds,
+      armState: armState,
+      timestamp: new Date().toISOString()
+    })
+  });
+  if (response.error) {
+    return { data: { success: false, results: [] }, error: response.error };
+  }
+  return { data: response.data?.data || { success: true, results: [] } };
+};
+
+export const disarmDevices = async (deviceIds: string[]): Promise<ApiResponse<{ success: boolean; results: any[] }>> => {
+  const response = await apiFetch<{ success: boolean; data: { success: boolean; results: any[] } }>('/api/devices/disarm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      deviceIds: deviceIds,
+      timestamp: new Date().toISOString()
+    })
+  });
+  if (response.error) {
+    return { data: { success: false, results: [] }, error: response.error };
+  }
+  return { data: response.data?.data || { success: true, results: [] } };
+};
+
+// Space Device Management
+export const getSpaceDevices = async (spaceId: string): Promise<ApiResponse<Device[]>> => {
+  const response = await apiFetch<{ success: boolean; data: Device[] }>(`/api/spaces/${spaceId}/devices`);
+  if (response.error) {
+    return { data: [], error: response.error };
+  }
+  return { data: response.data?.data || [] };
+};
+
+// Camera Management
+export const getCameras = async (spaceId?: string): Promise<ApiResponse<Camera[]>> => {
+  const url = spaceId ? `/api/cameras?spaceId=${spaceId}` : '/api/cameras';
+  const response = await apiFetch<{ success: boolean; data: Camera[] }>(url);
+  if (response.error) {
+    return { data: [], error: response.error };
+  }
+  return { data: response.data?.data || [] };
+};
+
+export const getCameraImage = async (cameraId: string): Promise<ApiResponse<{ imageUrl: string; timestamp: string }>> => {
+  const response = await apiFetch<{ success: boolean; data: { imageUrl: string; timestamp: string } }>(`/api/cameras/${cameraId}/image`);
+  if (response.error) {
+    return { data: { imageUrl: '', timestamp: '' }, error: response.error };
+  }
+  return { data: response.data?.data || { imageUrl: '', timestamp: '' } };
+};
+
+// Get available event types from database
+export const getEventTypes = async (organizationId: string, locationId?: string, sinceHours: number = 168): Promise<ApiResponse<{ eventTypes: any[] }>> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('organizationId', organizationId);
+  if (locationId) queryParams.append('locationId', locationId);
+  queryParams.append('sinceHours', sinceHours.toString());
+
+  try {
+    // Call local Next.js API route directly
+    const response = await fetch(`/api/events/types?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[getEventTypes] Error response:', errorText);
+      return { data: { eventTypes: [] }, error: `HTTP ${response.status}: ${response.statusText}` };
+    }
+
+    const data = await response.json();
+    console.log('[getEventTypes] Success response:', data);
+    return { data: data || { eventTypes: [] } };
+  } catch (error) {
+    console.error('[getEventTypes] Network error:', error);
+    return { data: { eventTypes: [] }, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Events with Filtering
+export const getFilteredEvents = async (filters: Partial<EventFilterSettings> & { limit?: number; sinceHours?: number }): Promise<ApiResponse<Event[]>> => {
+  const queryParams = new URLSearchParams();
+  
+  if (filters.limit) queryParams.append('limit', filters.limit.toString());
+  if (filters.sinceHours) queryParams.append('sinceHours', filters.sinceHours.toString());
+  if (filters.showSpaceEvents !== undefined) queryParams.append('showSpaceEvents', filters.showSpaceEvents.toString());
+  if (filters.showAlarmZoneEvents !== undefined) queryParams.append('showAlarmZoneEvents', filters.showAlarmZoneEvents.toString());
+  if (filters.showAllEvents !== undefined) queryParams.append('showAllEvents', filters.showAllEvents.toString());
+  
+  const response = await apiFetch<{ success: boolean; data: Event[] }>(`/api/events?${queryParams.toString()}`);
+  if (response.error) {
+    return { data: [], error: response.error };
+  }
+  return { data: response.data?.data || [] };
 };
 
 

@@ -6,5 +6,5 @@ export { useTheme } from './useTheme';
 export { useSystemHealth } from './useSystemHealth';
 export { useServiceWorker } from './useServiceWorker';
 
-// Export types
-export type { AlarmZone } from './useAlarmKeypad'; 
+// Export types from lib/api instead of local hooks
+export type { Space, Device, Camera, AlarmZone, ZoneWithDevices, EventFilterSettings } from '@/lib/api'; 

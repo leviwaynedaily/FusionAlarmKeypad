@@ -10,11 +10,16 @@ export interface AlarmZone {
   id: string;
   name: string;
   color: string;
-  areas: string[]; // area IDs
+  devices: Device[]; // Individual devices instead of space groups
+  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  locationId: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface ZoneWithAreas extends AlarmZone {
-  areas: any[]; // Area objects
+export interface ZoneWithDevices extends AlarmZone {
+  devices: Device[]; // Device objects with full details
   armedCount: number;
   totalCount: number;
 }
@@ -37,8 +42,43 @@ export interface Location {
   updatedAt?: string;
 }
 
-export interface PendingAreaToggle {
-  area: any;
+export interface Space {
+  id: string;
+  name: string;
+  description?: string;
+  locationId: string;
+  devices: Device[];
+  cameras?: Camera[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Device {
+  id: string;
+  name: string;
+  type: string;
+  category: string;
+  spaceId: string;
+  spaceName?: string;
+  status: 'online' | 'offline' | 'error';
+  armedState?: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  capabilities: string[];
+  lastSeen?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Camera {
+  id: string;
+  name: string;
+  spaceId: string;
+  streamUrl?: string;
+  thumbnailUrl?: string;
+  isActive: boolean;
+}
+
+export interface PendingSpaceToggle {
+  space: any;
   newState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
 }
 
@@ -76,4 +116,42 @@ export interface UIState {
 export interface ServiceWorkerState {
   isCheckingForUpdate: boolean;
   lastUpdateCheck: string;
+}
+
+// Event type information from database
+export interface EventTypeInfo {
+  eventType: string;
+  displayName: string;
+  icon: string;
+  category: string | null;
+  count: number;
+  sampleDevices: string[];
+}
+
+// Display preferences for individual event types
+export interface EventTypeDisplaySettings {
+  showInTimeline: boolean;
+  displayMode: 'thumbnail' | 'icon'; // thumbnail = base64 image, icon = custom icon
+  customIcon: string; // emoji or icon identifier
+}
+
+// Event filtering options for timeline
+export interface EventFilterSettings {
+  showSpaceEvents: boolean;
+  showAlarmZoneEvents: boolean;
+  showAllEvents: boolean;
+  // Individual event type toggles (legacy - kept for backward compatibility)
+  eventTypes: Record<string, boolean>; // eventType -> enabled
+  // Category level toggles for bulk operations
+  categories: Record<string, boolean>; // category -> enabled
+  // NEW: Comprehensive per-event display settings
+  eventTypeSettings: Record<string, EventTypeDisplaySettings>; // eventType -> display settings
+}
+
+// Legacy interface for backwards compatibility during migration
+export interface Area {
+  id: string;
+  name: string;
+  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  // This will be removed after migration
 } 

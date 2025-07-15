@@ -1,0 +1,4270 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Fusion API",
+    "description": "Unify. Automate. Protect."
+  },
+  "servers": [
+    {
+      "url": "https://fusion-bridge-production.up.railway.app",
+      "description": "Production server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Event ID"
+          },
+          "eventUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Event UUID"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "Device ID"
+          },
+          "deviceName": {
+            "type": "string",
+            "description": "Device name"
+          },
+          "connectorId": {
+            "type": "string",
+            "description": "Connector ID"
+          },
+          "connectorName": {
+            "type": "string",
+            "description": "Connector name"
+          },
+          "connectorCategory": {
+            "type": "string",
+            "description": "Connector category"
+          },
+          "locationId": {
+            "type": "string",
+            "description": "Location UUID"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Location name"
+          },
+          "spaceId": {
+            "type": "string",
+            "description": "Space UUID"
+          },
+          "spaceName": {
+            "type": "string",
+            "description": "Space name"
+          },
+          "alarmZoneId": {
+            "type": "string",
+            "description": "Alarm zone UUID that this device belongs to"
+          },
+          "alarmZoneName": {
+            "type": "string",
+            "description": "Alarm zone name that this device belongs to"
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Event timestamp (epoch milliseconds)"
+          },
+          "eventCategory": {
+            "type": "string",
+            "description": "Event category"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "Event type"
+          },
+          "eventSubtype": {
+            "type": "string",
+            "description": "Event subtype"
+          },
+          "payload": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Standardized event payload"
+          },
+          "rawPayload": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Raw event payload"
+          },
+          "deviceTypeInfo": {
+            "type": "object",
+            "properties": {
+              "deviceType": {
+                "type": "string",
+                "description": "Device type"
+              },
+              "category": {
+                "type": "string",
+                "description": "Device category"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "Display name"
+              },
+              "supportedFeatures": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Supported features"
+              }
+            },
+            "required": [
+              "deviceType",
+              "category",
+              "displayName",
+              "supportedFeatures"
+            ]
+          },
+          "displayState": {
+            "type": "string",
+            "description": "Display state"
+          },
+          "rawEventType": {
+            "type": "string",
+            "description": "Raw event type"
+          }
+        },
+        "required": [
+          "id",
+          "eventUuid",
+          "deviceId",
+          "connectorId",
+          "connectorCategory",
+          "timestamp",
+          "eventCategory",
+          "eventType",
+          "payload",
+          "rawPayload",
+          "deviceTypeInfo"
+        ]
+      },
+      "CreateLocationRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "addressStreet": {
+            "type": "string",
+            "minLength": 1
+          },
+          "addressCity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "addressState": {
+            "type": "string",
+            "minLength": 1
+          },
+          "addressPostalCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "timeZone",
+          "addressStreet",
+          "addressCity",
+          "addressState",
+          "addressPostalCode"
+        ]
+      },
+      "LocationIdParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Location UUID"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Location UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Location name"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Parent location UUID"
+          },
+          "path": {
+            "type": "string",
+            "description": "Hierarchical path"
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "Timezone"
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true,
+            "description": "External ID"
+          },
+          "addressStreet": {
+            "type": "string",
+            "nullable": true,
+            "description": "Street address"
+          },
+          "addressCity": {
+            "type": "string",
+            "nullable": true,
+            "description": "City"
+          },
+          "addressState": {
+            "type": "string",
+            "nullable": true,
+            "description": "State"
+          },
+          "addressPostalCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Postal code"
+          },
+          "latitude": {
+            "type": "string",
+            "nullable": true,
+            "description": "Latitude coordinate as string"
+          },
+          "longitude": {
+            "type": "string",
+            "nullable": true,
+            "description": "Longitude coordinate as string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Notes"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "path",
+          "timeZone",
+          "externalId",
+          "addressStreet",
+          "addressCity",
+          "addressState",
+          "addressPostalCode",
+          "latitude",
+          "longitude",
+          "notes",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DeviceSyncRequest": {
+        "type": "object",
+        "properties": {
+          "connectorId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "connectorId"
+        ]
+      },
+      "Device": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Internal device ID"
+          },
+          "deviceId": {
+            "type": "string",
+            "description": "External device ID"
+          },
+          "connectorId": {
+            "type": "string",
+            "description": "Connector ID"
+          },
+          "connectorCategory": {
+            "type": "string",
+            "description": "Connector category"
+          },
+          "connectorName": {
+            "type": "string",
+            "description": "Connector name"
+          },
+          "name": {
+            "type": "string",
+            "description": "Device name"
+          },
+          "type": {
+            "type": "string",
+            "description": "Raw device type"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "Device status"
+          },
+          "batteryPercentage": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Battery percentage (0-100, null if no battery data)"
+          },
+          "vendor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Device vendor"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Device model"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Device URL"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp (ISO string)"
+          },
+          "serverId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Server ID (e.g., Piko Server ID)"
+          },
+          "serverName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Server name"
+          },
+          "pikoServerDetails": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "serverId": {
+                "type": "string",
+                "description": "Piko server ID"
+              },
+              "name": {
+                "type": "string",
+                "description": "Piko server name"
+              },
+              "status": {
+                "type": "string",
+                "nullable": true,
+                "description": "Server status"
+              },
+              "version": {
+                "type": "string",
+                "nullable": true,
+                "description": "Server version"
+              },
+              "osPlatform": {
+                "type": "string",
+                "nullable": true,
+                "description": "OS platform"
+              },
+              "osVariantVersion": {
+                "type": "string",
+                "nullable": true,
+                "description": "OS variant version"
+              },
+              "url": {
+                "type": "string",
+                "nullable": true,
+                "description": "Server URL"
+              },
+              "createdAt": {
+                "type": "string",
+                "description": "Server creation timestamp"
+              },
+              "updatedAt": {
+                "type": "string",
+                "description": "Server update timestamp"
+              }
+            },
+            "required": [
+              "serverId",
+              "name",
+              "status",
+              "version",
+              "osPlatform",
+              "osVariantVersion",
+              "url",
+              "createdAt",
+              "updatedAt"
+            ],
+            "description": "Piko server details if applicable"
+          },
+          "locationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Location UUID"
+          },
+          "spaceId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Space UUID"
+          },
+          "deviceTypeInfo": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Standardized device type"
+              },
+              "subtype": {
+                "type": "string",
+                "nullable": true,
+                "description": "Standardized device subtype"
+              }
+            },
+            "required": [
+              "type",
+              "subtype"
+            ],
+            "description": "Standardized device type information"
+          },
+          "displayState": {
+            "type": "string",
+            "nullable": true,
+            "description": "Current display state"
+          }
+        },
+        "required": [
+          "id",
+          "deviceId",
+          "connectorId",
+          "connectorCategory",
+          "name",
+          "type",
+          "status",
+          "batteryPercentage",
+          "vendor",
+          "model",
+          "url",
+          "createdAt",
+          "updatedAt",
+          "serverId",
+          "serverName",
+          "pikoServerDetails",
+          "locationId",
+          "spaceId",
+          "deviceTypeInfo",
+          "displayState"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "details": {
+            "nullable": true,
+            "description": "Additional error details"
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "ApiKeyTestResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Test result message"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Test timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "timestamp"
+        ]
+      },
+      "ValidatePinRequest": {
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "description": "6-digit numeric PIN to validate"
+          }
+        },
+        "required": [
+          "pin"
+        ]
+      },
+      "PinValidationResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ],
+                "description": "PIN is not valid"
+              }
+            },
+            "required": [
+              "valid"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "valid": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ],
+                "description": "PIN is valid"
+              },
+              "userId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "User ID associated with the valid PIN"
+              },
+              "userName": {
+                "type": "string",
+                "description": "User name associated with the valid PIN"
+              }
+            },
+            "required": [
+              "valid",
+              "userId",
+              "userName"
+            ]
+          }
+        ]
+      },
+      "UserIdParams": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User UUID"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "CreateSpaceRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name",
+          "locationId"
+        ]
+      },
+      "UpdateSpaceRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AssignDevicesToSpaceRequest": {
+        "type": "object",
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "deviceIds"
+        ]
+      },
+      "RemoveDevicesFromSpaceRequest": {
+        "type": "object",
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "deviceIds"
+        ]
+      },
+      "CreateAlarmZoneRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "triggerBehavior": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "custom"
+            ],
+            "default": "standard"
+          }
+        },
+        "required": [
+          "name",
+          "locationId"
+        ]
+      },
+      "UpdateAlarmZoneRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string"
+          },
+          "triggerBehavior": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "custom"
+            ]
+          }
+        }
+      },
+      "AssignDevicesToZoneRequest": {
+        "type": "object",
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "deviceIds"
+        ]
+      },
+      "RemoveDevicesFromZoneRequest": {
+        "type": "object",
+        "properties": {
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "deviceIds"
+        ]
+      },
+      "SetZoneArmedStateRequest": {
+        "type": "object",
+        "properties": {
+          "armedState": {
+            "type": "string",
+            "enum": [
+              "DISARMED",
+              "ARMED",
+              "TRIGGERED"
+            ]
+          }
+        },
+        "required": [
+          "armedState"
+        ]
+      },
+      "AddTriggerOverrideRequest": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "shouldTrigger": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "eventType",
+          "shouldTrigger"
+        ]
+      },
+      "RemoveTriggerOverrideRequest": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "eventType"
+        ]
+      },
+      "Space": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Space UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Space name"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Location UUID"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Location name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Space description"
+          },
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of device IDs assigned to this space"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "locationId",
+          "locationName",
+          "description",
+          "deviceIds",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AlarmZone": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Alarm zone UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Alarm zone name"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Location UUID"
+          },
+          "locationName": {
+            "type": "string",
+            "description": "Location name"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Alarm zone description"
+          },
+          "armedState": {
+            "type": "string",
+            "description": "Current armed state"
+          },
+          "lastArmedStateChangeReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Reason for last armed state change"
+          },
+          "triggerBehavior": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "custom"
+            ],
+            "description": "Trigger behavior type"
+          },
+          "deviceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of device IDs assigned to this zone"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "locationId",
+          "locationName",
+          "description",
+          "armedState",
+          "lastArmedStateChangeReason",
+          "triggerBehavior",
+          "deviceIds",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TriggerOverride": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Override UUID"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Alarm zone UUID"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "Event type"
+          },
+          "shouldTrigger": {
+            "type": "boolean",
+            "description": "Whether this event type should trigger alarm"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "id",
+          "zoneId",
+          "eventType",
+          "shouldTrigger",
+          "createdAt"
+        ]
+      },
+      "AuditLogEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Audit log entry UUID"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Alarm zone UUID"
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "User UUID"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "armed",
+              "disarmed",
+              "triggered",
+              "acknowledged"
+            ],
+            "description": "Action performed"
+          },
+          "previousState": {
+            "type": "string",
+            "nullable": true,
+            "description": "Previous armed state"
+          },
+          "newState": {
+            "type": "string",
+            "nullable": true,
+            "description": "New armed state"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Reason for action"
+          },
+          "triggerEventId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Event UUID that triggered the action"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp (ISO string)"
+          }
+        },
+        "required": [
+          "id",
+          "zoneId",
+          "userId",
+          "action",
+          "previousState",
+          "newState",
+          "reason",
+          "triggerEventId",
+          "createdAt"
+        ]
+      },
+      "SSEStreamQuery": {
+        "type": "object",
+        "properties": {
+          "eventCategories": {
+            "type": "string",
+            "description": "Comma-separated event categories to filter by"
+          },
+          "eventTypes": {
+            "type": "string",
+            "description": "Comma-separated event types to filter by"
+          },
+          "includeThumbnails": {
+            "type": "boolean",
+            "description": "Include Piko thumbnails for applicable events (default: false)"
+          }
+        }
+      },
+      "SSEStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "organizationId": {
+                "type": "string",
+                "description": "Organization UUID"
+              },
+              "activeConnections": {
+                "type": "number",
+                "description": "Number of active SSE connections for this organization"
+              },
+              "subscribedChannels": {
+                "type": "number",
+                "description": "Number of Redis channels subscribed for this organization"
+              },
+              "timestamp": {
+                "type": "string",
+                "description": "Current timestamp (ISO string)"
+              },
+              "redis": {
+                "type": "object",
+                "properties": {
+                  "healthy": {
+                    "type": "boolean",
+                    "description": "Whether Redis connection is healthy"
+                  },
+                  "pingMs": {
+                    "type": "number",
+                    "nullable": true,
+                    "description": "Redis ping latency in milliseconds"
+                  }
+                },
+                "required": [
+                  "healthy",
+                  "pingMs"
+                ],
+                "description": "Redis connection status"
+              }
+            },
+            "required": [
+              "organizationId",
+              "activeConnections",
+              "subscribedChannels",
+              "timestamp",
+              "redis"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SSEStreamResponse": {
+        "type": "string",
+        "description": "Server-Sent Events stream in text/event-stream format. Includes connection events, real-time events, heartbeat messages, system notifications, error messages, and alarm zone state changes. Events may include Piko thumbnail data when includeThumbnails=true.",
+        "example": "event: connection\ndata: {\"type\":\"connection\",\"organizationId\":\"org-123\",\"timestamp\":\"2024-01-01T00:00:00.000Z\"}\n\nevent: event  \ndata: {\"eventUuid\":\"550e8400-e29b-41d4-a716-446655440000\",\"timestamp\":\"2024-01-01T00:00:00.000Z\",\"organizationId\":\"org-123\",\"deviceId\":\"front-door-camera\",\"deviceName\":\"Front Door Camera\",\"connectorId\":\"piko-001\",\"connectorName\":\"Piko Server Main\",\"locationId\":\"home-location-456\",\"locationName\":\"Main House\",\"spaceId\":\"living-space-123\",\"spaceName\":\"Living Room\",\"event\":{\"categoryId\":\"analytics\",\"category\":\"Analytics\",\"typeId\":\"object_detected\",\"type\":\"Object Detected\",\"subTypeId\":\"person\",\"subType\":\"Person\",\"objectTrackId\":\"track_12345\",\"confidence\":0.95,\"zone\":\"entrance\"},\"rawEvent\":{\"eventType\":\"analyticsSdkObjectDetected\",\"eventResourceId\":\"front-door-camera\",\"objectTrackId\":\"track_12345\",\"timestamp\":\"2024-01-01T00:00:00Z\"},\"thumbnailUri\":\"data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"}\n\nevent: event\ndata: {\"eventUuid\":\"550e8400-e29b-41d4-a716-446655440001\",\"timestamp\":\"2024-01-01T00:01:00.000Z\",\"organizationId\":\"org-123\",\"deviceId\":\"side-gate-sensor\",\"deviceName\":\"Side Gate Sensor\",\"connectorId\":\"netbox-001\",\"connectorName\":\"NetBox Controller\",\"locationId\":\"home-location-456\",\"locationName\":\"Main House\",\"spaceId\":\"perimeter-space-124\",\"spaceName\":\"Side Gate\",\"event\":{\"categoryId\":\"security\",\"category\":\"Security\",\"typeId\":\"door_opened\",\"type\":\"Door Opened\",\"motion\":true,\"zone\":\"side_entrance\"},\"rawEvent\":{\"event_type\":\"door\",\"sensor_id\":\"side-gate-sensor\",\"state\":\"open\",\"timestamp\":\"2024-01-01T00:01:00Z\"}}\n\nevent: alarm-zone\ndata: {\"type\":\"alarm-zone\",\"organizationId\":\"org-123\",\"timestamp\":\"2024-01-01T00:02:00.000Z\",\"alarmZone\":{\"id\":\"perimeter-zone-123\",\"name\":\"Perimeter Security\",\"locationId\":\"home-location-456\",\"locationName\":\"Main House\",\"previousState\":\"DISARMED\",\"previousStateDisplayName\":\"Disarmed\",\"currentState\":\"ARMED\",\"currentStateDisplayName\":\"Armed\"}}\n\nevent: heartbeat\ndata: {\"type\":\"heartbeat\",\"timestamp\":\"2024-01-01T00:00:30.000Z\"}\n\nevent: system\ndata: {\"type\":\"system\",\"message\":\"Redis connection lost\",\"timestamp\":\"2024-01-01T00:01:00.000Z\"}\n\nevent: system\ndata: {\"type\":\"system\",\"message\":\"Redis connection restored\",\"timestamp\":\"2024-01-01T00:01:30.000Z\"}\n\nevent: system\ndata: {\"type\":\"system\",\"message\":\"Server restarting - reconnect in 5000ms\",\"timestamp\":\"2024-01-01T00:02:00.000Z\"}\n\nevent: error\ndata: {\"type\":\"error\",\"error\":\"Connection authentication failed\",\"code\":\"AUTH_ERROR\",\"timestamp\":\"2024-01-01T00:01:15.000Z\"}"
+      },
+      "EventsCountResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "Total number of events matching the criteria"
+          }
+        },
+        "required": [
+          "success",
+          "count"
+        ]
+      },
+      "DevicesCountResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "count": {
+            "type": "number",
+            "description": "Total number of devices matching the criteria"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "connectorCategory": {
+                "type": "string",
+                "description": "Applied connector category filter"
+              },
+              "deviceType": {
+                "type": "string",
+                "description": "Applied device type filter"
+              },
+              "status": {
+                "type": "string",
+                "description": "Applied status filter"
+              }
+            },
+            "description": "Applied filters"
+          }
+        },
+        "required": [
+          "success",
+          "count",
+          "filters"
+        ]
+      },
+      "EventSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Event"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "EventsPagedResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "itemsPerPage": {
+                "type": "number",
+                "description": "Number of items per page"
+              },
+              "currentPage": {
+                "type": "number",
+                "description": "Current page number"
+              },
+              "hasNextPage": {
+                "type": "boolean",
+                "description": "Whether there is a next page"
+              }
+            },
+            "required": [
+              "itemsPerPage",
+              "currentPage",
+              "hasNextPage"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "pagination"
+        ]
+      },
+      "LocationsSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "LocationSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Location"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "DevicesSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Device"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "DeleteSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "PinValidationSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "valid": {
+                    "type": "boolean",
+                    "enum": [
+                      false
+                    ],
+                    "description": "PIN is not valid"
+                  }
+                },
+                "required": [
+                  "valid"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "valid": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ],
+                    "description": "PIN is valid"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "User ID associated with the valid PIN"
+                  },
+                  "userName": {
+                    "type": "string",
+                    "description": "User name associated with the valid PIN"
+                  }
+                },
+                "required": [
+                  "valid",
+                  "userId",
+                  "userName"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SpacesSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Space"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SpaceSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/Space"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AlarmZonesSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlarmZone"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AlarmZoneSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/AlarmZone"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "TriggerOverridesSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerOverride"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "TriggerOverrideSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/TriggerOverride"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "AuditLogSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogEntry"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "number"
+              },
+              "offset": {
+                "type": "number"
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "limit",
+              "offset",
+              "hasMore"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "pagination"
+        ]
+      },
+      "DeviceAssignmentSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "spaceId": {
+                "type": "string"
+              },
+              "deviceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "spaceId",
+              "deviceIds"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "ZoneDevicesSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "zoneId": {
+                "type": "string"
+              },
+              "deviceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "zoneId",
+              "deviceIds"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Test result message"
+              },
+              "timestamp": {
+                "type": "string",
+                "description": "Test timestamp (ISO string)"
+              },
+              "authMethod": {
+                "type": "string",
+                "description": "Authentication method used"
+              },
+              "userId": {
+                "type": "string",
+                "description": "User ID associated with the auth"
+              },
+              "organizationInfo": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "logo": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "nullable": true,
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "slug",
+                  "logo",
+                  "metadata",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "description": "Organization information if API key is scoped to an organization or user has active organization"
+              },
+              "sessionInfo": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "email",
+                      "name"
+                    ]
+                  },
+                  "hasSession": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "user",
+                  "hasSession"
+                ],
+                "description": "Session info if authenticated via session"
+              },
+              "apiKeyInfo": {
+                "type": "object",
+                "properties": {
+                  "keyId": {
+                    "type": "string"
+                  },
+                  "keyName": {
+                    "type": "string"
+                  },
+                  "rateLimitEnabled": {
+                    "type": "boolean"
+                  },
+                  "remaining": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "keyId",
+                  "keyName",
+                  "rateLimitEnabled"
+                ],
+                "description": "API key info if authenticated via API key"
+              }
+            },
+            "required": [
+              "message",
+              "timestamp",
+              "authMethod",
+              "userId",
+              "organizationInfo"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/admin/api-keys/test": {
+      "get": {
+        "summary": "Validate API key",
+        "description": "Validates the provided API key and returns detailed information about the key, associated user, and organization scope. This endpoint works with both session and API key authentication.",
+        "tags": [
+          "API Keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "API key validation successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones": {
+      "get": {
+        "summary": "Get all alarm zones",
+        "description": "Retrieves all alarm zones with their device assignments and armed states",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of alarm zones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmZonesSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new alarm zone",
+        "description": "Creates a new alarm zone for security management",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "triggerBehavior": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "custom"
+                    ],
+                    "default": "standard"
+                  }
+                },
+                "required": [
+                  "name",
+                  "locationId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alarm zone created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmZoneSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones/{id}": {
+      "get": {
+        "summary": "Get specific alarm zone",
+        "description": "Retrieves a single alarm zone by ID",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alarm zone retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmZoneSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update alarm zone",
+        "description": "Updates an alarm zone's name, description, or trigger behavior",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "triggerBehavior": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "custom"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alarm zone updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmZoneSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete alarm zone",
+        "description": "Deletes an alarm zone and removes all device assignments",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alarm zone deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones/{id}/arm-state": {
+      "put": {
+        "summary": "Set alarm zone armed state",
+        "description": "Arms or disarms an alarm zone with audit logging",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "armedState": {
+                    "type": "string",
+                    "enum": [
+                      "DISARMED",
+                      "ARMED",
+                      "TRIGGERED"
+                    ]
+                  }
+                },
+                "required": [
+                  "armedState"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Armed state updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlarmZoneSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones/{id}/audit-log": {
+      "get": {
+        "summary": "Get audit log",
+        "description": "Retrieves audit log for an alarm zone with pagination",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Number of entries to return (default: 100, max: 1000)"
+            },
+            "required": false,
+            "description": "Number of entries to return (default: 100, max: 1000)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Number of entries to skip (default: 0)"
+            },
+            "required": false,
+            "description": "Number of entries to skip (default: 0)",
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit log retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format or pagination parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones/{id}/devices": {
+      "get": {
+        "summary": "Get devices in alarm zone",
+        "description": "Retrieves all devices assigned to an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devices retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Assign devices to alarm zone",
+        "description": "Assigns multiple devices to an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "deviceIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Devices assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneDevicesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove devices from alarm zone",
+        "description": "Removes multiple devices from an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "deviceIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Devices removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZoneDevicesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm-zones/{id}/trigger-overrides": {
+      "get": {
+        "summary": "Get trigger overrides",
+        "description": "Retrieves custom trigger overrides for an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trigger overrides retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerOverridesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add trigger override",
+        "description": "Adds or updates a custom trigger override for an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "eventType": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "shouldTrigger": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "eventType",
+                  "shouldTrigger"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trigger override added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerOverrideSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove trigger override",
+        "description": "Removes a custom trigger override from an alarm zone",
+        "tags": [
+          "Alarm Zones"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Alarm zone UUID"
+            },
+            "required": true,
+            "description": "Alarm zone UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "eventType": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "eventType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trigger override removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "zoneId": {
+                              "type": "string"
+                            },
+                            "eventType": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "zoneId",
+                            "eventType"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alarm zone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alarm/keypad/validate-pin": {
+      "post": {
+        "summary": "Validate keypad PIN",
+        "description": "Validates a 6-digit PIN and returns user information if valid. Used by keypad devices for authentication.",
+        "tags": [
+          "Alarm Keypad"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pin": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$",
+                    "description": "6-digit numeric PIN to validate"
+                  }
+                },
+                "required": [
+                  "pin"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PIN validation result (always returns 200, check valid field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinValidationSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "summary": "Get devices",
+        "description": "Retrieve devices with optional filtering. Can fetch all devices, a specific device by deviceId, or just a count. Use count=true for OData-style counting.",
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Get specific device by external device ID"
+            },
+            "required": false,
+            "description": "Get specific device by external device ID",
+            "name": "deviceId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Return count only instead of data (OData style)"
+            },
+            "required": false,
+            "description": "Return count only instead of data (OData style)",
+            "name": "count",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by connector category (e.g., piko, yolink, genea)"
+            },
+            "required": false,
+            "description": "Filter by connector category (e.g., piko, yolink, genea)",
+            "name": "connectorCategory",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by device type"
+            },
+            "required": false,
+            "description": "Filter by device type",
+            "name": "deviceType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by device status"
+            },
+            "required": false,
+            "description": "Filter by device status",
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device data - single device, device list, or count only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DevicesSuccessResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DevicesCountResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found (when deviceId provided)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Sync devices",
+        "description": "Triggers device synchronization for a specific connector",
+        "tags": [
+          "Devices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "connectorId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "connectorId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device sync completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid connector ID or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connector not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "summary": "Get events",
+        "description": "Retrieve events with optional filtering and pagination. Can fetch a single event by UUID, a paginated list with filters, or just a count. Use count=true for OData-style counting.",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Get specific event by UUID"
+            },
+            "required": false,
+            "description": "Get specific event by UUID",
+            "name": "eventUuid",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Page number (default: 1)"
+            },
+            "required": false,
+            "description": "Page number (default: 1)",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Items per page (default: 50)"
+            },
+            "required": false,
+            "description": "Items per page (default: 50)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "description": "Return count only instead of data (OData style)"
+            },
+            "required": false,
+            "description": "Return count only instead of data (OData style)",
+            "name": "count",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated event categories to filter by"
+            },
+            "required": false,
+            "description": "Comma-separated event categories to filter by",
+            "name": "eventCategories",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Filter by connector category"
+            },
+            "required": false,
+            "description": "Filter by connector category",
+            "name": "connectorCategory",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter by location UUID"
+            },
+            "required": false,
+            "description": "Filter by location UUID",
+            "name": "locationId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated device names to filter by"
+            },
+            "required": false,
+            "description": "Comma-separated device names to filter by",
+            "name": "deviceNames",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Start time for filtering (ISO date string)"
+            },
+            "required": false,
+            "description": "Start time for filtering (ISO date string)",
+            "name": "timeStart",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "End time for filtering (ISO date string)"
+            },
+            "required": false,
+            "description": "End time for filtering (ISO date string)",
+            "name": "timeEnd",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events data - single event, paginated list, or count only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EventSuccessResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventsPagedResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EventsCountResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event not found (when eventUuid provided)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events/dashboard": {
+      "get": {
+        "summary": "Get dashboard events",
+        "description": "Get recent events for dashboard display with summary statistics",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard events data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsPagedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events/stream": {
+      "get": {
+        "summary": "Real-time event stream (SSE)",
+        "description": "Server-Sent Events endpoint for real-time event streaming.",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated event categories to filter by"
+            },
+            "required": false,
+            "description": "Comma-separated event categories to filter by",
+            "name": "eventCategories",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated event types to filter by"
+            },
+            "required": false,
+            "description": "Comma-separated event types to filter by",
+            "name": "eventTypes",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "boolean",
+              "description": "Include Piko thumbnails for applicable events (default: false)"
+            },
+            "required": false,
+            "description": "Include Piko thumbnails for applicable events (default: false)",
+            "name": "includeThumbnails",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events stream",
+            "headers": {
+              "Content-Type": {
+                "description": "text/event-stream",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "no-cache, no-transform",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Connection": {
+                "description": "keep-alive",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SSEStreamResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required - missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Connection limit exceeded - maximum 5 connections per API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events/stream/stats": {
+      "get": {
+        "summary": "SSE connection statistics",
+        "description": "Get connection statistics for the requesting organization including active connections and Redis health.",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SSEStatsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required - missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/locations": {
+      "get": {
+        "summary": "Get all locations",
+        "description": "Retrieves all locations",
+        "tags": [
+          "Locations"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationsSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new location",
+        "description": "Creates a new location with the specified name",
+        "tags": [
+          "Locations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "externalId": {
+                    "type": "string"
+                  },
+                  "addressStreet": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressCity": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressState": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressPostalCode": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "timeZone",
+                  "addressStreet",
+                  "addressCity",
+                  "addressState",
+                  "addressPostalCode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/locations/{id}": {
+      "get": {
+        "summary": "Get specific location",
+        "description": "Retrieves a single location by ID",
+        "tags": [
+          "Locations"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Location UUID"
+            },
+            "required": true,
+            "description": "Location UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Location retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update location",
+        "description": "Updates a location's properties including name, parent, address, etc.",
+        "tags": [
+          "Locations"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Location UUID"
+            },
+            "required": true,
+            "description": "Location UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "externalId": {
+                    "type": "string"
+                  },
+                  "addressStreet": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressCity": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressState": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "addressPostalCode": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "timeZone",
+                  "addressStreet",
+                  "addressCity",
+                  "addressState",
+                  "addressPostalCode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, ID format, or circular dependency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location or new parent location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete location",
+        "description": "Deletes a location and its descendants (cascade)",
+        "tags": [
+          "Locations"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Location UUID"
+            },
+            "required": true,
+            "description": "Location UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Location deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces": {
+      "get": {
+        "summary": "Get all spaces",
+        "description": "Retrieves all physical spaces with their device assignments",
+        "tags": [
+          "Spaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of spaces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpacesSuccessResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new space",
+        "description": "Creates a new physical space with specified name and location",
+        "tags": [
+          "Spaces"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "name",
+                  "locationId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Space created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Location not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{id}": {
+      "get": {
+        "summary": "Get specific space",
+        "description": "Retrieves a single space by ID",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update space",
+        "description": "Updates a space's name, description, or location assignment",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Space updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete space",
+        "description": "Deletes a space and removes all device assignments",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{id}/devices": {
+      "get": {
+        "summary": "Get devices in space",
+        "description": "Retrieves all devices assigned to a space",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devices retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicesSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Assign devices to space",
+        "description": "Assigns one or more devices to a space",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "deviceIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Devices assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceAssignmentSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove devices from space",
+        "description": "Removes one or more device assignments from a space",
+        "tags": [
+          "Spaces"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Space UUID"
+            },
+            "required": true,
+            "description": "Space UUID",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "deviceIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Devices removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceAssignmentSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "API Keys"
+    },
+    {
+      "name": "Alarm Keypad"
+    },
+    {
+      "name": "Alarm Zones"
+    },
+    {
+      "name": "Devices"
+    },
+    {
+      "name": "Events"
+    },
+    {
+      "name": "Locations"
+    },
+    {
+      "name": "Spaces"
+    }
+  ]
+}

@@ -1,14 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useSSEContext } from '@/hooks/SSEContext';
-import { updateAreaState, validatePin, getApiKeyDetails, Area, Device, Organization } from '@/lib/api';
+import { 
+  validatePin, 
+  getApiKeyDetails, 
+  Space, 
+  Device, 
+  Organization, 
+  Camera, 
+  AlarmZone, 
+  ZoneWithDevices, 
+  EventFilterSettings,
+  updateDeviceState as apiUpdateDeviceState,
+  armDevices,
+  disarmDevices,
+  getAlarmZones,
+  getCameras
+} from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { analytics } from '@/lib/analytics';
 import { performanceMonitor } from '@/lib/performance';
 import { 
   optimizedGetLocations, 
-  optimizedGetAreas, 
+  optimizedGetSpaces, 
   optimizedGetDevices, 
   optimizedGetDashboardData,
+  optimizedGetAlarmZones,
+  optimizedGetCameras,
+  optimizedUpdateDeviceState,
   clearCache,
   SmartPoller 
 } from '@/lib/api-optimized';
@@ -16,13 +34,6 @@ import {
 // API keys from environment variables
 const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
 const DEFAULT_WEATHER_API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY || '';
-
-export interface AlarmZone {
-  id: string;
-  name: string;
-  color: string;
-  areas: string[]; // area IDs
-}
 
 export function useAlarmKeypad() {
   // Core state
@@ -32,12 +43,17 @@ export function useAlarmKeypad() {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [locations, setLocations] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [cameras, setCameras] = useState<Camera[]>([]);
   const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticatedUser, setAuthenticatedUser] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+
+  // Legacy state for backwards compatibility during migration
+  const [areas, setAreas] = useState<any[]>([]);
 
   // UI state
   const [showSettings, setShowSettings] = useState(false);
@@ -49,40 +65,28 @@ export function useAlarmKeypad() {
   const [highlightPinButtons, setHighlightPinButtons] = useState(true);
   const [showWarningConfirm, setShowWarningConfirm] = useState(false);
   const [showWarningDetails, setShowWarningDetails] = useState<string | null>(null);
-
-  // Design state
-  const useDesign2 = true; // Design 2.0 is now default
+  const [useDesign2, setUseDesign2] = useState(false);
   const [useTestDesign, setUseTestDesign] = useState(false);
   const [useTestDesign2, setUseTestDesign2] = useState(false);
 
-  // Device and area state
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [deviceWarnings, setDeviceWarnings] = useState<string[]>([]);
-  const [pendingAreaToggle, setPendingAreaToggle] = useState<{ area: Area, newState: Area['armedState'] } | null>(null);
-  const [pendingToggleAll, setPendingToggleAll] = useState<Area['armedState'] | null>(null);
-  const [areaWarnings, setAreaWarnings] = useState<Record<string, string[]>>({});
+  // Event filtering settings
+  const [eventFilterSettings, setEventFilterSettings] = useState<EventFilterSettings>({
+    showSpaceEvents: true,
+    showAlarmZoneEvents: true,
+    showAllEvents: true,
+    eventTypes: {},
+    categories: {},
+    eventTypeSettings: {}
+  });
 
-  // Alarm zones
-  const [alarmZones, setAlarmZones] = useState<AlarmZone[]>([
-    {
-      id: 'critical',
-      name: 'Critical Alarm Zone',
-      color: '#ef4444', // red-500
-      areas: []
-    },
-    {
-      id: 'secondary',
-      name: 'Secondary Zone',
-      color: '#f59e0b', // amber-500
-      areas: []
-    },
-    {
-      id: 'perimeter',
-      name: 'Perimeter Zone',
-      color: '#3b82f6', // blue-500
-      areas: []
-    }
-  ]);
+  // Device and space state
+  const [deviceWarnings, setDeviceWarnings] = useState<string[]>([]);
+  const [pendingSpaceToggle, setPendingSpaceToggle] = useState<{ space: Space, newState: string } | null>(null);
+  const [pendingToggleAll, setPendingToggleAll] = useState<string | null>(null);
+  const [spaceWarnings, setSpaceWarnings] = useState<Record<string, string[]>>({});
+
+  // Alarm zones (now fetched from Fusion API)
+  const [alarmZones, setAlarmZones] = useState<AlarmZone[]>([]);
 
   // Service Worker state
   const [isCheckingForUpdate, setIsCheckingForUpdate] = useState(false);
@@ -94,7 +98,36 @@ export function useAlarmKeypad() {
   const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
   const [offlineDevices, setOfflineDevices] = useState<string[]>([]);
 
-  // SSE context for real-time area updates
+  // Listen for alarm zone state changes from SSE
+  useEffect(() => {
+    const handleAlarmZoneStateChange = (event: any) => {
+      const { type, category, deviceName, spaceName, displayState } = event.detail;
+      
+      console.log('🔒 Alarm Zone State Change Handler:', {
+        type,
+        category,
+        deviceName,
+        spaceName,
+        displayState
+      });
+      
+      // For now, just refresh alarm zones when we detect changes
+      // Later we can implement more specific zone updates
+      if (selectedLocation) {
+        loadAlarmZones(selectedLocation);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('alarmZoneStateChange', handleAlarmZoneStateChange);
+      
+      return () => {
+        window.removeEventListener('alarmZoneStateChange', handleAlarmZoneStateChange);
+      };
+    }
+  }, [selectedLocation]);
+
+  // SSE context for real-time space and device updates
   const sseCtx = useSSEContext();
 
   // Load organization and locations
@@ -130,13 +163,12 @@ export function useAlarmKeypad() {
         console.log('🏠 Setting selected location:', location.name);
         setSelectedLocation(location);
         
-        // Load areas first, then load events with area data
-        console.log('🏠 Loading areas for location:', location.name);
-        await loadAreas(location);
+        // Load spaces first, then load events with space data
+        console.log('🏠 Loading spaces for location:', location.name);
+        await loadSpaces(location);
         
-        // Load devices
-        console.log('🏠 Loading devices...');
-        await loadDevices();
+        // Devices are loaded as part of loadSpaces
+        console.log('✅ Devices loaded with spaces');
         
         console.log('✅ Location setup complete');
       } catch (e) {
@@ -167,44 +199,31 @@ export function useAlarmKeypad() {
     }
   };
 
-  // Load areas
-  const loadAreas = async (location: any) => {
-    console.log('🏠 Loading areas for location:', location.name);
-    try {
-      const response = await optimizedGetAreas(location.id);
-      console.log('🏠 Areas response:', response);
-      
-      if (response.data && response.data.length > 0) {
-        console.log('✅ Found', response.data.length, 'areas');
-        setAreas(response.data);
-        setError(''); // Clear any previous errors
-      } else if (response.data && response.data.length === 0) {
-        console.log('⚠️ No areas found for location');
-        setAreas([]);
-        setError(''); // Clear any previous errors
-      } else {
-        console.error('❌ Failed to load areas:', response.error);
-        setError('Failed to load areas');
-      }
-    } catch (error) {
-      console.error('💥 Exception loading areas:', error);
-      logger.error('Error loading areas:', error);
-      setError('Failed to load areas');
-    }
-  };
+  // Legacy function - replaced by loadSpaces
 
   // Load devices
   const loadDevices = async () => {
     try {
+      setLoading(true);
       const response = await optimizedGetDevices();
-      if (response.data) {
-        setDevices(response.data);
-      } else {
-        setError('Failed to load devices');
+      if (response.error) {
+        setError(response.error);
+        return;
       }
+      
+      setDevices(response.data);
+      console.log('📱 Loaded', response.data.length, 'devices');
+
+      // Load alarm zones after devices are loaded
+      if (selectedLocation) {
+        await loadAlarmZones(selectedLocation);
+      }
+      
     } catch (error) {
       logger.error('Error loading devices:', error);
       setError('Failed to load devices');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -254,60 +273,169 @@ export function useAlarmKeypad() {
     }
   };
 
-  // Real-time Area updates via SSE
+  // Update device state using the real API
+  const updateDeviceState = async (deviceId: string, newState: string) => {
+    try {
+      const response = await optimizedUpdateDeviceState(deviceId, newState);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data;
+    } catch (error) {
+      logger.error('Error updating device state:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  };
+
+  // Load alarm zones for a location (local zones, no API call needed)
+  const loadAlarmZones = async (location: any) => {
+    try {
+      console.log('🔒 Loading alarm zones from Fusion API for location:', location.id);
+      console.log('🔒 Location object:', location);
+      
+      const response = await optimizedGetAlarmZones(location.id);
+      console.log('🔒 Alarm zones API response:', response);
+      
+      if (response.error) {
+        logger.error('Error loading alarm zones:', response.error);
+        console.error('❌ Alarm zones error:', response.error);
+        setError(`Failed to load alarm zones: ${response.error}`);
+        return;
+      }
+
+      // Transform API response to include legacy fields for backwards compatibility
+      const transformedZones: AlarmZone[] = response.data.map(zone => ({
+        ...zone,
+        devices: [], // Will be populated when devices are loaded
+        color: getZoneColor(zone.name), // Assign colors based on zone name
+        isActive: true
+      }));
+
+      setAlarmZones(transformedZones);
+      console.log('🔒 Successfully loaded', transformedZones.length, 'alarm zones:');
+      console.log('🔒 Zones:', transformedZones.map(z => ({ id: z.id, name: z.name, armedState: z.armedState, deviceCount: z.deviceIds?.length || 0 })));
+      
+    } catch (error) {
+      logger.error('Error loading alarm zones:', error);
+      console.error('💥 Exception loading alarm zones:', error);
+      setError('Failed to load alarm zones');
+      // Don't set empty zones on error - keep whatever was loaded before
+    }
+  };
+
+  // Helper function to assign colors to zones based on their name
+  const getZoneColor = (zoneName: string): string => {
+    const name = zoneName.toLowerCase();
+    if (name.includes('perimeter') || name.includes('exterior') || name.includes('outside')) {
+      return '#ef4444'; // red-500
+    } else if (name.includes('interior') || name.includes('inside') || name.includes('motion')) {
+      return '#f59e0b'; // amber-500  
+    } else if (name.includes('critical') || name.includes('security') || name.includes('safe')) {
+      return '#dc2626'; // red-600
+    } else if (name.includes('garage') || name.includes('storage')) {
+      return '#3b82f6'; // blue-500
+    } else {
+      return '#6b7280'; // gray-500 (default)
+    }
+  };
+
+  // Load spaces with automatic zone assignment
+  const loadSpaces = async (location: any) => {
+    if (!location?.id) {
+      console.error('❌ No location provided to loadSpaces');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await optimizedGetSpaces(location.id);
+      const spacesData = response.data || [];
+      setSpaces(spacesData);
+      
+      console.log('🏠 Loaded', response.data.length, 'spaces with device info');
+      
+      // Load alarm zones after spaces are loaded
+      await loadAlarmZones(location);
+      console.log('🔒 Alarm zones loaded after spaces');
+      
+    } catch (error) {
+      logger.error('Error loading spaces:', error);
+      setError('Failed to load spaces');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Event filter settings management
+  const updateEventFilterSettings = (newSettings: Partial<EventFilterSettings>) => {
+    const updated = { ...eventFilterSettings, ...newSettings };
+    setEventFilterSettings(updated);
+    // Save to localStorage
+    localStorage.setItem('event_filter_settings', JSON.stringify(updated));
+  };
+
+  // Load event filter settings from localStorage
   useEffect(() => {
-    const client = sseCtx?.sseClient;
-    if (!client) return;
-
-    const handleAreaUpdate = (evt: any) => {
-      if (!evt?.areaId) return;
-      const newArmedState: Area['armedState'] = evt.type === 'DISARMED' ? 'DISARMED' : 'ARMED_AWAY';
-
-      setAreas(prev => {
-        const idx = prev.findIndex(a => a.id === evt.areaId);
-        if (idx > -1) {
-          const copy = [...prev];
-          copy[idx] = { ...copy[idx], armedState: newArmedState } as Area;
-          return copy;
-        }
-        // If area not present yet, add minimal stub
-        return [
-          ...prev,
-          {
-            id: evt.areaId,
-            name: evt.areaName ?? `Area ${evt.areaId}`,
-            armedState: newArmedState,
-            locationId: evt.locationId || '',
-            locationName: evt.locationName || '',
-            createdAt: '',
-            updatedAt: ''
-          } as Area
-        ];
-      });
-    };
-
-    client.on('area_state_change', handleAreaUpdate);
-    return () => {
-      client.off('area_state_change', handleAreaUpdate);
-    };
-  }, [sseCtx]);
-
-  // Load settings on mount
-  useEffect(() => {
-    loadSettings();
+    const savedSettings = localStorage.getItem('event_filter_settings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        // Ensure all required fields exist with defaults
+        const settingsWithDefaults = {
+          showSpaceEvents: true,
+          showAlarmZoneEvents: true,
+          showAllEvents: true,
+          eventTypes: {},
+          categories: {},
+          eventTypeSettings: {},
+          ...parsed
+        };
+        setEventFilterSettings(settingsWithDefaults);
+      } catch (error) {
+        logger.error('Error parsing event filter settings:', error);
+      }
+    }
   }, []);
 
+  // SSE event handlers for real-time updates
+  useEffect(() => {
+    if (!sseCtx) return;
+
+    const handleSpaceStateChange = (data: any) => {
+      // Update device state when space state changes
+      if (data.spaceId) {
+        setDevices(prev => prev.map(device => 
+          device.spaceId === data.spaceId 
+            ? { ...device, armedState: data.armedState }
+            : device
+        ));
+      }
+    };
+
+    const handleDeviceStateChange = (data: any) => {
+      // Update specific device state
+      if (data.deviceId) {
+        setDevices(prev => prev.map(device => 
+          device.id === data.deviceId 
+            ? { ...device, armedState: data.armedState, status: data.status }
+            : device
+        ));
+      }
+    };
+
+    // TODO: Set up SSE listeners when SSE context is properly implemented
+    // This will be updated when we implement the SSE integration
+    
+  }, [sseCtx]);
+
   // Handle location selection
-  const handleLocationSelect = async (location: any) => {
+  const handleLocationSelect = (location: any) => {
     setSelectedLocation(location);
     setShowLocationSelect(false);
     localStorage.setItem('fusion_selected_location', JSON.stringify(location));
-    
-    // Load areas for the selected location
-    await loadAreas(location);
-    
-    // Load devices
-    await loadDevices();
+    loadSpaces(location);
+    // Also load alarm zones when location is selected
+    loadAlarmZones(location);
   };
 
   // Handle PIN key press
@@ -405,19 +533,19 @@ export function useAlarmKeypad() {
   };
 
   // Check device status
-  const checkDeviceStatus = (areasToCheck: Area | Area[]) => {
-    const areas = Array.isArray(areasToCheck) ? areasToCheck : [areasToCheck];
+  const checkDeviceStatus = (spacesToCheck: Space | Space[]) => {
+    const spacesArray = Array.isArray(spacesToCheck) ? spacesToCheck : [spacesToCheck];
     const warnings: string[] = [];
     
-    areas.forEach(area => {
-      // Filter devices by area ID since Area interface doesn't have devices property
-      const areaDevices = devices.filter(device => device.areaId === area.id);
-      if (!areaDevices || areaDevices.length === 0) {
-        warnings.push(`${area.name}: No devices found`);
+    spacesArray.forEach(space => {
+      // Filter devices by space ID
+      const spaceDevices = devices.filter(device => device.spaceId === space.id);
+      if (!spaceDevices || spaceDevices.length === 0) {
+        warnings.push(`${space.name}: No devices found`);
         return;
       }
       
-      areaDevices.forEach((device: Device) => {
+      spaceDevices.forEach((device: Device) => {
         const type = device.type.toLowerCase();
         const deviceType = device.deviceTypeInfo?.type?.toLowerCase() || '';
         const status = device.status?.toLowerCase() || '';
@@ -425,18 +553,18 @@ export function useAlarmKeypad() {
         
         // Check for offline devices
         if (status === 'offline' || displayState === 'offline') {
-          warnings.push(`${area.name} - ${device.name}: Device offline`);
+          warnings.push(`${space.name} - ${device.name}: Device offline`);
         }
         
         // Check for low battery on keypads
         if ((type === 'keypad' || deviceType === 'keypad') && 
             displayState === 'low battery') {
-          warnings.push(`${area.name} - ${device.name}: Low battery`);
+          warnings.push(`${space.name} - ${device.name}: Low battery`);
         }
         
         // Check for tamper alerts
         if (displayState === 'tamper' || displayState === 'tampered') {
-          warnings.push(`${area.name} - ${device.name}: Tamper detected`);
+          warnings.push(`${space.name} - ${device.name}: Tamper detected`);
         }
       });
     });
@@ -444,16 +572,25 @@ export function useAlarmKeypad() {
     return warnings;
   };
 
-  // Handle area toggle
-  const handleAreaToggle = async (area: Area, skipConfirmation = false) => {
+  // Handle space toggle
+  const handleSpaceToggle = async (space: Space, skipConfirmation = false) => {
     if (isProcessing) return;
     
-    const newState = area.armedState === 'DISARMED' ? 'ARMED_AWAY' : 'DISARMED';
-    const warnings = checkDeviceStatus(area);
+    // Check if space has devices that can be armed/disarmed
+    const spaceDevices = devices.filter(device => device.spaceId === space.id);
+    if (spaceDevices.length === 0) {
+      setError(`No devices found in ${space.name}`);
+      return;
+    }
+    
+    // Determine new state based on current device states
+    const armedDevices = spaceDevices.filter(device => device.armedState && device.armedState !== 'DISARMED');
+    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED_AWAY';
+    const warnings = checkDeviceStatus(space);
     
     if (warnings.length > 0 && !skipConfirmation) {
-      setAreaWarnings(prev => ({ ...prev, [area.id]: warnings }));
-      setPendingAreaToggle({ area, newState });
+      setSpaceWarnings(prev => ({ ...prev, [space.id]: warnings }));
+      setPendingSpaceToggle({ space, newState });
       setShowWarningConfirm(true);
       return;
     }
@@ -462,21 +599,31 @@ export function useAlarmKeypad() {
     const startTime = performance.now();
     
     try {
-      const result = await updateAreaState(area.id, newState);
+      // Update all devices in the space
+      const deviceIds = spaceDevices.map(device => device.id);
+      let result;
+      
+      if (newState === 'DISARMED') {
+        result = await disarmDevices(deviceIds);
+      } else {
+        result = await armDevices(deviceIds, 'ARMED_AWAY');
+      }
+      
       const duration = performance.now() - startTime;
       
-      if (!result.error) {
-        // Update local state
-        setAreas(prev => prev.map(a => 
-          a.id === area.id ? { ...a, armedState: newState } : a
-        ));
+      if (result.data.success) {
+        // Update local device states
+        setDevices(prev => prev.map(device => {
+          const isInSpace = deviceIds.includes(device.id);
+          return isInSpace ? { ...device, armedState: newState } : device;
+        }));
         
         analytics.track({
-          action: 'area_state_change',
+          action: 'space_state_change',
           category: 'security',
           label: newState,
           properties: {
-            area: area.name,
+            space: space.name,
             newState,
             duration: Math.round(duration),
             location: selectedLocation?.name || 'unknown'
@@ -484,24 +631,24 @@ export function useAlarmKeypad() {
         });
         
         performanceMonitor.trackMetric({
-          name: 'area_toggle_duration',
+          name: 'space_toggle_duration',
           value: duration,
           rating: duration > 5000 ? 'poor' : duration > 2000 ? 'needs-improvement' : 'good'
         });
       } else {
-        setError(`Failed to ${newState.toLowerCase()} ${area.name}`);
+        setError(`Failed to ${newState.toLowerCase()} ${space.name}`);
       }
     } catch (error) {
       const duration = performance.now() - startTime;
-      logger.error('Area toggle error:', error);
-      setError(`Failed to ${newState.toLowerCase()} ${area.name}`);
+      logger.error('Space toggle error:', error);
+      setError(`Failed to ${newState.toLowerCase()} ${space.name}`);
       
       analytics.track({
-        action: 'area_state_change_error',
+        action: 'space_state_change_error',
         category: 'security',
         label: 'error',
         properties: {
-          area: area.name,
+          space: space.name,
           newState,
           duration: Math.round(duration),
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -513,14 +660,16 @@ export function useAlarmKeypad() {
     }
   };
 
-  // Handle toggle all areas
+  // Handle toggle all spaces
   const handleToggleAll = async (skipConfirmation = false) => {
-    if (isProcessing || areas.length === 0) return;
+    if (isProcessing || spaces.length === 0) return;
     
-    const armedAreas = areas.filter(a => a.armedState !== 'DISARMED');
-    const newState = armedAreas.length > 0 ? 'DISARMED' : 'ARMED_AWAY';
+    // Check if any devices in any space are armed
+    const allDevices = devices;
+    const armedDevices = allDevices.filter(d => d.armedState !== 'DISARMED');
+    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED_AWAY';
     
-    const allWarnings = areas.flatMap(area => checkDeviceStatus(area));
+    const allWarnings = spaces.flatMap(space => checkDeviceStatus(space));
     
     if (allWarnings.length > 0 && !skipConfirmation) {
       setDeviceWarnings(allWarnings);
@@ -533,26 +682,34 @@ export function useAlarmKeypad() {
     const startTime = performance.now();
     
     try {
-      const results = await Promise.allSettled(
-        areas.map(area => updateAreaState(area.id, newState))
-      );
+      // Update all devices instead of areas
+      const deviceIds = allDevices.map(device => device.id);
+      let result;
+      
+      if (newState === 'DISARMED') {
+        result = await disarmDevices(deviceIds);
+      } else {
+        result = await armDevices(deviceIds, 'ARMED_AWAY');
+      }
       
       const duration = performance.now() - startTime;
       
-      // Update local state for successful updates
-      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && !r.value.error);
-      if (successfulUpdates.length > 0) {
-        setAreas(prev => prev.map(area => ({ ...area, armedState: newState })));
+      if (result.data.success) {
+        // Update local device states
+        setDevices(prev => prev.map(device => ({ ...device, armedState: newState })));
+        
+        // Update alarm zones
+        setAlarmZones(prev => prev.map(zone => ({ ...zone, armedState: newState })));
       }
       
       analytics.track({
-        action: 'toggle_all_areas',
+        action: 'toggle_all_spaces',
         category: 'security',
         label: newState,
         properties: {
           newState,
-          totalAreas: areas.length,
-          successfulUpdates: successfulUpdates.length,
+          totalSpaces: spaces.length,
+          totalDevices: deviceIds.length,
           duration: Math.round(duration),
           location: selectedLocation?.name || 'unknown'
         }
@@ -566,10 +723,10 @@ export function useAlarmKeypad() {
     } catch (error) {
       const duration = performance.now() - startTime;
       logger.error('Toggle all error:', error);
-      setError(`Failed to ${newState.toLowerCase()} all areas`);
+      setError(`Failed to ${newState.toLowerCase()} all devices`);
       
       analytics.track({
-        action: 'toggle_all_areas_error',
+        action: 'toggle_all_spaces_error',
         category: 'security',
         label: 'error',
         properties: {
@@ -640,48 +797,69 @@ export function useAlarmKeypad() {
     return 'Just now';
   };
 
-  // Get zones with areas
-  const getZonesWithAreas = () => {
+  // Get zones with devices
+  const getZonesWithDevices = (): ZoneWithDevices[] => {
     return alarmZones.map(zone => {
-      const zoneAreas = areas.filter(area => {
-        const areaName = area.name.toLowerCase();
-        return zone.areas.some(zoneAreaId => {
-          const zoneName = zoneAreaId.toLowerCase();
-          return areaName.includes(zoneName) || zoneName.includes(areaName);
-        });
-      });
+      // Find devices that belong to this zone using deviceIds from the API
+      const zoneDevices = devices.filter(device => 
+        zone.deviceIds?.includes(device.id) || false
+      );
       
       return {
         ...zone,
-        areas: zoneAreas,
-        armedCount: zoneAreas.filter(a => a.armedState !== 'DISARMED').length,
-        totalCount: zoneAreas.length
+        devices: zoneDevices,
+        armedCount: zoneDevices.filter(d => d.armedState !== 'DISARMED').length,
+        totalCount: zoneDevices.length
       };
     });
   };
 
-  // Handle zone toggle
+  // Handle zone toggle with proper device management
   const handleZoneToggle = async (zone: AlarmZone) => {
-    const zonesWithAreas = getZonesWithAreas();
-    const zoneData = zonesWithAreas.find(z => z.id === zone.id);
+    const zonesWithDevices = getZonesWithDevices();
+    const zoneData = zonesWithDevices.find(z => z.id === zone.id);
     
-    if (!zoneData || zoneData.areas.length === 0) return;
+    if (!zoneData || zoneData.devices.length === 0) {
+      setError(`No devices found in ${zone.name}`);
+      return;
+    }
     
     const newState = zoneData.armedCount > 0 ? 'DISARMED' : 'ARMED_AWAY';
+    const deviceIds = zoneData.devices.map(d => d.id);
     
     setIsProcessing(true);
     try {
-      const results = await Promise.allSettled(
-        zoneData.areas.map(area => updateAreaState(area.id, newState))
-      );
+      let result;
+      if (newState === 'DISARMED') {
+        result = await disarmDevices(deviceIds);
+      } else {
+        result = await armDevices(deviceIds, 'ARMED_AWAY');
+      }
       
-      // Update local state for successful updates
-      const successfulUpdates = results.filter(r => r.status === 'fulfilled' && !r.value.error);
-      if (successfulUpdates.length > 0) {
-        setAreas(prev => prev.map(area => {
-          const isInZone = zoneData.areas.some(zoneArea => zoneArea.id === area.id);
-          return isInZone ? { ...area, armedState: newState } : area;
+      if (result.data.success) {
+        // Update local device states
+        setDevices(prev => prev.map(device => {
+          const isInZone = deviceIds.includes(device.id);
+          return isInZone ? { ...device, armedState: newState } : device;
         }));
+        
+        // Update alarm zone state
+        setAlarmZones(prev => prev.map(z => 
+          z.id === zone.id ? { ...z, armedState: newState } : z
+        ));
+        
+        analytics.track({
+          action: 'zone_toggle',
+          category: 'security',
+          properties: {
+            zoneId: zone.id,
+            zoneName: zone.name,
+            newState: newState,
+            deviceCount: deviceIds.length
+          }
+        });
+      } else {
+        setError(`Failed to ${newState.toLowerCase()} ${zone.name}`);
       }
     } catch (error) {
       logger.error('Zone toggle error:', error);
@@ -692,90 +870,88 @@ export function useAlarmKeypad() {
   };
 
   return {
-    // State
+    // Core state
     apiKey,
+    setApiKey,
     error,
+    setError,
     loading,
     organization,
     locations,
     selectedLocation,
-    areas,
+    setSelectedLocation,
+    spaces,
+    devices,
+    cameras,
     pin,
+    setPin,
     isAuthenticated,
     authenticatedUser,
     isProcessing,
     pressedButton,
+    setPressedButton,
+    
+    // Legacy state (will be removed after migration)
+    areas,
+    
+    // UI state
     showSettings,
+    setShowSettings,
     showLocationSelect,
+    setShowLocationSelect,
     showEvents,
+    setShowEvents,
     showAutomation,
+    setShowAutomation,
     showZonesPreview,
+    setShowZonesPreview,
     showSeconds,
+    setShowSeconds,
     highlightPinButtons,
+    setHighlightPinButtons,
     showWarningConfirm,
+    setShowWarningConfirm,
     showWarningDetails,
+    setShowWarningDetails,
     useDesign2,
+    setUseDesign2,
     useTestDesign,
+    setUseTestDesign,
     useTestDesign2,
-    devices,
-    deviceWarnings,
-    pendingAreaToggle,
-    pendingToggleAll,
-    areaWarnings,
+    setUseTestDesign2,
+    
+    // Event filtering
+    eventFilterSettings,
+    updateEventFilterSettings,
+    
+    // Alarm zones
     alarmZones,
-    isCheckingForUpdate,
-    lastUpdateCheck,
+    setAlarmZones,
+    getZonesWithDevices,
+    handleZoneToggle,
+    
+    // System health
     systemStatus,
     deviceConnectivity,
     lastHeartbeat,
     offlineDevices,
-
-    // Setters
-    setApiKey,
-    setError,
+    
+    // Service Worker
+    isCheckingForUpdate,
+    lastUpdateCheck,
+    
+    // Functions
     setLoading,
-    setPin,
-    setPressedButton,
-    setShowSettings,
-    setShowLocationSelect,
-    setShowEvents,
-    setShowAutomation,
-    setShowZonesPreview,
-    setShowSeconds,
-    setHighlightPinButtons,
-    setShowWarningConfirm,
-    setShowWarningDetails,
-    setUseTestDesign,
-    setUseTestDesign2,
-    setDeviceWarnings,
-    setPendingAreaToggle,
-    setPendingToggleAll,
-    setAreaWarnings,
-    setAlarmZones,
-    setIsCheckingForUpdate,
-    setLastUpdateCheck,
-    setSystemStatus,
-    setDeviceConnectivity,
-    setLastHeartbeat,
-    setOfflineDevices,
-
-    // Actions
     loadOrganizationAndLocations,
     loadLocations,
-    loadAreas,
-    loadDevices,
-    loadSettings,
+    loadSpaces,
+    updateDeviceState,
     handleLocationSelect,
-    handlePinKeyPress,
-    handleAuthenticate,
-    handleLogout,
-    checkDeviceStatus,
-    handleAreaToggle,
+    handleSpaceToggle,
     handleToggleAll,
-    handleApiKeyUpdate,
-    handleCheckForUpdates,
-    formatRelativeTime,
-    getZonesWithAreas,
-    handleZoneToggle,
+    getZonesWithAreas: getZonesWithDevices, // Legacy alias
+    
+    // SSE
+    sseCtx
   };
 } 

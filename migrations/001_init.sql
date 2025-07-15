@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS events (
   event_type  TEXT,
   category    TEXT,
   device_name TEXT,
-  area_name   TEXT,
+  space_name  TEXT,
   payload     JSON
 );
 
