@@ -766,7 +766,7 @@ export function SettingsModal({
                           description: null,
                           armedState: 'DISARMED',
                           lastArmedStateChangeReason: null,
-                          triggerBehavior: 'INTRUSION',
+                          triggerBehavior: 'standard',
                           locationName: selectedLocation?.name || '',
                           createdAt: new Date().toISOString(),
                           updatedAt: new Date().toISOString(),
