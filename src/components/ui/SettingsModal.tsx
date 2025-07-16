@@ -352,16 +352,9 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'connection': !(eventFilterSettings.eventTypes['connection'] ?? true) };
-                        // Check if all event types are enabled after this change
-                        const allEnabled = (newEventTypes['connection'] ?? true) &&
-                          (eventFilterSettings.eventTypes['device check-in'] ?? true) &&
-                          (eventFilterSettings.eventTypes['intrusion detected'] ?? true) &&
-                          (eventFilterSettings.eventTypes['State Changed'] ?? true);
-                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes,
-                          showAllEvents: allEnabled
+                          eventTypes: newEventTypes
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -385,18 +378,9 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'device check-in': !(eventFilterSettings.eventTypes['device check-in'] ?? true) };
-                        // Check if all event types are enabled after this change
-                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
-                        const allEnabled = allEventTypes.every(type => 
-                          type === 'device check-in' 
-                            ? newEventTypes['device check-in'] 
-                            : (newEventTypes[type] ?? true)
-                        );
-                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes,
-                          showAllEvents: allEnabled
+                          eventTypes: newEventTypes
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -420,18 +404,9 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'intrusion detected': !(eventFilterSettings.eventTypes['intrusion detected'] ?? true) };
-                        // Check if all event types are enabled after this change
-                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
-                        const allEnabled = allEventTypes.every(type => 
-                          type === 'intrusion detected' 
-                            ? newEventTypes['intrusion detected'] 
-                            : (newEventTypes[type] ?? true)
-                        );
-                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes,
-                          showAllEvents: allEnabled
+                          eventTypes: newEventTypes
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -455,18 +430,9 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'State Changed': !(eventFilterSettings.eventTypes['State Changed'] ?? true) };
-                        // Check if all event types are enabled after this change
-                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
-                        const allEnabled = allEventTypes.every(type => 
-                          type === 'State Changed' 
-                            ? newEventTypes['State Changed'] 
-                            : (newEventTypes[type] ?? true)
-                        );
-                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes,
-                          showAllEvents: allEnabled
+                          eventTypes: newEventTypes
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
