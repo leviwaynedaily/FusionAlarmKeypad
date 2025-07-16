@@ -145,14 +145,11 @@ export default function PinPage() {
 
   const getZoneStatusIcon = (zone: AlarmZone) => {
     const armedDevices = zone.devices?.filter(device => device.armedState !== 'DISARMED') || [];
-    const totalDevices = zone.devices?.length || 0;
     
     if (zone.armedState === 'DISARMED' || armedDevices.length === 0) {
       return { icon: '🟢', status: 'DISARMED', color: 'text-green-500' };
-    } else if (zone.armedState === 'ARMED_AWAY' || armedDevices.length === totalDevices) {
-      return { icon: '🔴', status: 'ARMED', color: 'text-red-500' };
     } else {
-      return { icon: '🟡', status: 'PARTIAL', color: 'text-yellow-500' };
+      return { icon: '🔴', status: 'ARMED', color: 'text-red-500' };
     }
   };
 
@@ -163,12 +160,48 @@ export default function PinPage() {
     switch (action) {
       case 'DISARMED':
         return `${baseClass} ${isActive ? 'bg-green-600 text-white' : 'bg-green-100 hover:bg-green-200 text-green-700'}`;
-      case 'ARMED_STAY':
-        return `${baseClass} ${isActive ? 'bg-yellow-600 text-white' : 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700'}`;
       case 'ARMED_AWAY':
         return `${baseClass} ${isActive ? 'bg-red-600 text-white' : 'bg-red-100 hover:bg-red-200 text-red-700'}`;
       default:
         return baseClass;
+    }
+  };
+
+  const handleArmAll = async () => {
+    setProcessing(true);
+    try {
+      for (const zone of alarmZones) {
+        if (zone.armedState !== 'ARMED_AWAY') {
+          const deviceIdsToArm = zone.devices?.map(device => device.id) || [];
+          if (deviceIdsToArm.length > 0) {
+            await armDevices(deviceIdsToArm, 'ARMED_AWAY');
+          }
+          await updateAlarmZone(zone.id, { armedState: 'ARMED_AWAY' });
+        }
+      }
+      await loadAlarmZones();
+    } catch (error) {
+      console.error('Failed to arm all zones:', error);
+      setError('Failed to arm all zones');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDisarmAll = async () => {
+    setProcessing(true);
+    try {
+      for (const zone of alarmZones) {
+        if (zone.armedState !== 'DISARMED') {
+          await updateAlarmZone(zone.id, { armedState: 'DISARMED' });
+        }
+      }
+      await loadAlarmZones();
+    } catch (error) {
+      console.error('Failed to disarm all zones:', error);
+      setError('Failed to disarm all zones');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -312,6 +345,27 @@ export default function PinPage() {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Master Controls */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <button
+                    onClick={handleArmAll}
+                    disabled={processing}
+                    className="py-4 px-4 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl font-semibold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="text-lg">🔴</div>
+                    <div>ARM ALL</div>
+                  </button>
+                  
+                  <button
+                    onClick={handleDisarmAll}
+                    disabled={processing}
+                    className="py-4 px-4 bg-green-100 hover:bg-green-200 text-green-700 rounded-xl font-semibold transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="text-lg">🟢</div>
+                    <div>DISARM ALL</div>
+                  </button>
+                </div>
+
                 {alarmZones.map((zone) => {
                   const status = getZoneStatusIcon(zone);
                   return (
@@ -342,7 +396,7 @@ export default function PinPage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => handleZoneAction(zone, 'DISARMED')}
                           disabled={processing}
@@ -353,21 +407,12 @@ export default function PinPage() {
                         </button>
                         
                         <button
-                          onClick={() => handleZoneAction(zone, 'ARMED_STAY')}
-                          disabled={processing}
-                          className={getActionButtonClass('ARMED_STAY', zone)}
-                        >
-                          <div className="text-xs">🟡</div>
-                          <div>STAY</div>
-                        </button>
-                        
-                        <button
                           onClick={() => handleZoneAction(zone, 'ARMED_AWAY')}
                           disabled={processing}
                           className={getActionButtonClass('ARMED_AWAY', zone)}
                         >
                           <div className="text-xs">🔴</div>
-                          <div>AWAY</div>
+                          <div>ARM</div>
                         </button>
                       </div>
                     </div>
