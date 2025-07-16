@@ -2,6 +2,7 @@
   "name": "fusion-alarm-keypad",
   "version": "0.1.0",
   "private": true,
+  "_deployment": "2025-01-16T13:42:00Z",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
