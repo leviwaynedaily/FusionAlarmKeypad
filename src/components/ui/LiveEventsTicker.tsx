@@ -688,7 +688,7 @@ export function LiveEventsTicker({
         )}
 
         {/* Right fade only - Shows newest events clearly and fades toward older events */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-[30rem] bg-gradient-to-l from-white via-white/60 via-white/45 via-white/30 via-white/20 via-white/15 via-white/10 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/60 dark:via-[#0f0f0f]/45 dark:via-[#0f0f0f]/30 dark:via-[#0f0f0f]/20 dark:via-[#0f0f0f]/15 dark:via-[#0f0f0f]/10 to-transparent z-20" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[40rem] bg-gradient-to-l from-white via-white/60 via-white/45 via-white/30 via-white/20 via-white/15 via-white/10 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/60 dark:via-[#0f0f0f]/45 dark:via-[#0f0f0f]/30 dark:via-[#0f0f0f]/20 dark:via-[#0f0f0f]/15 dark:via-[#0f0f0f]/10 to-transparent z-20" />
 
         {/* Scroll button - Only right arrow to view older events */}
         {filteredEvents.length > 3 && (
