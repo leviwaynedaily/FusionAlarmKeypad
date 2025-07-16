@@ -771,6 +771,7 @@ function AlarmKeypad() {
         cameras={alarmKeypad.cameras}
         spaces={alarmKeypad.spaces}
         eventFilterSettings={alarmKeypad.eventFilterSettings}
+        alarmZones={alarmKeypad.alarmZones}
       />
       {/* Layout Selection */}
       {alarmKeypad.useTestDesign2 ? (

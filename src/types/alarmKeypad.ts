@@ -140,6 +140,9 @@ export interface EventFilterSettings {
   showSpaceEvents: boolean;
   showAlarmZoneEvents: boolean;
   showAllEvents: boolean;
+  // NEW: Alarm zone specific filtering
+  showOnlyAlarmZoneEvents: boolean; // Show only events from devices in alarm zones
+  selectedAlarmZones: string[]; // Empty array = show all alarm zones, populated = show only selected zones
   // Individual event type toggles (legacy - kept for backward compatibility)
   eventTypes: Record<string, boolean>; // eventType -> enabled
   // Category level toggles for bulk operations

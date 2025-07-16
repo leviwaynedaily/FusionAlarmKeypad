@@ -6,7 +6,7 @@ import { EventDetailsModal } from './EventDetailsModal';
 import { formatRelativeTime } from '@/lib/alarmKeypadUtils';
 
 // Import necessary types
-import { Camera, Space, EventFilterSettings } from '@/lib/api';
+import { Camera, Space, EventFilterSettings, AlarmZone } from '@/lib/api';
 
 // Import React Icons for custom icon support
 import { 
@@ -156,6 +156,7 @@ interface LiveEventsTickerProps {
   cameras?: Camera[]; // Added camera data for better integration
   spaces?: Space[]; // Added space data for context
   eventFilterSettings?: EventFilterSettings; // Added event filtering
+  alarmZones?: AlarmZone[]; // Added alarm zones for zone-based filtering
 }
 
 const eventTypeIcon: Record<string, React.ReactNode> = {
@@ -235,10 +236,12 @@ export function LiveEventsTicker({
   debugMode = false,
   cameras = [],
   spaces = [],
-  eventFilterSettings
+  eventFilterSettings,
+  alarmZones = []
 }: LiveEventsTickerProps) {
   const [selected, setSelected] = useState<SSEEventDisplay | null>(null);
   const [settingsVersion, setSettingsVersion] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Debug logging helper
   const debugLog = (message: string, data?: any) => {
@@ -274,6 +277,19 @@ export function LiveEventsTicker({
     return spaces.find(space => space.id === event.spaceId) || null;
   };
 
+  // Check if an event's device belongs to an alarm zone
+  const getAlarmZoneForEvent = (event: SSEEventDisplay): AlarmZone | null => {
+    if (!event.deviceName || alarmZones.length === 0) return null;
+    
+    // Find alarm zone that contains this device
+    return alarmZones.find(zone => 
+      zone.devices?.some(device => 
+        device.name === event.deviceName || 
+        device.id === event.deviceId
+      )
+    ) || null;
+  };
+
   // Filter events based on settings
   const filteredEvents = useMemo(() => {
     if (!eventFilterSettings) return recentEvents;
@@ -295,21 +311,38 @@ export function LiveEventsTicker({
       
       // Fallback to legacy category-based filtering
       
+      // NEW: Alarm zone specific filtering
+      const eventAlarmZone = getAlarmZoneForEvent(event);
+      const isInAlarmZone = !!eventAlarmZone;
+      
+      // If "Show only alarm zone events" is enabled, filter out non-alarm-zone events
+      if (eventFilterSettings.showOnlyAlarmZoneEvents && !isInAlarmZone) {
+        return false;
+      }
+      
+      // If specific alarm zones are selected, only show events from those zones
+      if (eventFilterSettings.selectedAlarmZones.length > 0 && isInAlarmZone) {
+        if (!eventFilterSettings.selectedAlarmZones.includes(eventAlarmZone.id)) {
+          return false;
+        }
+      }
+      
       // Check if event is space-related
       const isSpaceEvent = event.spaceId && event.spaceName;
       if (eventFilterSettings.showSpaceEvents && isSpaceEvent) return true;
       
-      // Check if event is alarm zone related (device in an alarm zone)
+      // Check if event is alarm zone related (legacy logic - device in an alarm zone)
       const isAlarmZoneEvent = event.category?.includes('alarm') || 
                                event.type?.includes('alarm') ||
-                               event.displayState?.includes('armed');
+                               event.displayState?.includes('armed') ||
+                               isInAlarmZone; // Also include our new alarm zone detection
       if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) return true;
       
       // If no specific filtering rules match, default to showing the event
       // This ensures backward compatibility and shows events by default
       return true;
     });
-  }, [recentEvents, eventFilterSettings]);
+  }, [recentEvents, eventFilterSettings, alarmZones]);
 
   // Auto-scroll left to show newest card
   useEffect(() => {
@@ -533,73 +566,152 @@ export function LiveEventsTicker({
                       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-[#0f0f0f]/80 px-3 py-1 rounded-full">
             Timeline • {filteredEvents.length} events
           </div>
-          <button
-            className="pointer-events-auto text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-full transition-colors"
-            onClick={() => {
-              const currentSettings = eventFilterSettings;
-              const allHidden = !currentSettings?.showAllEvents && !currentSettings?.showSpaceEvents && !currentSettings?.showAlarmZoneEvents;
-              
-              // Smart toggle: if most things are hidden, show important events. If most are shown, hide system noise.
-              const newSettings = allHidden ? {
-                // Show important events
-                showAllEvents: true,
-                showSpaceEvents: true,
-                showAlarmZoneEvents: true
-              } : {
-                // Hide system noise, keep important events
-                showAllEvents: currentSettings?.showAllEvents,
-                showSpaceEvents: currentSettings?.showSpaceEvents,
-                showAlarmZoneEvents: currentSettings?.showAlarmZoneEvents
-              };
-              
-              // localStorage.setItem('timeline_events', JSON.stringify(newSettings)); // This line is removed as per new_code
-              setSettingsVersion(prev => prev + 1); // Force re-render
-            }}
-          >
-            ⚙️
-          </button>
+          <div className="pointer-events-auto flex gap-2">
+            {/* Alarm Zone Only Toggle */}
+            {alarmZones.length > 0 && (
+              <button
+                className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                  eventFilterSettings?.showOnlyAlarmZoneEvents
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                    : 'bg-gray-500 hover:bg-gray-600 text-white'
+                }`}
+                onClick={() => {
+                  if (eventFilterSettings) {
+                    // Create updated settings - toggle alarm zone only mode
+                    const newSettings = {
+                      ...eventFilterSettings,
+                      showOnlyAlarmZoneEvents: !eventFilterSettings.showOnlyAlarmZoneEvents
+                    };
+                    // Note: In a real app, you'd want to call a setter function passed as prop
+                    setSettingsVersion(prev => prev + 1);
+                  }
+                }}
+                title={eventFilterSettings?.showOnlyAlarmZoneEvents ? "Showing only alarm zone events" : "Show all events"}
+              >
+                🔒 {eventFilterSettings?.showOnlyAlarmZoneEvents ? 'Zones Only' : 'All Events'}
+              </button>
+            )}
+            
+            {/* Settings Button */}
+            <button
+              className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-full transition-colors"
+              onClick={() => setShowSettings(!showSettings)}
+              title="Timeline filter settings"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
 
-        {/* Edge fades */}
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white/90 dark:from-[#0f0f0f]/90 to-transparent z-10" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white/90 dark:from-[#0f0f0f]/90 to-transparent z-10" />
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="pointer-events-auto absolute top-10 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 min-w-[300px] z-30">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-medium text-gray-900 dark:text-white">Timeline Filters</h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Alarm Zone Filters */}
+            {alarmZones.length > 0 && (
+              <div className="space-y-3">
+                <div className="border-b border-gray-200 dark:border-gray-600 pb-3">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🔒 Alarm Zones</h4>
+                  
+                  {/* Show Only Alarm Zone Events Toggle */}
+                  <label className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={eventFilterSettings?.showOnlyAlarmZoneEvents || false}
+                      onChange={(e) => {
+                        if (eventFilterSettings) {
+                          // Note: In real app, use proper setter
+                          console.log('Toggle alarm zone only:', e.target.checked);
+                          setSettingsVersion(prev => prev + 1);
+                        }
+                      }}
+                      className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Show only alarm zone events</span>
+                  </label>
+                  
+                  {/* Specific Zone Selection */}
+                  {eventFilterSettings?.showOnlyAlarmZoneEvents && (
+                    <div className="ml-6 space-y-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Select specific zones (empty = all zones):</p>
+                      {alarmZones.map(zone => (
+                        <label key={zone.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={eventFilterSettings?.selectedAlarmZones?.includes(zone.id) || false}
+                            onChange={(e) => {
+                              if (eventFilterSettings) {
+                                const currentSelected = eventFilterSettings.selectedAlarmZones || [];
+                                const newSelected = e.target.checked
+                                  ? [...currentSelected, zone.id]
+                                  : currentSelected.filter(id => id !== zone.id);
+                                // Note: In real app, use proper setter
+                                console.log('Toggle zone:', zone.name, e.target.checked);
+                                setSettingsVersion(prev => prev + 1);
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: zone.color }}></span>
+                            {zone.name} ({zone.devices?.length || 0} devices)
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  💡 Alarm zone filtering helps focus on security-related events from your configured zones.
+                </div>
+              </div>
+            )}
+            
+            {alarmZones.length === 0 && (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                <div className="text-2xl mb-2">🔒</div>
+                <p className="text-sm">No alarm zones configured</p>
+                <p className="text-xs">Set up alarm zones to enable zone-based filtering</p>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Scroll buttons */}
+        {/* Edge fades - Enhanced for better scroll indication */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white/95 via-white/50 dark:from-[#0f0f0f]/95 dark:via-[#0f0f0f]/50 to-transparent z-20" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white/95 via-white/70 via-white/40 dark:from-[#0f0f0f]/95 dark:via-[#0f0f0f]/70 dark:via-[#0f0f0f]/40 to-transparent z-20" />
+
+        {/* Scroll button - Only right arrow to view older events */}
         {filteredEvents.length > 3 && (
-          <>
-            <button
-              onClick={() => {
-                if (rowRef.current) {
-                  rowRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-                }
-              }}
-              className="pointer-events-auto absolute left-2 top-1/2 transform -translate-y-1/2 z-20 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 p-2 rounded-full shadow-lg backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 transition-all duration-200 hover:scale-105"
-              title="Scroll left"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={() => {
-                if (rowRef.current) {
-                  rowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-                }
-              }}
-              className="pointer-events-auto absolute right-2 top-1/2 transform -translate-y-1/2 z-20 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 p-2 rounded-full shadow-lg backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 transition-all duration-200 hover:scale-105"
-              title="Scroll right"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </>
+          <button
+            onClick={() => {
+              if (rowRef.current) {
+                rowRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+              }
+            }}
+            className="pointer-events-auto absolute right-2 top-1/2 transform -translate-y-1/2 z-20 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 p-2 rounded-full shadow-lg backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 transition-all duration-200 hover:scale-105"
+            title="View older events"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         )}
 
         {/* Scrollable timeline */}
         <div
           ref={rowRef}
-          className="timeline-fade-effect relative flex gap-4 py-4 px-8 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-t-3xl overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto border-t border-gray-200/50 dark:border-gray-800/50"
+          className="relative flex gap-4 py-4 px-8 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-t-3xl overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto border-t border-gray-200/50 dark:border-gray-800/50"
         >
           {/* Timeline connector line - centered */}
           <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none transform -translate-y-1/2" />

@@ -74,6 +74,8 @@ export function useAlarmKeypad() {
     showSpaceEvents: true,
     showAlarmZoneEvents: true,
     showAllEvents: true,
+    showOnlyAlarmZoneEvents: false,
+    selectedAlarmZones: [], // Empty = show all alarm zones
     eventTypes: {},
     categories: {},
     eventTypeSettings: {}

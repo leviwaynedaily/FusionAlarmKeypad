@@ -18,6 +18,8 @@ export default function EventTimelineManagementPage() {
     showSpaceEvents: true,
     showAlarmZoneEvents: true,
     showAllEvents: true,
+    showOnlyAlarmZoneEvents: false,
+    selectedAlarmZones: [],
     eventTypes: {},
     categories: {},
     eventTypeSettings: {}
