@@ -687,9 +687,8 @@ export function LiveEventsTicker({
           </div>
         )}
 
-        {/* Edge fades - Extended and more gradual for seamless blending */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-white via-white/95 via-white/85 via-white/70 via-white/55 via-white/40 via-white/25 via-white/15 via-white/8 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/95 dark:via-[#0f0f0f]/85 dark:via-[#0f0f0f]/70 dark:via-[#0f0f0f]/55 dark:via-[#0f0f0f]/40 dark:via-[#0f0f0f]/25 dark:via-[#0f0f0f]/15 dark:via-[#0f0f0f]/8 to-transparent z-20" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-96 bg-gradient-to-l from-white via-white/98 via-white/92 via-white/85 via-white/75 via-white/65 via-white/55 via-white/45 via-white/35 via-white/25 via-white/18 via-white/12 via-white/8 via-white/5 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/98 dark:via-[#0f0f0f]/92 dark:via-[#0f0f0f]/85 dark:via-[#0f0f0f]/75 dark:via-[#0f0f0f]/65 dark:via-[#0f0f0f]/55 dark:via-[#0f0f0f]/45 dark:via-[#0f0f0f]/35 dark:via-[#0f0f0f]/25 dark:via-[#0f0f0f]/18 dark:via-[#0f0f0f]/12 dark:via-[#0f0f0f]/8 dark:via-[#0f0f0f]/5 to-transparent z-20" />
+{/* Right fade only - Extended and gradual for seamless blending */}
+<div className="pointer-events-none absolute inset-y-0 right-0 w-96 bg-gradient-to-l from-white via-white/98 via-white/92 via-white/85 via-white/75 via-white/65 via-white/55 via-white/45 via-white/35 via-white/25 via-white/18 via-white/12 via-white/8 via-white/5 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/98 dark:via-[#0f0f0f]/92 dark:via-[#0f0f0f]/85 dark:via-[#0f0f0f]/75 dark:via-[#0f0f0f]/65 dark:via-[#0f0f0f]/55 dark:via-[#0f0f0f]/45 dark:via-[#0f0f0f]/35 dark:via-[#0f0f0f]/25 dark:via-[#0f0f0f]/18 dark:via-[#0f0f0f]/12 dark:via-[#0f0f0f]/8 dark:via-[#0f0f0f]/5 to-transparent z-20" />
 
         {/* Scroll button - Only right arrow to view older events */}
         {filteredEvents.length > 3 && (
