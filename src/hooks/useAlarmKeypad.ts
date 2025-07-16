@@ -384,9 +384,11 @@ export function useAlarmKeypad() {
         await saveUserPreferences(
           organization.id,
           selectedLocation?.id || null,
-          'default', // userId - using default for now
-          updated,
-          {} // customEventNames - empty for now
+          {
+            eventFilterSettings: updated,
+            customEventNames: {}
+          },
+          'default' // userId - using default for now
         );
         logger.info('Event filter settings saved to database');
       } catch (error) {
