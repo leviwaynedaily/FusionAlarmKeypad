@@ -19,8 +19,8 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build",
-    "railway:build": "npm run clean:safe && npm run type-check && npm run lint && npm run build",
-    "railway:build:simple": "npm run clean:safe && npm run build",
+    "railway:build": "NEXT_TELEMETRY_DISABLED=1 npm run clean:safe && NEXT_TELEMETRY_DISABLED=1 npm run type-check && NEXT_TELEMETRY_DISABLED=1 npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build",
+    "railway:build:simple": "NEXT_TELEMETRY_DISABLED=1 npm run clean:safe && NEXT_TELEMETRY_DISABLED=1 npm run build",
     "db:setup": "echo 'Run the SQL in migrations/supabase_schema.sql in your Supabase SQL Editor'"
   },
   "dependencies": {

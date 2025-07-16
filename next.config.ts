@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Disable telemetry
+  telemetry: false,
+  
   // Production optimizations
   compress: true,
   poweredByHeader: false,
