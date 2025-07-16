@@ -603,152 +603,207 @@ function AlarmKeypad() {
     );
   }
 
+  // Helper function to get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  // Handle zone toggle
+  const handleZoneToggle = async (zone: any) => {
+    await alarmKeypad.handleZoneToggle(zone);
+  };
+
   // Show authenticated dashboard
   if (auth.isAuthenticated) {
     return (
       <div className="w-full h-full bg-gray-50 dark:bg-gray-900">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Welcome, {auth.authenticatedUser}
+        {/* Live Events Ticker */}
+        <LiveEventsTicker
+          showLiveEvents={alarmKeypad.showLiveEvents}
+          recentEvents={sse.recentEvents}
+          debugMode={debugMode}
+          cameras={alarmKeypad.cameras}
+          spaces={alarmKeypad.spaces}
+          eventFilterSettings={alarmKeypad.eventFilterSettings}
+          alarmZones={alarmKeypad.alarmZones}
+        />
+
+        {/* Main Content */}
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="w-full max-w-md">
+            {/* Greeting Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {getTimeBasedGreeting()}, {auth.authenticatedUser}
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400">
                 {alarmKeypad.selectedLocation?.name}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
 
-        {/* Dashboard Content */}
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Spaces & Alarm Zones */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Security Overview</h3>
-              <div className="space-y-3">
-                {/* Alarm Zones Section */}
-                {((alarmKeypad.alarmZones && alarmKeypad.alarmZones.length > 0) || debugMode) && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Alarm Zones ({alarmKeypad.alarmZones?.filter(z => z.isActive).length || 0})
-                      {debugMode && (
-                        <span className="text-xs text-red-500 ml-2">
-                          [Debug: Total {alarmKeypad.alarmZones?.length || 0} zones]
-                        </span>
-                      )}
-                    </h4>
-                    <div className="space-y-2">
-                      {alarmKeypad.alarmZones?.filter(zone => zone.isActive).map((zone) => (
-                        <div
-                          key={zone.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-                          onClick={() => {
-                            console.log('Zone clicked:', zone);
-                            // TODO: Add zone toggle functionality
-                          }}
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {zone.name}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {zone.devices?.length || 0} device{(zone.devices?.length || 0) !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              zone.armedState !== 'DISARMED' ? 'bg-rose-500' : 'bg-green-500'
-                            }`} />
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                              {zone.armedState || 'DISARMED'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Spaces Section */}
-                {alarmKeypad.alarmZones && alarmKeypad.alarmZones.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Spaces ({alarmKeypad.spaces?.length || 0})</h4>
-                    <div className="space-y-2">
-                      {alarmKeypad.alarmZones.map((zone) => (
-                        <div
-                          key={zone.id}
-                          className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{zone.name}</span>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                            zone.armedState !== 'DISARMED' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          }`}>
-                            {zone.armedState}
+            {/* Alarm Zones */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Security Zones
+              </h2>
+              
+              {alarmKeypad.alarmZones && alarmKeypad.alarmZones.length > 0 ? (
+                <div className="space-y-3">
+                  {alarmKeypad.alarmZones.filter(zone => zone.isActive).map((zone) => {
+                    const zonesWithDevices = alarmKeypad.getZonesWithDevices();
+                    const zoneData = zonesWithDevices.find(z => z.id === zone.id);
+                    const isArmed = zone.armedState !== 'DISARMED';
+                    
+                    return (
+                      <div
+                        key={zone.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-lg font-medium text-gray-900 dark:text-white">
+                            {zone.name}
+                          </span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {zoneData?.devices?.length || 0} device{(zoneData?.devices?.length || 0) !== 1 ? 's' : ''}
                           </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                        
+                        {/* Toggle Switch */}
+                        <button
+                          onClick={() => handleZoneToggle(zone)}
+                          disabled={alarmKeypad.isProcessing}
+                          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            isArmed
+                              ? 'bg-red-500 focus:ring-red-500' 
+                              : 'bg-green-500 focus:ring-green-500'
+                          } ${alarmKeypad.isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <span
+                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                              isArmed ? 'translate-x-7' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        
+                        {/* Status Text */}
+                        <div className="flex flex-col items-end ml-3">
+                          <span className={`text-sm font-semibold ${
+                            isArmed ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                          }`}>
+                            {isArmed ? 'ARMED' : 'DISARMED'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No alarm zones configured
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex gap-3 mb-6">
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+              >
+                Logout
+              </button>
+              <button
+                onClick={handleSettingsClick}
+                className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+              >
+                Settings
+              </button>
             </div>
 
             {/* System Status */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">System Status</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: systemHealth.getSystemStatusColor() }}
-                    />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {systemHealth.systemStatus}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Connectivity</span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {systemHealth.getConnectivityStatusText()}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">System Status</span>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: systemHealth.getSystemStatusColor() }}
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                    {systemHealth.systemStatus}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Weather */}
-            {weather.weather && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Weather</h3>
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={`https://openweathermap.org/img/wn/${weather.weather.icon}.png`} 
-                    alt={weather.weather.condition}
-                    className="w-8 h-8"
-                  />
-                  <div>
-                    <div className="text-lg font-medium text-gray-900 dark:text-white">
-                      {weather.weather.temp}°F
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {weather.weather.condition}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Settings Modal */}
+        <SettingsModal
+          open={settingsModalOpen}
+          onClose={() => setSettingsModalOpen(false)}
+          apiKey={alarmKeypad.apiKey}
+          onApiKeyUpdate={(key) => {
+            alarmKeypad.setApiKey(key);
+            localStorage.setItem('fusion_api_key', key);
+          }}
+          weather={weather.weather}
+          selectedLocation={alarmKeypad.selectedLocation}
+          organization={alarmKeypad.organization}
+          showZonesPreview={alarmKeypad.showZonesPreview}
+          onShowZonesPreviewChange={(value) => {
+            alarmKeypad.setShowZonesPreview(value);
+            localStorage.setItem('show_zones_preview', value.toString());
+          }}
+          showSeconds={alarmKeypad.showSeconds}
+          onShowSecondsChange={(value) => {
+            alarmKeypad.setShowSeconds(value);
+            localStorage.setItem('show_seconds', value.toString());
+          }}
+          highlightPinButtons={alarmKeypad.highlightPinButtons}
+          onHighlightPinButtonsChange={(value) => {
+            alarmKeypad.setHighlightPinButtons(value);
+            localStorage.setItem('highlight_pin_buttons', value.toString());
+          }}
+                     sseConnected={sse.isConnected}
+           lastSSEEvent={sse.lastSSEEvent}
+          showLiveEvents={alarmKeypad.showLiveEvents}
+          onShowLiveEventsChange={(value) => {
+            alarmKeypad.setShowLiveEvents(value);
+          }}
+          debugMode={debugMode}
+          onDebugModeChange={handleDebugModeChange}
+          eventFilterSettings={alarmKeypad.eventFilterSettings}
+          onEventFilterSettingsChange={alarmKeypad.updateEventFilterSettings}
+          useTestDesign={alarmKeypad.useTestDesign}
+          onUseTestDesignChange={(value) => {
+            alarmKeypad.setUseTestDesign(value);
+            localStorage.setItem('use_test_design', value.toString());
+          }}
+          useTestDesign2={alarmKeypad.useTestDesign2}
+          onUseTestDesign2Change={(value) => {
+            alarmKeypad.setUseTestDesign2(value);
+            localStorage.setItem('use_test_design_2', value.toString());
+          }}
+          systemStatus={systemHealth.systemStatus}
+          deviceConnectivity={systemHealth.deviceConnectivity}
+          offlineDevices={systemHealth.offlineDevices}
+          lastHeartbeat={systemHealth.lastHeartbeat}
+          theme={theme.theme}
+          onThemeChange={theme.setTheme}
+          spaces={alarmKeypad.spaces}
+          alarmZones={alarmKeypad.alarmZones}
+          onAlarmZonesChange={alarmKeypad.setAlarmZones}
+          onLocationChange={() => {
+            // Handle location change if needed
+          }}
+          requireApiKey={!FUSION_API_KEY}
+        />
       </div>
     );
   }
