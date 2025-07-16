@@ -391,6 +391,64 @@ export const updateDeviceState = async (deviceId: string, state: string): Promis
   return { data: response.data?.data || { success: true } };
 };
 
+// User Preferences Management
+export interface UserPreferences {
+  eventFilterSettings: EventFilterSettings;
+  customEventNames: Record<string, string>;
+}
+
+export const saveUserPreferences = async (
+  organizationId: string,
+  locationId: string | null,
+  preferences: UserPreferences,
+  userId: string = 'default'
+): Promise<ApiResponse<{ success: boolean }>> => {
+  const response = await fetch('/api/user-preferences', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      organizationId,
+      locationId,
+      userId,
+      eventFilterSettings: preferences.eventFilterSettings,
+      customEventNames: preferences.customEventNames
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return { data: { success: false }, error: errorText };
+  }
+
+  const data = await response.json();
+  return { data: data.data };
+};
+
+export const loadUserPreferences = async (
+  organizationId: string,
+  locationId: string | null,
+  userId: string = 'default'
+): Promise<ApiResponse<UserPreferences | null>> => {
+  const params = new URLSearchParams({
+    organizationId,
+    userId
+  });
+  
+  if (locationId) {
+    params.append('locationId', locationId);
+  }
+
+  const response = await fetch(`/api/user-preferences?${params.toString()}`);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return { data: null, error: errorText };
+  }
+
+  const result = await response.json();
+  return { data: result.data };
+};
+
 export const armDevices = async (deviceIds: string[], armState: 'ARMED_AWAY' | 'ARMED_STAY'): Promise<ApiResponse<{ success: boolean; results: any[] }>> => {
   const response = await apiFetch<{ success: boolean; data: { success: boolean; results: any[] } }>('/api/devices/arm', {
     method: 'POST',

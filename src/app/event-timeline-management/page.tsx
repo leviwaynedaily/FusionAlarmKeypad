@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { EventFilterSettings, EventTypeDisplaySettings, getEventTypes } from '@/lib/api';
+import { EventFilterSettings, EventTypeDisplaySettings, getEventTypes, saveUserPreferences, loadUserPreferences, UserPreferences } from '@/lib/api';
 import { EventTypeInfo } from '@/types/alarmKeypad';
 import { IconPicker } from '@/components/ui/IconPicker';
 
@@ -14,6 +14,8 @@ export default function EventTimelineManagementPage() {
   const router = useRouter();
   const [availableEventTypes, setAvailableEventTypes] = useState<EventTypeInfo[]>([]);
   const [loadingEventTypes, setLoadingEventTypes] = useState(true);
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
+  const [savingPreferences, setSavingPreferences] = useState(false);
   const [eventFilterSettings, setEventFilterSettings] = useState<EventFilterSettings>({
     showSpaceEvents: true,
     showAlarmZoneEvents: true,
@@ -32,25 +34,87 @@ export default function EventTimelineManagementPage() {
   const [editingValue, setEditingValue] = useState('');
   const [showQuickGuide, setShowQuickGuide] = useState(false);
 
-  // Load settings from localStorage
+  // Load settings from database with localStorage migration
   useEffect(() => {
-    const savedSettings = localStorage.getItem('event_filter_settings');
-    if (savedSettings) {
+    const loadPreferences = async () => {
+      setLoadingPreferences(true);
       try {
-        setEventFilterSettings(JSON.parse(savedSettings));
-      } catch (e) {
-        console.error('Failed to parse saved event filter settings:', e);
+        // Get organization and location from localStorage
+        const organizationId = localStorage.getItem('selected_organization_id') || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+        const locationId = localStorage.getItem('selected_location_id');
+        
+        // Try to load from database first
+        const response = await loadUserPreferences(organizationId, locationId);
+        
+        if (response.data) {
+          // Use database data
+          setEventFilterSettings(response.data.eventFilterSettings);
+          setCustomEventNames(response.data.customEventNames);
+        } else {
+          // No database data found, try to migrate from localStorage
+          const savedSettings = localStorage.getItem('event_filter_settings');
+          const savedCustomNames = localStorage.getItem('custom_event_names');
+          
+          if (savedSettings || savedCustomNames) {
+            try {
+              const eventFilterSettings = savedSettings ? JSON.parse(savedSettings) : {
+                showSpaceEvents: true,
+                showAlarmZoneEvents: true,
+                showAllEvents: true,
+                showOnlyAlarmZoneEvents: false,
+                selectedAlarmZones: [],
+                eventTypes: {},
+                categories: {},
+                eventTypeSettings: {}
+              };
+              
+              const customEventNames = savedCustomNames ? JSON.parse(savedCustomNames) : {};
+              
+              // Set the state immediately
+              setEventFilterSettings(eventFilterSettings);
+              setCustomEventNames(customEventNames);
+              
+              // Migrate to database in the background
+              try {
+                await saveUserPreferences(organizationId, locationId, {
+                  eventFilterSettings,
+                  customEventNames
+                });
+                
+                // Clear localStorage after successful migration
+                localStorage.removeItem('event_filter_settings');
+                localStorage.removeItem('custom_event_names');
+                console.log('Successfully migrated preferences from localStorage to database');
+              } catch (migrationError) {
+                console.error('Failed to migrate preferences to database:', migrationError);
+              }
+            } catch (e) {
+              console.error('Failed to parse localStorage settings:', e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user preferences:', error);
+        // Fallback to localStorage if database fails
+        try {
+          const savedSettings = localStorage.getItem('event_filter_settings');
+          const savedCustomNames = localStorage.getItem('custom_event_names');
+          
+          if (savedSettings) {
+            setEventFilterSettings(JSON.parse(savedSettings));
+          }
+          if (savedCustomNames) {
+            setCustomEventNames(JSON.parse(savedCustomNames));
+          }
+        } catch (e) {
+          console.error('Failed to load fallback localStorage settings:', e);
+        }
+      } finally {
+        setLoadingPreferences(false);
       }
-    }
+    };
 
-    const savedCustomNames = localStorage.getItem('custom_event_names');
-    if (savedCustomNames) {
-      try {
-        setCustomEventNames(JSON.parse(savedCustomNames));
-      } catch (e) {
-        console.error('Failed to parse saved custom event names:', e);
-      }
-    }
+    loadPreferences();
   }, []);
 
   // Load event types from API
@@ -76,14 +140,34 @@ export default function EventTimelineManagementPage() {
     loadEventTypes();
   }, []);
 
-  // Save settings to localStorage whenever they change
+  // Save settings to database whenever they change (debounced)
   useEffect(() => {
-    localStorage.setItem('event_filter_settings', JSON.stringify(eventFilterSettings));
-  }, [eventFilterSettings]);
+    if (loadingPreferences) return; // Don't save during initial load
+    
+    const savePreferencesToDatabase = async () => {
+      setSavingPreferences(true);
+      try {
+        const organizationId = localStorage.getItem('selected_organization_id') || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+        const locationId = localStorage.getItem('selected_location_id');
+        
+        await saveUserPreferences(organizationId, locationId, {
+          eventFilterSettings,
+          customEventNames
+        });
+      } catch (error) {
+        console.error('Failed to save preferences to database:', error);
+        // Fallback to localStorage if database fails
+        localStorage.setItem('event_filter_settings', JSON.stringify(eventFilterSettings));
+        localStorage.setItem('custom_event_names', JSON.stringify(customEventNames));
+      } finally {
+        setSavingPreferences(false);
+      }
+    };
 
-  useEffect(() => {
-    localStorage.setItem('custom_event_names', JSON.stringify(customEventNames));
-  }, [customEventNames]);
+    // Debounce the save operation to avoid too many database calls
+    const timeoutId = setTimeout(savePreferencesToDatabase, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [eventFilterSettings, customEventNames, loadingPreferences]);
 
   // Get display settings for an event type
   const getEventTypeSettings = (eventType: string): EventTypeDisplaySettings => {
@@ -170,26 +254,28 @@ export default function EventTimelineManagementPage() {
     return matchesSearch && matchesCategory;
   });
 
-  if (loadingEventTypes) {
+  if (loadingEventTypes || loadingPreferences) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#22c55f] mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading event types...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {loadingEventTypes ? 'Loading event types...' : 'Loading preferences...'}
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100 dark:bg-[#0f0f0f]">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-10 bg-gray-100 dark:bg-[#0f0f0f] shadow-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.back()}
+                onClick={() => router.push('/dashboard')}
                 className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +284,7 @@ export default function EventTimelineManagementPage() {
                 Back
               </button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   Event Timeline Management
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
@@ -207,32 +293,41 @@ export default function EventTimelineManagementPage() {
               </div>
             </div>
             
-            {/* Global Toggle - Using signature green */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">
-                Show All
-              </span>
-              <button
-                onClick={() => toggleShowAllEvents(!eventFilterSettings.showAllEvents)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  eventFilterSettings.showAllEvents 
-                    ? 'bg-[#22c55f]' 
-                    : 'bg-gray-200 dark:bg-gray-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    eventFilterSettings.showAllEvents ? 'translate-x-6' : 'translate-x-1'
+            {/* Global Toggle and Save Status */}
+            <div className="flex items-center space-x-4">
+              {savingPreferences && (
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#22c55f] mr-2"></div>
+                  <span className="hidden sm:inline">Saving...</span>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">
+                  Show All
+                </span>
+                <button
+                  onClick={() => toggleShowAllEvents(!eventFilterSettings.showAllEvents)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    eventFilterSettings.showAllEvents 
+                      ? 'bg-[#22c55f]' 
+                      : 'bg-gray-200 dark:bg-gray-700'
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      eventFilterSettings.showAllEvents ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters - Updated styling */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
@@ -241,14 +336,14 @@ export default function EventTimelineManagementPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search events..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-gray-100 dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
               />
             </div>
             <div className="sm:w-48">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-gray-100 dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#22c55f] focus:border-[#22c55f]"
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -263,7 +358,7 @@ export default function EventTimelineManagementPage() {
       {/* Scrollable Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Event Types ({filteredEventTypes.length})
           </h2>
           {eventFilterSettings.showAllEvents && (
@@ -281,7 +376,7 @@ export default function EventTimelineManagementPage() {
             const isEditing = editingEventName === eventType.eventType;
 
             return (
-              <div key={`${eventType.eventType}-${index}`} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+              <div key={`${eventType.eventType}-${index}`} className="bg-white dark:bg-[#1a1a1a] rounded-lg border border-gray-200 dark:border-gray-800 p-4 hover:shadow-md transition-shadow">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -293,7 +388,7 @@ export default function EventTimelineManagementPage() {
                             type="text"
                             value={editingValue}
                             onChange={(e) => setEditingValue(e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-[#22c55f] rounded focus:outline-none focus:ring-2 focus:ring-[#22c55f] dark:bg-gray-700 dark:border-[#22c55f] dark:text-gray-100"
+                            className="w-full px-2 py-1 text-sm border border-[#22c55f] rounded focus:outline-none focus:ring-2 focus:ring-[#22c55f] dark:bg-[#0f0f0f] dark:border-[#22c55f] dark:text-white"
                             autoFocus
                           />
                           <div className="flex space-x-1">
@@ -324,7 +419,7 @@ export default function EventTimelineManagementPage() {
                           className="cursor-pointer group"
                           onClick={() => startEditingEventName(eventType.eventType, displayName)}
                         >
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-[#22c55f]">
+                          <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate group-hover:text-[#22c55f]">
                             {displayName}
                             {customEventNames[eventType.eventType] && (
                               <span className="ml-1 text-xs text-[#22c55f]">✏️</span>
@@ -364,7 +459,7 @@ export default function EventTimelineManagementPage() {
                     {/* Category & Sample Devices - Compact */}
                     <div className="mb-3">
                       {eventType.category && (
-                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded mb-2">
+                        <span className="inline-block px-2 py-1 text-xs bg-gray-100 dark:bg-[#0f0f0f] text-gray-600 dark:text-gray-400 rounded mb-2">
                           {eventType.category}
                         </span>
                       )}
@@ -379,10 +474,10 @@ export default function EventTimelineManagementPage() {
                       <div className="flex space-x-1">
                         <button
                           onClick={() => updateEventTypeSettings(eventType.eventType, { displayMode: 'thumbnail' })}
-                          className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                                                      className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
                             settings.displayMode === 'thumbnail'
                               ? 'bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f]'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              : 'bg-gray-100 dark:bg-[#0f0f0f] text-gray-600 dark:text-gray-400'
                           }`}
                         >
                           📸 Image
@@ -392,7 +487,7 @@ export default function EventTimelineManagementPage() {
                           className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
                             settings.displayMode === 'icon'
                               ? 'bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f]'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              : 'bg-gray-100 dark:bg-[#0f0f0f] text-gray-600 dark:text-gray-400'
                           }`}
                         >
                           {settings.customIcon} Icon
@@ -402,7 +497,7 @@ export default function EventTimelineManagementPage() {
                       {settings.displayMode === 'icon' && (
                         <button
                           onClick={() => setShowIconPicker(eventType.eventType)}
-                          className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-xs bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                          className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-xs bg-gray-50 dark:bg-[#0f0f0f] hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                         >
                           <span>{settings.customIcon}</span>
                           <span>Change Icon</span>
@@ -411,13 +506,13 @@ export default function EventTimelineManagementPage() {
                     </div>
 
                     {/* Mini Preview */}
-                    <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs">
+                    <div className="mt-3 p-2 bg-gray-50 dark:bg-[#0f0f0f] rounded text-xs">
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs">
+                        <div className="w-6 h-6 bg-gray-200 dark:bg-gray-800 rounded flex items-center justify-center text-xs">
                           {settings.displayMode === 'thumbnail' ? '📷' : settings.customIcon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                          <div className="font-medium text-gray-900 dark:text-white truncate">
                             {displayName}
                           </div>
                         </div>
@@ -495,10 +590,10 @@ export default function EventTimelineManagementPage() {
       {/* Icon Picker Modal - Updated colors */}
       {showIconPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Choose Icon
                 </h3>
                 <button
