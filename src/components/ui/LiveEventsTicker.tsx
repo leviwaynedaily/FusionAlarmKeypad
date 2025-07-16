@@ -687,8 +687,7 @@ export function LiveEventsTicker({
           </div>
         )}
 
-        {/* Edge fades - Much more prominent and extended for clear scroll indication */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white via-white/80 via-white/60 via-white/40 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/80 dark:via-[#0f0f0f]/60 dark:via-[#0f0f0f]/40 to-transparent z-20" />
+        {/* Right fade only - Shows newest events clearly and fades toward older events */}
         <div className="pointer-events-none absolute inset-y-0 right-0 w-80 bg-gradient-to-l from-white via-white/90 via-white/75 via-white/60 via-white/45 via-white/30 dark:from-[#0f0f0f] dark:via-[#0f0f0f]/90 dark:via-[#0f0f0f]/75 dark:via-[#0f0f0f]/60 dark:via-[#0f0f0f]/45 dark:via-[#0f0f0f]/30 to-transparent z-20" />
 
         {/* Scroll button - Only right arrow to view older events */}
