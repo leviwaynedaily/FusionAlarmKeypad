@@ -620,38 +620,40 @@ function AlarmKeypad() {
   if (auth.isAuthenticated) {
     return (
       <div className="w-full h-full bg-gray-50 dark:bg-gray-900">
-        {/* Live Events Ticker */}
-        <LiveEventsTicker
-          showLiveEvents={alarmKeypad.showLiveEvents}
-          recentEvents={sse.recentEvents}
-          debugMode={debugMode}
-          cameras={alarmKeypad.cameras}
-          spaces={alarmKeypad.spaces}
-          eventFilterSettings={alarmKeypad.eventFilterSettings}
-          alarmZones={alarmKeypad.alarmZones}
-        />
+        {/* Live Events Ticker - Hidden on small screens */}
+        {!isMobile && (
+          <LiveEventsTicker
+            showLiveEvents={alarmKeypad.showLiveEvents}
+            recentEvents={sse.recentEvents}
+            debugMode={debugMode}
+            cameras={alarmKeypad.cameras}
+            spaces={alarmKeypad.spaces}
+            eventFilterSettings={alarmKeypad.eventFilterSettings}
+            alarmZones={alarmKeypad.alarmZones}
+          />
+        )}
 
         {/* Main Content */}
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <div className="w-full max-w-md">
-            {/* Greeting Header */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="flex flex-col items-center justify-center min-h-screen p-3">
+          <div className="w-full max-w-sm">
+            {/* Compact Greeting Header - Smaller on mobile */}
+            <div className={`text-center ${isMobile ? 'mb-4' : 'mb-6'}`}>
+              <h1 className={`font-bold text-gray-900 dark:text-white ${isMobile ? 'text-xl mb-1' : 'text-2xl mb-2'}`}>
                 {getTimeBasedGreeting()}, {auth.authenticatedUser}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className={`text-gray-600 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 {alarmKeypad.selectedLocation?.name}
               </p>
             </div>
 
-            {/* Alarm Zones */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            {/* Compact Alarm Zones */}
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
+              <h2 className={`font-semibold text-gray-900 dark:text-white ${isMobile ? 'text-lg mb-3' : 'text-xl mb-4'}`}>
                 Security Zones
               </h2>
               
               {alarmKeypad.alarmZones && alarmKeypad.alarmZones.length > 0 ? (
-                <div className="space-y-3">
+                <div className={`space-y-${isMobile ? '2' : '3'}`}>
                   {alarmKeypad.alarmZones.filter(zone => zone.isActive).map((zone) => {
                     const zonesWithDevices = alarmKeypad.getZonesWithDevices();
                     const zoneData = zonesWithDevices.find(z => z.id === zone.id);
@@ -660,38 +662,38 @@ function AlarmKeypad() {
                     return (
                       <div
                         key={zone.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+                        className={`flex items-center justify-between bg-gray-50 dark:bg-[#161c25] rounded-xl border border-gray-200 dark:border-gray-800 ${isMobile ? 'p-3' : 'p-4'}`}
                       >
                         <div className="flex flex-col">
-                          <span className="text-lg font-medium text-gray-900 dark:text-white">
+                          <span className={`font-medium text-gray-900 dark:text-white ${isMobile ? 'text-base' : 'text-lg'}`}>
                             {zone.name}
                           </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                          <span className={`text-gray-500 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                             {zoneData?.devices?.length || 0} device{(zoneData?.devices?.length || 0) !== 1 ? 's' : ''}
                           </span>
                         </div>
                         
-                        {/* Toggle Switch */}
+                        {/* Compact Toggle Switch */}
                         <button
                           onClick={() => handleZoneToggle(zone)}
                           disabled={alarmKeypad.isProcessing}
-                          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          className={`relative inline-flex ${isMobile ? 'h-6 w-11' : 'h-7 w-12'} items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-[#1a1a1a] ${
                             isArmed
-                              ? 'bg-red-500 focus:ring-red-500' 
-                              : 'bg-green-500 focus:ring-green-500'
-                          } ${alarmKeypad.isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              ? 'bg-rose-500 hover:bg-rose-600 focus:ring-rose-500 shadow-lg shadow-rose-500/30' 
+                              : 'bg-[#22c55f] hover:bg-[#16a34a] focus:ring-[#22c55f] shadow-lg shadow-[#22c55f]/30'
+                          } ${alarmKeypad.isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                         >
                           <span
-                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                              isArmed ? 'translate-x-7' : 'translate-x-1'
+                            className={`inline-block ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} transform rounded-full bg-white transition-transform duration-300 shadow-lg ${
+                              isArmed ? (isMobile ? 'translate-x-6' : 'translate-x-6') : 'translate-x-1'
                             }`}
                           />
                         </button>
                         
-                        {/* Status Text */}
-                        <div className="flex flex-col items-end ml-3">
-                          <span className={`text-sm font-semibold ${
-                            isArmed ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                        {/* Compact Status Text */}
+                        <div className="flex flex-col items-end ml-2">
+                          <span className={`font-bold ${isMobile ? 'text-xs' : 'text-sm'} ${
+                            isArmed ? 'text-rose-600 dark:text-rose-400' : 'text-[#22c55f]'
                           }`}>
                             {isArmed ? 'ARMED' : 'DISARMED'}
                           </span>
@@ -701,47 +703,77 @@ function AlarmKeypad() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
+                <div className="text-center py-6">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     No alarm zones configured
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex gap-3 mb-6">
+            {/* Compact Quick Actions */}
+            <div className={`flex gap-2 ${isMobile ? 'mb-3' : 'mb-4'}`}>
               <button
                 onClick={handleLogout}
-                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                className={`flex-1 bg-gray-100 dark:bg-[#161c25] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200 font-medium border border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-700 ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
               >
                 Logout
               </button>
               <button
                 onClick={handleSettingsClick}
-                className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+                className={`flex-1 bg-[#22c55f] hover:bg-[#16a34a] text-white rounded-xl transition-all duration-200 font-medium shadow-lg shadow-[#22c55f]/30 hover:shadow-[#22c55f]/40 hover:scale-105 ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
               >
                 Settings
               </button>
             </div>
 
-            {/* System Status */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+            {/* Compact System Status */}
+            <div className={`bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm ${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">System Status</span>
+                <span className={`font-medium text-gray-600 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>System Status</span>
                 <div className="flex items-center gap-2">
                   <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: systemHealth.getSystemStatusColor() }}
+                    className={`rounded-full ${isMobile ? 'w-2 h-2' : 'w-3 h-3'} shadow-lg`}
+                    style={{ 
+                      backgroundColor: systemHealth.getSystemStatusColor(),
+                      boxShadow: `0 0 8px ${systemHealth.getSystemStatusColor()}40`
+                    }}
                   />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                  <span className={`font-semibold text-gray-900 dark:text-white capitalize ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     {systemHealth.systemStatus}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Show Live Events Toggle on Mobile */}
+            {isMobile && (
+              <div className="mt-3">
+                <button
+                  onClick={() => alarmKeypad.setShowLiveEvents(!alarmKeypad.showLiveEvents)}
+                  className="w-full bg-gray-100 dark:bg-[#161c25] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-600 dark:text-gray-400 rounded-lg px-3 py-2 text-xs font-medium border border-gray-300 dark:border-gray-800 transition-all duration-200"
+                >
+                  {alarmKeypad.showLiveEvents ? 'Hide' : 'Show'} Live Events
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Mobile Live Events - Conditionally shown */}
+        {isMobile && alarmKeypad.showLiveEvents && (
+          <div className="absolute bottom-0 left-0 right-0">
+            <LiveEventsTicker
+              showLiveEvents={alarmKeypad.showLiveEvents}
+              recentEvents={sse.recentEvents}
+              debugMode={debugMode}
+              cameras={alarmKeypad.cameras}
+              spaces={alarmKeypad.spaces}
+              eventFilterSettings={alarmKeypad.eventFilterSettings}
+              alarmZones={alarmKeypad.alarmZones}
+            />
+          </div>
+        )}
 
         {/* Settings Modal */}
         <SettingsModal
@@ -770,8 +802,8 @@ function AlarmKeypad() {
             alarmKeypad.setHighlightPinButtons(value);
             localStorage.setItem('highlight_pin_buttons', value.toString());
           }}
-                     sseConnected={sse.isConnected}
-           lastSSEEvent={sse.lastSSEEvent}
+          sseConnected={sse.isConnected}
+          lastSSEEvent={sse.lastSSEEvent}
           showLiveEvents={alarmKeypad.showLiveEvents}
           onShowLiveEventsChange={(value) => {
             alarmKeypad.setShowLiveEvents(value);
