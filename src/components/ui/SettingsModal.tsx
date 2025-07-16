@@ -465,7 +465,7 @@ export function SettingsModal({
 
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-xs text-blue-800 dark:text-blue-200">
-                    💡 Tip: Toggle off event types you don't want to see in the alarm keypad. More event types can be added in the future.
+                    💡 Tip: Toggle off event types you don&apos;t want to see in the alarm keypad. More event types can be added in the future.
                   </p>
                 </div>
               </div>
