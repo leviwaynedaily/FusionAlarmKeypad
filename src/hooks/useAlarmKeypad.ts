@@ -14,7 +14,9 @@ import {
   armDevices,
   disarmDevices,
   getAlarmZones,
-  getCameras
+  getCameras,
+  saveUserPreferences,
+  loadUserPreferences
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { analytics } from '@/lib/analytics';
@@ -369,35 +371,86 @@ export function useAlarmKeypad() {
   };
 
   // Event filter settings management
-  const updateEventFilterSettings = (newSettings: Partial<EventFilterSettings>) => {
+  const updateEventFilterSettings = async (newSettings: Partial<EventFilterSettings>) => {
     const updated = { ...eventFilterSettings, ...newSettings };
     setEventFilterSettings(updated);
-    // Save to localStorage
+    
+    // Save to localStorage as backup
     localStorage.setItem('event_filter_settings', JSON.stringify(updated));
+    
+    // Save to database if we have organization context
+    if (organization?.id) {
+      try {
+        await saveUserPreferences(
+          organization.id,
+          selectedLocation?.id || null,
+          'default', // userId - using default for now
+          updated,
+          {} // customEventNames - empty for now
+        );
+        logger.info('Event filter settings saved to database');
+      } catch (error) {
+        logger.error('Failed to save event filter settings to database:', error);
+        // Settings are still saved to localStorage as fallback
+      }
+    }
   };
 
-  // Load event filter settings from localStorage
+  // Load event filter settings from database (with localStorage fallback)
   useEffect(() => {
-    const savedSettings = localStorage.getItem('event_filter_settings');
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        // Ensure all required fields exist with defaults
+    const loadEventFilterSettings = async () => {
+      let loadedSettings = null;
+      
+      // First try to load from database if we have organization context
+      if (organization?.id) {
+        try {
+          const response = await loadUserPreferences(
+            organization.id,
+            selectedLocation?.id || null,
+            'default' // userId - using default for now
+          );
+          
+          if (response.data?.eventFilterSettings) {
+            loadedSettings = response.data.eventFilterSettings;
+            logger.info('Event filter settings loaded from database');
+          }
+        } catch (error) {
+          logger.error('Failed to load event filter settings from database:', error);
+        }
+      }
+      
+      // Fallback to localStorage if database load failed
+      if (!loadedSettings) {
+        const savedSettings = localStorage.getItem('event_filter_settings');
+        if (savedSettings) {
+          try {
+            loadedSettings = JSON.parse(savedSettings);
+            logger.info('Event filter settings loaded from localStorage');
+          } catch (error) {
+            logger.error('Error parsing event filter settings from localStorage:', error);
+          }
+        }
+      }
+      
+      // Apply loaded settings with defaults
+      if (loadedSettings) {
         const settingsWithDefaults = {
           showSpaceEvents: true,
           showAlarmZoneEvents: true,
           showAllEvents: true,
+          showOnlyAlarmZoneEvents: false,
+          selectedAlarmZones: [],
           eventTypes: {},
           categories: {},
           eventTypeSettings: {},
-          ...parsed
+          ...loadedSettings
         };
         setEventFilterSettings(settingsWithDefaults);
-      } catch (error) {
-        logger.error('Error parsing event filter settings:', error);
       }
-    }
-  }, []);
+    };
+
+    loadEventFilterSettings();
+  }, [organization?.id, selectedLocation?.id]);
 
   // SSE event handlers for real-time updates
   useEffect(() => {
