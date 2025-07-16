@@ -55,13 +55,13 @@ export function ZoneStatus({
             {activeSpacesCount > 0 ? (
               <>
                 <span className="text-xs text-[#22c55f]">
-                  {activeSpacesCount} Space{activeSpacesCount !== 1 ? 's' : ''}
+                  {activeSpacesCount} Zone{activeSpacesCount !== 1 ? 's' : ''}
                 </span>
                 <div className="w-2 h-2 bg-[#22c55f] rounded-full"></div>
               </>
             ) : (
               <>
-                <span className="text-xs text-gray-500">No Spaces</span>
+                <span className="text-xs text-gray-500">No Zones</span>
                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               </>
             )}

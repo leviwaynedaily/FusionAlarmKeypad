@@ -13,6 +13,20 @@ export function Clock({
   selectedLocation, 
   showSeconds 
 }: ClockProps) {
+  // Format time to show/hide seconds based on showSeconds prop
+  const formatTime = (timeString: string) => {
+    if (!showSeconds && timeString.includes(':')) {
+      // Remove seconds from time string (e.g., "09:04:37 AM" -> "09:04 AM")
+      const parts = timeString.split(':');
+      if (parts.length === 3) {
+        const lastPart = parts[2]; // "37 AM"
+        const amPm = lastPart.includes(' ') ? ' ' + lastPart.split(' ')[1] : '';
+        return parts[0] + ':' + parts[1] + amPm;
+      }
+    }
+    return timeString;
+  };
+
   return (
     <div className="flex-shrink-0 px-4 pt-8 pb-4">
       <div className="text-center">
@@ -20,7 +34,7 @@ export function Clock({
           {currentDate}
         </div>
         <div className="text-4xl font-light text-gray-900 dark:text-white">
-          {currentTime}
+          {formatTime(currentTime)}
         </div>
         {selectedLocation && (
           <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">

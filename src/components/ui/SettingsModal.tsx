@@ -29,9 +29,7 @@ interface SettingsModalProps {
   highlightPinButtons: boolean;
   onHighlightPinButtonsChange: (value: boolean) => void;
   
-  // SSE and events
-  sseEnabled: boolean;
-  onSSEEnabledChange: (value: boolean) => void;
+  // SSE status (read-only for display)
   sseConnected: boolean;
   lastSSEEvent: string;
   showLiveEvents: boolean;
@@ -85,8 +83,6 @@ export function SettingsModal({
   onShowSecondsChange,
   highlightPinButtons,
   onHighlightPinButtonsChange,
-  sseEnabled,
-  onSSEEnabledChange,
   sseConnected,
   lastSSEEvent,
   showLiveEvents,
@@ -143,48 +139,54 @@ export function SettingsModal({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
 
-              {/* Organization Section */}
-              {organization && (
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Organization</h3>
-                  <div className="space-y-1">
-                    <p className="text-base text-gray-900 dark:text-white font-medium">{organization.name}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">ID: {organization.id}</p>
-                    {organization.slug && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Slug: {organization.slug}</p>
-                    )}
+              {/* Organization and Location Section - Combined */}
+              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Organization & Location</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Organization Info */}
+                  {organization && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Organization</h4>
+                      <div className="space-y-1">
+                        <p className="text-base text-gray-900 dark:text-white font-medium">{organization.name}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">ID: {organization.id}</p>
+                        {organization.slug && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Slug: {organization.slug}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Current Location */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Location</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{selectedLocation?.name || 'No location selected'}</p>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mb-2 space-y-1">
+                      {selectedLocation?.addressPostalCode && (
+                        <p>Postal Code: {selectedLocation.addressPostalCode}</p>
+                      )}
+                      {weather && (
+                        <p>Weather: {weather.temp}°F</p>
+                      )}
+                      <p>
+                        Timezone: {selectedLocation?.timeZone ? (
+                          <span className="text-[#22c55f]">{selectedLocation.timeZone}</span>
+                        ) : (
+                          <span className="text-amber-500">Not specified</span>
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onLocationChange();
+                      }}
+                      className="px-4 py-2 bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f] rounded-md text-sm hover:bg-[#22c55f]/20 transition-all font-medium"
+                    >
+                      Change Location
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* Location Section */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Current Location</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{selectedLocation?.name || 'No location selected'}</p>
-                <div className="text-xs text-gray-500 dark:text-gray-500 mb-2 space-y-1">
-                  {selectedLocation?.addressPostalCode && (
-                    <p>Postal Code: {selectedLocation.addressPostalCode}</p>
-                  )}
-                  {weather && (
-                    <p>Weather: {weather.temp}°F</p>
-                  )}
-                  <p>
-                    Timezone: {selectedLocation?.timeZone ? (
-                      <span className="text-[#22c55f]">{selectedLocation.timeZone}</span>
-                    ) : (
-                      <span className="text-amber-500">Not specified</span>
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    onClose();
-                    onLocationChange();
-                  }}
-                  className="px-4 py-2 bg-[#22c55f]/10 text-[#22c55f] border border-[#22c55f] rounded-md text-sm hover:bg-[#22c55f]/20 transition-all font-medium"
-                >
-                  Change Location
-                </button>
               </div>
 
               {/* Display Options */}
@@ -251,40 +253,11 @@ export function SettingsModal({
                     </button>
                   </div>
 
-                  {/* Real-time Events (SSE) */}
+                  {/* Show Timeline on Main Screen */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-900 dark:text-white">Real-time Updates (SSE)</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Use real-time event streaming instead of polling
-                        {sseConnected && <span className="text-[#22c55f] ml-1">• Connected</span>}
-                        {!sseConnected && sseEnabled && <span className="text-amber-500 ml-1">• Connecting...</span>}
-                      </p>
-                      {lastSSEEvent && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          Last: {lastSSEEvent}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => onSSEEnabledChange(!sseEnabled)}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        sseEnabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          sseEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Show Live Events on Main Screen */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-900 dark:text-white">Show Live Events on Main Screen</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Display recent activity ticker on alarm screen</p>
+                      <p className="text-sm text-gray-900 dark:text-white">Show Timeline on Main Screen</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Display recent activity timeline on alarm screen</p>
                     </div>
                     <button
                       onClick={() => onShowLiveEventsChange(!showLiveEvents)}
@@ -325,8 +298,9 @@ export function SettingsModal({
                 </div>
               </div>
 
-              {/* Event Display Settings - Simple Toggle Interface */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+              {/* Event Display Settings - Only show when Timeline is enabled */}
+              {showLiveEvents && (
+                <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Event Display Settings</h3>
@@ -335,10 +309,21 @@ export function SettingsModal({
                   <div className="flex items-center space-x-2">
                     <span className="text-xs text-gray-600 dark:text-gray-400">Show All Events:</span>
                     <button
-                      onClick={() => onEventFilterSettingsChange({
-                        ...eventFilterSettings,
-                        showAllEvents: !eventFilterSettings.showAllEvents
-                      })}
+                      onClick={() => {
+                        const newShowAll = !eventFilterSettings.showAllEvents;
+                        // When toggling "Show All", set all individual event types to match
+                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
+                        const newEventTypes: Record<string, boolean> = {};
+                        allEventTypes.forEach(type => {
+                          newEventTypes[type] = newShowAll;
+                        });
+                        
+                        onEventFilterSettingsChange({
+                          ...eventFilterSettings,
+                          showAllEvents: newShowAll,
+                          eventTypes: newEventTypes
+                        });
+                      }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
                         eventFilterSettings.showAllEvents ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
                       }`}
@@ -367,9 +352,16 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'connection': !(eventFilterSettings.eventTypes['connection'] ?? true) };
+                        // Check if all event types are enabled after this change
+                        const allEnabled = (newEventTypes['connection'] ?? true) &&
+                          (eventFilterSettings.eventTypes['device check-in'] ?? true) &&
+                          (eventFilterSettings.eventTypes['intrusion detected'] ?? true) &&
+                          (eventFilterSettings.eventTypes['State Changed'] ?? true);
+                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes
+                          eventTypes: newEventTypes,
+                          showAllEvents: allEnabled
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -393,9 +385,18 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'device check-in': !(eventFilterSettings.eventTypes['device check-in'] ?? true) };
+                        // Check if all event types are enabled after this change
+                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
+                        const allEnabled = allEventTypes.every(type => 
+                          type === 'device check-in' 
+                            ? newEventTypes['device check-in'] 
+                            : (newEventTypes[type] ?? true)
+                        );
+                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes
+                          eventTypes: newEventTypes,
+                          showAllEvents: allEnabled
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -419,9 +420,18 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'intrusion detected': !(eventFilterSettings.eventTypes['intrusion detected'] ?? true) };
+                        // Check if all event types are enabled after this change
+                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
+                        const allEnabled = allEventTypes.every(type => 
+                          type === 'intrusion detected' 
+                            ? newEventTypes['intrusion detected'] 
+                            : (newEventTypes[type] ?? true)
+                        );
+                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes
+                          eventTypes: newEventTypes,
+                          showAllEvents: allEnabled
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -445,9 +455,18 @@ export function SettingsModal({
                     <button
                       onClick={() => {
                         const newEventTypes = { ...eventFilterSettings.eventTypes, 'State Changed': !(eventFilterSettings.eventTypes['State Changed'] ?? true) };
+                        // Check if all event types are enabled after this change
+                        const allEventTypes = ['connection', 'device check-in', 'intrusion detected', 'State Changed'];
+                        const allEnabled = allEventTypes.every(type => 
+                          type === 'State Changed' 
+                            ? newEventTypes['State Changed'] 
+                            : (newEventTypes[type] ?? true)
+                        );
+                        
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          eventTypes: newEventTypes
+                          eventTypes: newEventTypes,
+                          showAllEvents: allEnabled
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
@@ -468,7 +487,8 @@ export function SettingsModal({
                     💡 Tip: Toggle off event types you don&apos;t want to see in the alarm keypad. More event types can be added in the future.
                   </p>
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* Display Options Continued */}
               <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
@@ -557,7 +577,7 @@ export function SettingsModal({
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-600 dark:text-gray-400">Real-time Events:</span>
                         <span className={`text-xs ${sseConnected ? 'text-[#22c55f]' : 'text-amber-500'}`}>
-                          {sseEnabled ? (sseConnected ? '✅ Connected' : '⏳ Connecting...') : '⚠️ Disabled (Polling)'}
+                          {sseConnected ? '✅ Connected' : '⏳ Connecting...'}
                         </span>
                       </div>
 

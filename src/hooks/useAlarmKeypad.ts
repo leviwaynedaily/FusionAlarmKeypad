@@ -65,6 +65,7 @@ export function useAlarmKeypad() {
   const [showZonesPreview, setShowZonesPreview] = useState(true);
   const [showSeconds, setShowSeconds] = useState(true);
   const [highlightPinButtons, setHighlightPinButtons] = useState(true);
+  const [showLiveEvents, setShowLiveEvents] = useState(true); // Default to true
   const [showWarningConfirm, setShowWarningConfirm] = useState(false);
   const [showWarningDetails, setShowWarningDetails] = useState<string | null>(null);
   const [useDesign2, setUseDesign2] = useState(false);
@@ -82,6 +83,11 @@ export function useAlarmKeypad() {
     categories: {},
     eventTypeSettings: {}
   });
+
+  // Save showLiveEvents setting to localStorage
+  useEffect(() => {
+    localStorage.setItem('show_timeline', showLiveEvents.toString());
+  }, [showLiveEvents]);
 
   // Device and space state
   const [deviceWarnings, setDeviceWarnings] = useState<string[]>([]);
@@ -250,6 +256,21 @@ export function useAlarmKeypad() {
       const savedShowZones = localStorage.getItem('show_zones_preview');
       if (savedShowZones !== null) {
         setShowZonesPreview(savedShowZones === 'true');
+      }
+
+      // Load show live events setting (renamed from show_live_events to show_timeline)
+      const savedShowTimeline = localStorage.getItem('show_timeline');
+      if (savedShowTimeline !== null) {
+        setShowLiveEvents(savedShowTimeline === 'true');
+      } else {
+        // Migration: check old key and migrate
+        const oldSavedShowLiveEvents = localStorage.getItem('show_live_events');
+        if (oldSavedShowLiveEvents !== null) {
+          const value = oldSavedShowLiveEvents === 'true';
+          setShowLiveEvents(value);
+          localStorage.setItem('show_timeline', value.toString());
+          localStorage.removeItem('show_live_events'); // Clean up old key
+        }
       }
 
       // Load test design settings
@@ -966,6 +987,8 @@ export function useAlarmKeypad() {
     setShowSeconds,
     highlightPinButtons,
     setHighlightPinButtons,
+    showLiveEvents,
+    setShowLiveEvents,
     showWarningConfirm,
     setShowWarningConfirm,
     showWarningDetails,

@@ -765,7 +765,7 @@ function AlarmKeypad() {
 
       {/* Live Events Ticker */}
       <LiveEventsTicker
-        showLiveEvents={sse.showLiveEvents}
+        showLiveEvents={alarmKeypad.showLiveEvents}
         recentEvents={sse.recentEvents}
         debugMode={debugMode}
         cameras={alarmKeypad.cameras}
@@ -890,12 +890,11 @@ function AlarmKeypad() {
         onShowSecondsChange={alarmKeypad.setShowSeconds}
         highlightPinButtons={alarmKeypad.highlightPinButtons}
         onHighlightPinButtonsChange={alarmKeypad.setHighlightPinButtons}
-        sseEnabled={sse.sseEnabled}
-        onSSEEnabledChange={sse.setSSEEnabled}
+
         sseConnected={sse.sseConnected}
         lastSSEEvent={sse.lastSSEEvent}
-        showLiveEvents={sse.showLiveEvents}
-        onShowLiveEventsChange={sse.setShowLiveEvents}
+        showLiveEvents={alarmKeypad.showLiveEvents}
+        onShowLiveEventsChange={alarmKeypad.setShowLiveEvents}
         debugMode={debugMode}
         onDebugModeChange={handleDebugModeChange}
         eventFilterSettings={alarmKeypad.eventFilterSettings}
