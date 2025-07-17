@@ -47,7 +47,7 @@ export function ZoneStatus({
             </div>
           ) : !useDesign2 ? (
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Zone Status
+              Alarm Zones
             </span>
           ) : null}
           

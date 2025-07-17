@@ -83,7 +83,7 @@ export function DesktopLayout({
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto md:mx-0 md:items-start">
           <div className="mb-2 text-lg text-gray-500 dark:text-gray-400">{currentDate}</div>
           <div className="text-6xl md:text-7xl font-thin text-gray-900 dark:text-white mb-6">{currentTime}</div>
-          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Zone Status</div>
+          <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Alarm Zones</div>
           <div className="space-y-2 w-full">
             {areas.length === 0 && (
               <div className="text-gray-400 text-sm">No alarm zones configured</div>
