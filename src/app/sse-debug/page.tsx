@@ -190,7 +190,21 @@ export default function SSEDebugPage() {
               if (currentEvent.data) {
                 try {
                   const data = JSON.parse(currentEvent.data);
-                  addEvent(data, currentEvent.event || 'unknown');
+                  // Determine a more meaningful event type instead of "unknown"
+                  let eventType = currentEvent.event || 'unknown';
+                  if (eventType === 'unknown' && data) {
+                    // Try to extract meaningful event type from data
+                    if (data.event?.type) {
+                      eventType = data.event.type;
+                    } else if (data.event?.category) {
+                      eventType = data.event.category;
+                    } else if (data.deviceName) {
+                      eventType = 'device_event';
+                    } else {
+                      eventType = 'data_event';
+                    }
+                  }
+                  addEvent(data, eventType);
                 } catch (e) {
                   console.error('🔍 SSE Debug: JSON parse error:', e);
                 }

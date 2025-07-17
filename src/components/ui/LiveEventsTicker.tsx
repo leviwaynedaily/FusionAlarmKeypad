@@ -805,28 +805,52 @@ export function LiveEventsTicker({
                   return { primaryLabel, secondaryLabel };
                 }
                 
-                // For state changes - show the actual state change
+                // For state changes - show the actual state change with device-specific handling
                 if (parsedEventType.type === 'State Changed') {
                   const state = parsedEventType.displayState || parsedEventType.intermediateState;
-                  if (state) {
-                    if (/on|open/i.test(state)) {
-                      primaryLabel = 'State Changed';
-                      secondaryLabel = 'Turned On';
-                      type = 'light_on';
-                    } else if (/off|closed/i.test(state)) {
-                      primaryLabel = 'State Changed';
-                      secondaryLabel = 'Turned Off';
-                      type = 'light_off';
-                    } else if (/error/i.test(state)) {
-                      primaryLabel = 'State Changed';
-                      secondaryLabel = 'Error State';
+                  
+                  // Check if this is a light device (matching events page logic)
+                  const lowerDeviceName = deviceName.toLowerCase();
+                  const isLightDevice = lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp');
+                  
+                  if (isLightDevice) {
+                    // For lights, use device name as primary and show on/off state
+                    primaryLabel = deviceName;
+                    if (state) {
+                      if (/on|open/i.test(state)) {
+                        secondaryLabel = 'Turned On';
+                        type = 'light_on';
+                      } else if (/off|closed/i.test(state)) {
+                        secondaryLabel = 'Turned Off';
+                        type = 'light_off';
+                      } else {
+                        secondaryLabel = state.charAt(0).toUpperCase() + state.slice(1);
+                      }
                     } else {
-                      primaryLabel = 'State Changed';
-                      secondaryLabel = state.charAt(0).toUpperCase() + state.slice(1);
+                      secondaryLabel = 'State Changed';
                     }
                   } else {
-                    primaryLabel = 'State Changed';
-                    secondaryLabel = 'Status Update';
+                    // For non-light devices, keep existing behavior
+                    if (state) {
+                      if (/on|open/i.test(state)) {
+                        primaryLabel = 'State Changed';
+                        secondaryLabel = 'Turned On';
+                        type = 'light_on';
+                      } else if (/off|closed/i.test(state)) {
+                        primaryLabel = 'State Changed';
+                        secondaryLabel = 'Turned Off';
+                        type = 'light_off';
+                      } else if (/error/i.test(state)) {
+                        primaryLabel = 'State Changed';
+                        secondaryLabel = 'Error State';
+                      } else {
+                        primaryLabel = 'State Changed';
+                        secondaryLabel = state.charAt(0).toUpperCase() + state.slice(1);
+                      }
+                    } else {
+                      primaryLabel = 'State Changed';
+                      secondaryLabel = 'Status Update';
+                    }
                   }
                   
                   return { primaryLabel, secondaryLabel };
@@ -1014,13 +1038,33 @@ export function LiveEventsTicker({
                 return { primaryLabel, secondaryLabel };
               }
 
-              // Fallback - use formatted event type or state
+              // Fallback - use formatted event type or state with light device detection
+              const lowerDeviceName = deviceName.toLowerCase();
+              const isLightDevice = lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp');
+              
               if (rawState) {
-                primaryLabel = 'Device Update';
-                secondaryLabel = rawState.charAt(0).toUpperCase() + rawState.slice(1);
+                if (isLightDevice) {
+                  // For lights, use device name as primary and interpret state
+                  primaryLabel = deviceName;
+                  if (/on|open/i.test(rawState)) {
+                    secondaryLabel = 'Turned On';
+                  } else if (/off|closed/i.test(rawState)) {
+                    secondaryLabel = 'Turned Off';
+                  } else {
+                    secondaryLabel = rawState.charAt(0).toUpperCase() + rawState.slice(1);
+                  }
+                } else {
+                  primaryLabel = 'Device Update';
+                  secondaryLabel = rawState.charAt(0).toUpperCase() + rawState.slice(1);
+                }
               } else {
-                primaryLabel = 'System Event';
-                secondaryLabel = 'Status Update';
+                if (isLightDevice) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'Status Update';
+                } else {
+                  primaryLabel = 'System Event';
+                  secondaryLabel = 'Status Update';
+                }
               }
               
               return { primaryLabel, secondaryLabel };
