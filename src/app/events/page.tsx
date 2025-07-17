@@ -153,6 +153,66 @@ export default function EventsPage() {
     return deviceKeywords.some(keyword => deviceName.includes(keyword));
   };
 
+  // Enhanced device type detection
+  const detectDeviceType = (deviceName: string): string => {
+    const lowerName = deviceName.toLowerCase();
+    
+    // Light devices (most specific first)
+    if (lowerName.includes('light') || lowerName.includes('bulb') || lowerName.includes('lamp')) {
+      return 'light';
+    }
+    
+    // Switch devices
+    if (lowerName.includes('switch')) {
+      return 'switch';
+    }
+    
+    // Outlet/plug devices
+    if (lowerName.includes('outlet') || lowerName.includes('plug') || lowerName.includes('socket')) {
+      return 'outlet';
+    }
+    
+    // Fan devices
+    if (lowerName.includes('fan')) {
+      return 'fan';
+    }
+    
+    // Dimmer devices
+    if (lowerName.includes('dimmer')) {
+      return 'dimmer';
+    }
+    
+    // Door devices
+    if (lowerName.includes('door') || lowerName.includes('garage')) {
+      return 'door';
+    }
+    
+    // Lock devices
+    if (lowerName.includes('lock')) {
+      return 'lock';
+    }
+    
+    return 'unknown';
+  };
+
+  // Enhanced state detection
+  const normalizeState = (state: string): string => {
+    if (!state) return '';
+    const lowerState = state.toLowerCase();
+    
+    // On states
+    if (/^(on|open|opened|active|enabled|armed|true|1|yes|up|high)$/i.test(lowerState)) {
+      return 'on';
+    }
+    
+    // Off states  
+    if (/^(off|closed|inactive|disabled|disarmed|false|0|no|down|low)$/i.test(lowerState)) {
+      return 'off';
+    }
+    
+    return lowerState;
+  };
+
   const processEvent = (rawData: any, eventType: string): ProcessedEvent => {
     const timestamp = new Date(rawData.timestamp || Date.now());
     const eventUuid = rawData.eventUuid || `${eventType}-${Date.now()}`;
@@ -166,58 +226,51 @@ export default function EventsPage() {
     if (isDeviceStateEvent(rawData)) {
       const deviceName = rawData.deviceName || 'Unknown Device';
       const deviceState = extractDeviceState(rawData);
-      const lowerDeviceName = deviceName.toLowerCase();
+      const deviceType = detectDeviceType(deviceName);
+      const normalizedState = normalizeState(deviceState);
       
-      // Create clean event messages based on device type and state
-      if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
-        if (deviceState === 'On') {
-          title = 'Light Turned On';
+      // Create clean event messages based on device type and state using consistent format
+      if (['light', 'switch', 'outlet', 'fan'].includes(deviceType)) {
+        // For controllable devices, use "Device Name turned On/Off" format
+        if (normalizedState === 'on') {
+          title = `${deviceName} turned On`;
           description = `${deviceName} turned on`;
-        } else if (deviceState === 'Off') {
-          title = 'Light Turned Off';
+        } else if (normalizedState === 'off') {
+          title = `${deviceName} turned Off`;
           description = `${deviceName} turned off`;
         } else {
-          title = 'Light State Changed';
+          title = `${deviceName} State Changed`;
           description = `${deviceName} changed to ${deviceState}`;
         }
-      } else if (lowerDeviceName.includes('switch')) {
-        if (deviceState === 'On') {
-          title = 'Switch Turned On';
-          description = `${deviceName} turned on`;
-        } else if (deviceState === 'Off') {
-          title = 'Switch Turned Off';
-          description = `${deviceName} turned off`;
+      } else if (deviceType === 'door') {
+        // For doors, use action-based descriptions
+        if (normalizedState === 'on') {
+          title = `${deviceName} Opened`;
+          description = `${deviceName} was opened`;
+        } else if (normalizedState === 'off') {
+          title = `${deviceName} Closed`;
+          description = `${deviceName} was closed`;
         } else {
-          title = 'Switch State Changed';
+          title = `${deviceName} State Changed`;
           description = `${deviceName} changed to ${deviceState}`;
         }
-      } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
-        if (deviceState === 'On') {
-          title = 'Outlet Turned On';
-          description = `${deviceName} turned on`;
-        } else if (deviceState === 'Off') {
-          title = 'Outlet Turned Off';
-          description = `${deviceName} turned off`;
+      } else if (deviceType === 'lock') {
+        // For locks, use action-based descriptions
+        if (deviceState && /unlock/i.test(deviceState)) {
+          title = `${deviceName} Unlocked`;
+          description = `${deviceName} was unlocked`;
+        } else if (deviceState && /lock/i.test(deviceState)) {
+          title = `${deviceName} Locked`;
+          description = `${deviceName} was locked`;
         } else {
-          title = 'Outlet State Changed';
+          title = `${deviceName} State Changed`;
           description = `${deviceName} changed to ${deviceState}`;
         }
-      } else if (lowerDeviceName.includes('fan')) {
-        if (deviceState === 'On') {
-          title = 'Fan Turned On';
-          description = `${deviceName} turned on`;
-        } else if (deviceState === 'Off') {
-          title = 'Fan Turned Off';
-          description = `${deviceName} turned off`;
-        } else {
-          title = 'Fan State Changed';
-          description = `${deviceName} changed to ${deviceState}`;
-        }
-      } else if (lowerDeviceName.includes('dimmer')) {
-        title = 'Dimmer State Changed';
+      } else if (deviceType === 'dimmer') {
+        title = `${deviceName} Adjusted`;
         description = `${deviceName} changed to ${deviceState}`;
       } else {
-        title = 'Device State Changed';
+        title = `${deviceName} Updated`;
         description = `${deviceName} changed to ${deviceState}`;
       }
       
@@ -244,68 +297,44 @@ export default function EventsPage() {
         case 'device_state_change':
           const deviceName = rawData.deviceName || 'Unknown Device';
           const displayState = extractDeviceState(rawData);
-          const lowerDeviceName = deviceName.toLowerCase();
+          const deviceType = detectDeviceType(deviceName);
+          const normalizedState = normalizeState(displayState);
           
-          if (lowerDeviceName.includes('door')) {
+          if (deviceType === 'door') {
             const mappedState = mapRawStateToDisplayState(displayState);
-            title = mappedState === 'Open' || mappedState === 'On' ? 'Door Opened' : 'Door Closed';
-            description = `${deviceName} was ${mappedState === 'Open' || mappedState === 'On' ? 'opened' : 'closed'}`;
+            title = normalizedState === 'on' ? `${deviceName} Opened` : `${deviceName} Closed`;
+            description = `${deviceName} was ${normalizedState === 'on' ? 'opened' : 'closed'}`;
             category = 'security';
             severity = 'medium';
-          } else if (lowerDeviceName.includes('light') || lowerDeviceName.includes('bulb') || lowerDeviceName.includes('lamp')) {
-            if (displayState === 'On') {
-              title = 'Light Turned On';
+          } else if (['light', 'switch', 'outlet', 'fan'].includes(deviceType)) {
+            // For controllable devices, use "Device Name turned On/Off" format
+            if (normalizedState === 'on') {
+              title = `${deviceName} turned On`;
               description = `${deviceName} turned on`;
-            } else if (displayState === 'Off') {
-              title = 'Light Turned Off';
+            } else if (normalizedState === 'off') {
+              title = `${deviceName} turned Off`;
               description = `${deviceName} turned off`;
             } else {
-              title = 'Light State Changed';
+              title = `${deviceName} State Changed`;
               description = `${deviceName} changed to ${displayState}`;
             }
             category = 'device';
             severity = 'low';
-          } else if (lowerDeviceName.includes('switch')) {
-            if (displayState === 'On') {
-              title = 'Switch Turned On';
-              description = `${deviceName} turned on`;
-            } else if (displayState === 'Off') {
-              title = 'Switch Turned Off';
-              description = `${deviceName} turned off`;
+          } else if (deviceType === 'lock') {
+            if (displayState && /unlock/i.test(displayState)) {
+              title = `${deviceName} Unlocked`;
+              description = `${deviceName} was unlocked`;
+            } else if (displayState && /lock/i.test(displayState)) {
+              title = `${deviceName} Locked`;
+              description = `${deviceName} was locked`;
             } else {
-              title = 'Switch State Changed';
+              title = `${deviceName} State Changed`;
               description = `${deviceName} changed to ${displayState}`;
             }
-            category = 'device';
-            severity = 'low';
-          } else if (lowerDeviceName.includes('outlet') || lowerDeviceName.includes('plug') || lowerDeviceName.includes('socket')) {
-            if (displayState === 'On') {
-              title = 'Outlet Turned On';
-              description = `${deviceName} turned on`;
-            } else if (displayState === 'Off') {
-              title = 'Outlet Turned Off';
-              description = `${deviceName} turned off`;
-            } else {
-              title = 'Outlet State Changed';
-              description = `${deviceName} changed to ${displayState}`;
-            }
-            category = 'device';
-            severity = 'low';
-          } else if (lowerDeviceName.includes('fan')) {
-            if (displayState === 'On') {
-              title = 'Fan Turned On';
-              description = `${deviceName} turned on`;
-            } else if (displayState === 'Off') {
-              title = 'Fan Turned Off';
-              description = `${deviceName} turned off`;
-            } else {
-              title = 'Fan State Changed';
-              description = `${deviceName} changed to ${displayState}`;
-            }
-            category = 'device';
-            severity = 'low';
+            category = 'security';
+            severity = 'medium';
           } else {
-            title = 'Device State Changed';
+            title = `${deviceName} Updated`;
             description = `${deviceName} changed to ${displayState}`;
             category = 'device';
             severity = 'low';
