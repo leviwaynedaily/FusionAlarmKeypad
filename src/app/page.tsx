@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { analytics } from '@/lib/analytics';
 import { performanceMonitor } from '@/lib/performance';
+import { addAlarmZoneTestFunctions } from '@/lib/utils';
 import { 
   useAlarmKeypad,
   useAuthentication,
@@ -150,6 +151,13 @@ function SSEConnectionManager({ organization, apiKey }: { organization: any; api
       hasApiKey: !!apiKey
     });
   }, [autoStartStatus, retryCount, lastError, organization, apiKey, debugLog]);
+
+  // 🔒 Add alarm zone test functions in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      addAlarmZoneTestFunctions();
+    }
+  }, []);
 
   // 🔍 Component lifecycle monitoring
   useEffect(() => {

@@ -31,3 +31,35 @@ export const isDebugMode = (): boolean => {
   }
   return false;
 };
+
+// 🔒 Alarm Zone Testing Utilities
+export const testAlarmZoneEvent = (deviceName: string, eventType: 'armed' | 'disarmed' = 'armed') => {
+  if (typeof window !== 'undefined') {
+    const testEvent = {
+      type: eventType,
+      category: 'security',
+      deviceName,
+      spaceName: 'Test Space',
+      displayState: eventType === 'armed' ? 'Armed Away' : 'Disarmed',
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('🔒 Test: Dispatching alarm zone event:', testEvent);
+    
+    window.dispatchEvent(new CustomEvent('alarmZoneStateChange', {
+      detail: testEvent
+    }));
+  }
+};
+
+// Helper to add test functions to window for easy console access
+export const addAlarmZoneTestFunctions = () => {
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    (window as any).testAlarmZoneArmed = (deviceName: string) => testAlarmZoneEvent(deviceName, 'armed');
+    (window as any).testAlarmZoneDisarmed = (deviceName: string) => testAlarmZoneEvent(deviceName, 'disarmed');
+    
+    console.log('🔒 Test functions added to window:');
+    console.log('• testAlarmZoneArmed("Device Name")');
+    console.log('• testAlarmZoneDisarmed("Device Name")');
+  }
+};

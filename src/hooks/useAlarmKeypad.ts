@@ -121,9 +121,50 @@ export function useAlarmKeypad() {
         displayState
       });
       
-      // For now, just refresh alarm zones when we detect changes
-      // Later we can implement more specific zone updates
+      // Try to update specific zones more efficiently
+      if (deviceName) {
+        // Find which alarm zone contains this device
+        const affectedZones = alarmZones.filter(zone => 
+          zone.deviceIds?.some(deviceId => 
+            devices.find(device => device.id === deviceId && device.name === deviceName)
+          )
+        );
+        
+        if (affectedZones.length > 0) {
+          console.log('🔒 Found affected alarm zones:', affectedZones.map(z => z.name));
+          
+          // Update device state in local state
+          setDevices(prev => prev.map(device => {
+            if (device.name === deviceName) {
+              const newArmedState = type?.toLowerCase().includes('disarm') ? 'DISARMED' : 
+                                   type?.toLowerCase().includes('arm') ? 'ARMED_AWAY' : 
+                                   device.armedState;
+              return { ...device, armedState: newArmedState };
+            }
+            return device;
+          }));
+          
+          // Update alarm zone states based on their device states
+          setAlarmZones(prev => prev.map(zone => {
+            if (affectedZones.some(az => az.id === zone.id)) {
+              const zoneDevices = devices.filter(device => 
+                zone.deviceIds?.includes(device.id)
+              );
+              const armedDevices = zoneDevices.filter(d => d.armedState !== 'DISARMED');
+              const newZoneState = armedDevices.length > 0 ? 'ARMED_AWAY' : 'DISARMED';
+              
+              return { ...zone, armedState: newZoneState };
+            }
+            return zone;
+          }));
+          
+          return; // Skip full refresh if we handled it locally
+        }
+      }
+      
+      // Fallback: refresh all alarm zones if we can't handle it locally
       if (selectedLocation) {
+        console.log('🔒 Fallback: Refreshing all alarm zones from API');
         loadAlarmZones(selectedLocation);
       }
     };
@@ -135,7 +176,7 @@ export function useAlarmKeypad() {
         window.removeEventListener('alarmZoneStateChange', handleAlarmZoneStateChange);
       };
     }
-  }, [selectedLocation]);
+  }, [selectedLocation, alarmZones, devices]);
 
   // SSE context for real-time space and device updates
   const sseCtx = useSSEContext();

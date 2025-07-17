@@ -547,6 +547,25 @@ export function SettingsModal({
                         </span>
                       </div>
 
+                      {/* Alarm Zone Debug Info */}
+                      {debugMode && (
+                        <div className="col-span-2 mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                          <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">🔒 Alarm Zone Event Monitor</h4>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            <div>Watch browser console for:</div>
+                            <div>• 🔒 SSE: Alarm zone event detected</div>
+                            <div>• 🔒 Alarm Zone State Change Handler</div>
+                            <div>• 🔒 Found affected alarm zones</div>
+                            <div>• 🔒 Fallback: Refreshing all alarm zones</div>
+                          </div>
+                          {lastSSEEvent && (
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                              <span className="font-medium">Last SSE Event:</span> {lastSSEEvent}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Device Connectivity */}
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-600 dark:text-gray-400">Device Connectivity:</span>
