@@ -88,8 +88,8 @@ export function VisionProLayout({
         <div className="flex-shrink-0 text-center py-8 px-4 relative">
           <div className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden max-w-sm mx-auto">
             {/* Glass layers */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-white/5 rounded-2xl"></div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 via-transparent to-purple-400/10 rounded-2xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 rounded-2xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/10 via-transparent to-gray-800/10 rounded-2xl"></div>
             
             <div className="relative">
               <div className="text-sm text-white/70 mb-1 font-medium tracking-wide">{currentDate}</div>
@@ -280,7 +280,7 @@ export function VisionProLayout({
         <div className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden max-w-lg mx-auto">
           {/* Glass layers */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-white/5 rounded-3xl"></div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/10 via-transparent to-purple-400/10 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/10 via-transparent to-gray-800/10 rounded-3xl"></div>
           
           <div className="relative">
             <div className="text-xl text-white/70 mb-2 font-medium tracking-wide">{currentDate}</div>
