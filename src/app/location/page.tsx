@@ -39,7 +39,7 @@ export default function LocationPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading locations...</p>
         </div>
       </main>
@@ -67,7 +67,7 @@ export default function LocationPage() {
             <button
               key={location.id}
               onClick={() => handleLocationSelect(location)}
-              className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
             >
               <span className="text-gray-900">{location.name}</span>
               <svg
