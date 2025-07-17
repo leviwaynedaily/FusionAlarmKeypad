@@ -58,7 +58,7 @@ export default function AlarmZoneCard({
     switch (zoneType) {
       case 'critical':
         return {
-          bg: allArmed ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-white dark:bg-[#1a1a1a]',
+          bg: allArmed ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-white dark:bg-[#0f0f0f]',
           border: allArmed ? 'border-rose-200 dark:border-rose-800' : 'border-gray-200 dark:border-gray-800',
           icon: allArmed ? 'text-rose-500' : 'text-gray-500 dark:text-gray-400',
           header: allArmed ? 'text-rose-700 dark:text-rose-300' : 'text-gray-900 dark:text-white',
@@ -68,7 +68,7 @@ export default function AlarmZoneCard({
         };
       case 'perimeter':
         return {
-          bg: allArmed ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-[#1a1a1a]',
+          bg: allArmed ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-[#0f0f0f]',
           border: allArmed ? 'border-blue-200 dark:border-blue-800' : 'border-gray-200 dark:border-gray-800',
           icon: allArmed ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400',
           header: allArmed ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white',
@@ -78,7 +78,7 @@ export default function AlarmZoneCard({
         };
       case 'indoor':
         return {
-          bg: allArmed ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-[#1a1a1a]',
+          bg: allArmed ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-[#0f0f0f]',
           border: allArmed ? 'border-purple-200 dark:border-purple-800' : 'border-gray-200 dark:border-gray-800',
           icon: allArmed ? 'text-purple-500' : 'text-gray-500 dark:text-gray-400',
           header: allArmed ? 'text-purple-700 dark:text-purple-300' : 'text-gray-900 dark:text-white',

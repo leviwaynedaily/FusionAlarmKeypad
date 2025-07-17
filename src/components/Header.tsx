@@ -30,7 +30,7 @@ export default function Header({ locationName, postalCode, organizationName, onS
   }, []);
 
   return (
-    <header className="bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+    <header className="bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800 px-6 py-4">
       <div className="max-w-screen-xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <svg viewBox="0 0 375 375" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#22c55f]">

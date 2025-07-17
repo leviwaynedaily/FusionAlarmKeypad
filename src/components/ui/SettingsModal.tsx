@@ -119,7 +119,7 @@ export function SettingsModal({
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
             <button
               onClick={onClose}
-              className="p-2 bg-white dark:bg-[#1a1a1a] rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+              className="p-2 bg-white dark:bg-[#0f0f0f] rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all"
             >
               ✕
             </button>
@@ -140,7 +140,7 @@ export function SettingsModal({
 
 
               {/* Organization and Location Section - Combined */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+              <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Organization & Location</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Organization Info */}
@@ -190,7 +190,7 @@ export function SettingsModal({
               </div>
 
               {/* Display Options */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+              <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Display Options</h3>
                 <div className="space-y-3">
                   {/* Show Zone Status */}
@@ -300,7 +300,7 @@ export function SettingsModal({
 
               {/* Event Display Settings - Only show when Timeline is enabled */}
               {showLiveEvents && (
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+                <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Event Display Settings</h3>
@@ -457,7 +457,7 @@ export function SettingsModal({
               )}
 
               {/* Display Options Continued */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+              <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Advanced Display Options</h3>
                 <div className="space-y-3">
                   {/* Test Design Toggle */}
@@ -621,7 +621,7 @@ export function SettingsModal({
               </div>
 
               {/* Theme Section */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+              <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Appearance</h3>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -668,7 +668,7 @@ export function SettingsModal({
 
               {/* Alarm Zones Configuration */}
               {useTestDesign && spaces.length > 0 && (
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
+                <div className="bg-white dark:bg-[#0f0f0f] rounded-lg p-4 border border-gray-200 dark:border-gray-800 lg:col-span-2">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🏠 Alarm Zones Configuration</h3>

@@ -647,7 +647,7 @@ function AlarmKeypad() {
             </div>
 
             {/* Compact Alarm Zones */}
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
+            <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
               <h2 className={`font-semibold text-gray-900 dark:text-white ${isMobile ? 'text-lg mb-3' : 'text-xl mb-4'}`}>
                 Security Zones
               </h2>
@@ -728,7 +728,7 @@ function AlarmKeypad() {
             </div>
 
             {/* Compact System Status */}
-            <div className={`bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm ${isMobile ? 'p-3' : 'p-4'}`}>
+            <div className={`bg-white dark:bg-[#0f0f0f] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm ${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
                 <span className={`font-medium text-gray-600 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>System Status</span>
                 <div className="flex items-center gap-2">
