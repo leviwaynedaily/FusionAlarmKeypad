@@ -50,9 +50,9 @@ export const getWeatherStyle = (condition: string) => {
   
   if (cond.includes('clear') || cond.includes('sunny')) {
     return {
-      bg: 'bg-gradient-to-br from-gray-800 to-gray-900',
+      bg: 'bg-gradient-to-br from-blue-400 to-blue-600',
       icon: '☀️',
-      text: 'text-gray-100'
+      text: 'text-yellow-100'
     };
   } else if (cond.includes('cloud') || cond.includes('overcast')) {
     return {
@@ -62,15 +62,15 @@ export const getWeatherStyle = (condition: string) => {
     };
   } else if (cond.includes('rain') || cond.includes('drizzle')) {
     return {
-      bg: 'bg-gradient-to-br from-gray-700 to-gray-900',
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
       icon: '🌧️',
-      text: 'text-gray-100'
+      text: 'text-blue-100'
     };
   } else if (cond.includes('snow') || cond.includes('sleet')) {
     return {
-      bg: 'bg-gradient-to-br from-gray-600 to-gray-800',
+      bg: 'bg-gradient-to-br from-blue-200 to-blue-400',
       icon: '❄️',
-      text: 'text-gray-100'
+      text: 'text-blue-50'
     };
   } else if (cond.includes('thunder') || cond.includes('storm')) {
     return {
