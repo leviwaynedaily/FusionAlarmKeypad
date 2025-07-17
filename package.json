@@ -21,7 +21,9 @@
     "prod:build": "npm run clean && npm run type-check && npm run lint && npm run test:ci && npm run build",
     "railway:build": "NEXT_TELEMETRY_DISABLED=1 npm run clean:safe && NEXT_TELEMETRY_DISABLED=1 npm run type-check && NEXT_TELEMETRY_DISABLED=1 npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build",
     "railway:build:simple": "NEXT_TELEMETRY_DISABLED=1 npm run clean:safe && NEXT_TELEMETRY_DISABLED=1 npm run build",
-    "db:setup": "echo 'Run the SQL in migrations/supabase_schema.sql in your Supabase SQL Editor'"
+    "db:setup": "echo 'Run the SQL in migrations/supabase_schema.sql in your Supabase SQL Editor'",
+    "db:migrate:formatting": "node migrations/run_formatting_migration.js",
+    "db:migrate:formatting:manual": "node migrations/run_formatting_migration.js --direct"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

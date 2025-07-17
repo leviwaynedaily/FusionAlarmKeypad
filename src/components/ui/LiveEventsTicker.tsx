@@ -760,6 +760,72 @@ export function LiveEventsTicker({
                 fullEvent: event
               });
 
+              // 🔥 NEW: Check for pre-formatted descriptions from database trigger first
+              const eventData = (event as any).event_data || (event as any).eventData;
+              if (eventData && eventData.formatted_title && eventData.formatted_description) {
+                debugLog(`🎯 Using database-formatted description for: ${event.deviceName}`, {
+                  title: eventData.formatted_title,
+                  description: eventData.formatted_description,
+                  deviceType: eventData.device_type
+                });
+                
+                // For database-formatted events, extract the action from the title
+                const formattedTitle = eventData.formatted_title;
+                const deviceName = event.deviceName || 'Unknown Device';
+                
+                // Extract the action part (e.g., "turned On", "Opened", etc.)
+                if (formattedTitle.includes(' turned ')) {
+                  const actionPart = formattedTitle.split(' turned ')[1];
+                  primaryLabel = deviceName;
+                  secondaryLabel = `turned ${actionPart}`;
+                } else if (formattedTitle.includes(' Opened')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'opened';
+                } else if (formattedTitle.includes(' Closed')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'closed';
+                } else if (formattedTitle.includes(' Locked')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'locked';
+                } else if (formattedTitle.includes(' Unlocked')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'unlocked';
+                } else if (formattedTitle.includes(' Adjusted')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'adjusted';
+                } else if (formattedTitle.includes(' Updated')) {
+                  primaryLabel = deviceName;
+                  secondaryLabel = 'updated';
+                } else {
+                  // Fallback - use device name as primary and description as secondary
+                  primaryLabel = deviceName;
+                  secondaryLabel = eventData.formatted_description;
+                }
+                
+                // Update the type for proper icon selection
+                if (eventData.device_type === 'light' || eventData.device_type === 'switch') {
+                  if (eventData.normalized_state === 'on') {
+                    type = 'light_on';
+                  } else if (eventData.normalized_state === 'off') {
+                    type = 'light_off';
+                  }
+                } else if (eventData.device_type === 'door') {
+                  if (eventData.normalized_state === 'on') {
+                    type = 'door_opened';
+                  } else if (eventData.normalized_state === 'off') {
+                    type = 'door_closed';
+                  }
+                } else if (eventData.device_type === 'lock') {
+                  if (eventData.formatted_description.includes('unlocked')) {
+                    type = 'lock_unlocked';
+                  } else if (eventData.formatted_description.includes('locked')) {
+                    type = 'lock_locked';
+                  }
+                }
+                
+                return { primaryLabel, secondaryLabel };
+              }
+
               // Enhanced device type detection
               const detectDeviceType = (deviceName: string): string => {
                 const lowerName = deviceName.toLowerCase();
