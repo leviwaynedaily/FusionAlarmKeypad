@@ -273,10 +273,10 @@ export default function MonitoringPage() {
                   Use these URLs with external monitoring services like:
                 </p>
                 <ul className="text-sm text-blue-200 mt-2 list-disc list-inside">
-                  <li><strong>UptimeRobot</strong> - Monitor every 5 minutes</li>
-                  <li><strong>Pingdom</strong> - Check availability and response time</li>
-                  <li><strong>StatusCake</strong> - Free tier includes basic monitoring</li>
-                  <li><strong>Railway's built-in monitoring</strong> - Check deployment logs</li>
+                                     <li><strong>UptimeRobot</strong> - Monitor every 5 minutes</li>
+                   <li><strong>Pingdom</strong> - Check availability and response time</li>
+                   <li><strong>StatusCake</strong> - Free tier includes basic monitoring</li>
+                   <li><strong>Railway&apos;s built-in monitoring</strong> - Check deployment logs</li>
                 </ul>
               </div>
             </div>
