@@ -9,13 +9,13 @@ export async function GET() {
     
     // Quick database check - just get the latest event timestamp
     const { data: latestEvent } = await supabase
-      .from('events')
-      .select('created_at')
-      .order('created_at', { ascending: false })
+      .from('fusion_events')
+      .select('received_at')
+      .order('received_at', { ascending: false })
       .limit(1)
       .single();
     
-    const lastEventTime = latestEvent?.created_at;
+    const lastEventTime = latestEvent?.received_at;
     const timeSinceLastEvent = lastEventTime 
       ? Date.now() - new Date(lastEventTime).getTime()
       : null;

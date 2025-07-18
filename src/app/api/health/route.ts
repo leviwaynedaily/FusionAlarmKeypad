@@ -18,9 +18,9 @@ export async function GET() {
     try {
       // Test database connection and get recent event info
       const { data: recentEvents, error } = await supabase
-        .from('events')
-        .select('created_at, event_type')
-        .order('created_at', { ascending: false })
+        .from('fusion_events')
+        .select('received_at, event_type')
+        .order('received_at', { ascending: false })
         .limit(5);
       
       if (error) {
@@ -28,7 +28,7 @@ export async function GET() {
         console.error('Database health check error:', error);
       } else {
         dbStatus = 'connected';
-        lastEventTime = recentEvents?.[0]?.created_at || null;
+        lastEventTime = recentEvents?.[0]?.received_at || null;
         recentEventCount = recentEvents?.length || 0;
       }
     } catch (dbError) {
