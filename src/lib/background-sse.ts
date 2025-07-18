@@ -20,6 +20,13 @@ class BackgroundSSEService {
   private readonly EVENT_CACHE_TTL = 30000; // 30 seconds
   private eventCacheCleanupTimer: NodeJS.Timeout | null = null;
 
+  // 🆕 ADD: Enhanced status tracking
+  private startTime: number | null = null;
+  private lastEventTime: number | null = null;
+  private totalEventsProcessed = 0;
+  private connectionHistory: Array<{ timestamp: number; type: 'connected' | 'disconnected' | 'error'; message?: string }> = [];
+  private lastError: string | null = null;
+
   constructor() {
     console.log('🔧 Background SSE Service initialized');
     
@@ -57,11 +64,15 @@ class BackgroundSSEService {
     }
 
     this.config = config;
+    this.startTime = Date.now();
+    this.lastError = null;
+    
     console.log('🔧 Starting Background SSE Service...', {
       endpoint: config.endpoint,
       organizationId: config.organizationId
     });
 
+    this.addConnectionEvent('connected', 'Service started');
     await this.connect();
   }
 
@@ -100,6 +111,9 @@ class BackgroundSSEService {
       this.isRunning = true;
       this.reconnectAttempts = 0;
       this.reconnectDelay = 5000;
+      this.lastError = null;
+
+      this.addConnectionEvent('connected', 'Successfully connected to SSE stream');
 
       // Store the response for cleanup
       this.eventSource = response;
@@ -116,6 +130,7 @@ class BackgroundSSEService {
             
             if (done) {
               console.log('🔧 Background SSE: Stream ended');
+              this.addConnectionEvent('disconnected', 'Stream ended normally');
               break;
             }
 
@@ -153,14 +168,19 @@ class BackgroundSSEService {
           }
         } catch (error) {
           console.error('❌ Background SSE: Stream processing error:', error);
+          this.lastError = error instanceof Error ? error.message : 'Stream processing error';
+          this.addConnectionEvent('error', this.lastError);
         } finally {
           reader.releaseLock();
         }
       };
 
       await processStream();
-    } catch (error) {
+    } catch (error: any) {
+      this.lastError = error instanceof Error ? error.message : 'Connection error';
       console.error('❌ Background SSE: Connection error:', error);
+      this.addConnectionEvent('error', this.lastError);
+      
       if (this.isRunning && this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
         console.log(`🔧 Background SSE: Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
@@ -169,12 +189,16 @@ class BackgroundSSEService {
       } else {
         console.error('❌ Background SSE: Max reconnection attempts reached');
         this.isRunning = false;
+        this.addConnectionEvent('disconnected', 'Max reconnection attempts reached');
       }
     }
   }
 
   private async processEvent(rawEvent: any) {
     try {
+      // Update last event time
+      this.lastEventTime = Date.now();
+      
       // 🔥 ADD: Check for duplicate events
       const eventId = this.createEventId(rawEvent);
       
@@ -190,6 +214,9 @@ class BackgroundSSEService {
       
       // Add to processed events cache
       this.processedEvents.add(eventId);
+      
+      // Increment total events processed
+      this.totalEventsProcessed++;
       
       // Process ALL events including system events - let event timeline management handle filtering
       // System events like heartbeats are important for monitoring and should be in database
@@ -317,9 +344,25 @@ class BackgroundSSEService {
         })
         .catch((error) => {
           console.error('❌ Background SSE: Failed to save event:', error);
+          this.lastError = `Failed to save event: ${error.message}`;
         });
     } catch (error) {
       console.error('❌ Background SSE: Error saving event to database:', error);
+      this.lastError = `Event processing error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
+
+  // 🆕 ADD: Connection event tracking
+  private addConnectionEvent(type: 'connected' | 'disconnected' | 'error', message?: string) {
+    this.connectionHistory.push({
+      timestamp: Date.now(),
+      type,
+      message
+    });
+    
+    // Keep only last 20 connection events
+    if (this.connectionHistory.length > 20) {
+      this.connectionHistory = this.connectionHistory.slice(-20);
     }
   }
 
@@ -343,14 +386,31 @@ class BackgroundSSEService {
     }
     
     this.reconnectAttempts = 0;
+    this.addConnectionEvent('disconnected', 'Service stopped manually');
     console.log('✅ Background SSE: Service stopped');
   }
 
+  // 🆕 ENHANCED: Better status reporting
   getStatus() {
+    const now = Date.now();
+    const uptime = this.startTime ? now - this.startTime : 0;
+    const timeSinceLastEvent = this.lastEventTime ? now - this.lastEventTime : null;
+    
     return {
       isRunning: this.isRunning,
       reconnectAttempts: this.reconnectAttempts,
-      processedEventsCount: this.processedEvents.size
+      processedEventsCount: this.processedEvents.size,
+      totalEventsProcessed: this.totalEventsProcessed,
+      uptime: Math.round(uptime / 1000), // seconds
+      lastEventTime: this.lastEventTime,
+      timeSinceLastEvent: timeSinceLastEvent ? Math.round(timeSinceLastEvent / 1000) : null, // seconds
+      lastError: this.lastError,
+      connectionHistory: this.connectionHistory.slice(-5), // Last 5 connection events
+      config: this.config ? {
+        endpoint: this.config.endpoint,
+        organizationId: this.config.organizationId,
+        hasApiKey: !!this.config.apiKey
+      } : null
     };
   }
 }
