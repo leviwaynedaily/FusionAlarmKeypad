@@ -21,7 +21,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock environment variables
-process.env.NEXT_PUBLIC_API_BASE_URL = 'https://test-api.example.com'
+process.env.NEXT_PUBLIC_FUSION_BASE_URL = 'https://test-api.example.com'
 process.env.NODE_ENV = 'test'
 
 // Mock window.matchMedia

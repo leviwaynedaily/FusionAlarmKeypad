@@ -29,6 +29,7 @@ interface SSEContextValue {
   backgroundServiceStatus: ReturnType<typeof useSSE>['backgroundServiceStatus'];
   isConnected: ReturnType<typeof useSSE>['isConnected'];
   isLoading: ReturnType<typeof useSSE>['isLoading'];
+  statusLoading: ReturnType<typeof useSSE>['statusLoading'];
   connectSSE: ReturnType<typeof useSSE>['connectSSE'];
   cleanupOldEvents: ReturnType<typeof useSSE>['cleanupOldEvents'];
 }

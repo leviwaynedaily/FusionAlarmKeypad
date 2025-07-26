@@ -14,7 +14,7 @@
 ### 2. **Environment Variables**
 Create `.env.local` file:
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://fusion-bridge-production.up.railway.app
+NEXT_PUBLIC_FUSION_BASE_URL=https://fusion-bridge-production.up.railway.app
 NEXT_PUBLIC_APP_ENV=production
 NEXT_PUBLIC_MAX_REQUESTS_PER_MINUTE=20
 ```
@@ -55,7 +55,7 @@ npm run build:analyze
 Set these variables in your Railway dashboard:
 
 **Required:**
-- `NEXT_PUBLIC_API_BASE_URL` = `https://fusion-bridge-production.up.railway.app`
+- `NEXT_PUBLIC_FUSION_BASE_URL` = `https://fusion-bridge-production.up.railway.app`
 - `NEXT_PUBLIC_FUSION_API_KEY` = Your Fusion API key
 - `NEXT_PUBLIC_APP_ENV` = `production`
 
