@@ -154,7 +154,7 @@ function SSEConnectionManager({ organization, apiKey }: { organization: any; api
 
   // 🔒 Add alarm zone test functions in development
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NEXT_PUBLIC_APP_ENV !== 'production') {
       addAlarmZoneTestFunctions();
     }
   }, []);

@@ -76,7 +76,7 @@ const DefaultErrorFallback: React.FC<{ error?: Error; resetError: () => void }> 
           An unexpected error occurred. Please try again.
         </p>
         
-        {process.env.NODE_ENV === 'development' && error && (
+        {process.env.NEXT_PUBLIC_APP_ENV !== 'production' && error && (
           <details className="mb-4 text-left bg-gray-50 dark:bg-gray-900 p-3 rounded text-xs">
             <summary className="cursor-pointer font-medium">Error Details</summary>
             <pre className="mt-2 whitespace-pre-wrap text-rose-600 dark:text-rose-400">
