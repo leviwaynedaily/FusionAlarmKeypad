@@ -23,6 +23,11 @@ export default function SSEDebugPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string>('');
   
+  // State for tracking what credentials are available (to avoid hydration mismatch)
+  const [hasApiKeyFromEnv, setHasApiKeyFromEnv] = useState(false);
+  const [hasOrgFromStorage, setHasOrgFromStorage] = useState(false);
+  const [isClientMounted, setIsClientMounted] = useState(false);
+  
   // Filters
   const [filterType, setFilterType] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -36,15 +41,14 @@ export default function SSEDebugPage() {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const eventIdCounter = useRef(0);
 
-  // Helper to safely access localStorage during client-side render only
-  const isBrowser = typeof window !== 'undefined';
-  const fusionOrganizationStored = isBrowser ? localStorage.getItem('fusion_organization') : null;
-
   // Load saved credentials from localStorage and environment
   useEffect(() => {
+    setIsClientMounted(true);
+    
     // 🔥 FIX: Force the working API key instead of using environment variables
     const workingApiKey = 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU';
     setApiKey(workingApiKey);
+    setHasApiKeyFromEnv(!!process.env.NEXT_PUBLIC_FUSION_API_KEY);
     
     // Get organization ID from main app or debug storage
     const mainAppOrg = localStorage.getItem('fusion_organization');
@@ -57,6 +61,7 @@ export default function SSEDebugPage() {
         const orgData = JSON.parse(mainAppOrg);
         if (orgData && orgData.id) {
           setOrganizationId(orgData.id);
+          setHasOrgFromStorage(true);
         }
       } catch (e) {
         console.warn('Failed to parse organization data from main app');
@@ -272,7 +277,7 @@ export default function SSEDebugPage() {
       return;
     }
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fusion-bridge-production.up.railway.app'}/api/locations`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://fusion-bridge-production.up.railway.app'}/api/locations`, {
         headers: {
           'x-api-key': apiKey,
         },
@@ -295,7 +300,7 @@ export default function SSEDebugPage() {
           </h1>
 
           {/* Auto-populate Info */}
-          {(process.env.NEXT_PUBLIC_FUSION_API_KEY || fusionOrganizationStored) && (
+          {isClientMounted && (hasApiKeyFromEnv || hasOrgFromStorage) && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -309,10 +314,10 @@ export default function SSEDebugPage() {
                   </h3>
                   <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
                     <ul className="list-disc pl-5 space-y-1">
-                      {process.env.NEXT_PUBLIC_FUSION_API_KEY && (
+                      {hasApiKeyFromEnv && (
                         <li>API Key automatically loaded from NEXT_PUBLIC_FUSION_API_KEY environment variable</li>
                       )}
-                      {fusionOrganizationStored && (
+                      {hasOrgFromStorage && (
                         <li>Organization ID loaded from main application session</li>
                       )}
                     </ul>

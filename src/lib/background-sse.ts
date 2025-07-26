@@ -6,6 +6,11 @@ interface BackgroundSSEConfig {
   endpoint: string;
 }
 
+// Configuration constants
+const DEFAULT_API_KEY = process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU';
+const DEFAULT_ORGANIZATION_ID = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://fusion-bridge-production.up.railway.app';
+
 class BackgroundSSEService {
   private eventSource: any = null;
   private config: BackgroundSSEConfig | null = null;
@@ -430,9 +435,9 @@ function initializeBackgroundService() {
     backgroundSSEService = new BackgroundSSEService();
     
     const config = {
-      apiKey: process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU',
-      organizationId: process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK',
-      endpoint: process.env.FUSION_ENDPOINT || 'https://fusion-bridge-production.up.railway.app/api/events/stream'
+      apiKey: DEFAULT_API_KEY,
+      organizationId: DEFAULT_ORGANIZATION_ID,
+      endpoint: `${DEFAULT_BASE_URL}/api/events/stream`
     };
 
     backgroundSSEService.start(config).catch(error => {
@@ -457,9 +462,9 @@ export function startBackgroundSSE(config?: { apiKey?: string; organizationId?: 
   }
 
   const defaultConfig = {
-    apiKey: process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU',
-    organizationId: process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK',
-    endpoint: process.env.FUSION_ENDPOINT || 'https://fusion-bridge-production.up.railway.app/api/events/stream'
+    apiKey: DEFAULT_API_KEY,
+    organizationId: DEFAULT_ORGANIZATION_ID,
+    endpoint: `${DEFAULT_BASE_URL}/api/events/stream`
   };
 
   const finalConfig = { ...defaultConfig, ...config };

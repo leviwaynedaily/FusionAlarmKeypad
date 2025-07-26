@@ -41,7 +41,7 @@ npm install
 Create a `.env.local` file in the root directory:
 ```env
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL=https://fusion-bridge-production.up.railway.app
+NEXT_PUBLIC_FUSION_BASE_URL=https://fusion-bridge-production.up.railway.app
 NEXT_PUBLIC_APP_ENV=production
 
 # Required API Keys
@@ -91,7 +91,7 @@ npm run build:analyze
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | Fusion API base URL | No | `https://fusion-bridge-production.up.railway.app` |
+| `NEXT_PUBLIC_FUSION_BASE_URL` | Fusion API base URL | No | `https://fusion-bridge-production.up.railway.app` |
 | `NEXT_PUBLIC_FUSION_API_KEY` | Fusion API key (required) | Yes | - |
 | `NEXT_PUBLIC_WEATHER_API_KEY` | OpenWeatherMap API key (required for weather) | Yes | - |
 | `NEXT_PUBLIC_MAX_REQUESTS_PER_MINUTE` | API rate limiting | No | `20` |
