@@ -165,7 +165,8 @@ export function useSSE() {
       setIsLoading(true);
       
       globalDebugLog('🔍 SSE: Loading recent events from database...');
-      const response = await fetch('/api/events?limit=50&sinceHours=24&organizationId=GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK');
+      const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+      const response = await fetch(`/api/events?limit=50&sinceHours=24&organizationId=${organizationId}`);
        
        if (!response.ok) {
          throw new Error(`API error: ${response.status}`);
@@ -239,28 +240,19 @@ export function useSSE() {
     }
   }, []);
 
-  // ✅ UPDATED: Reduced polling frequency since we have real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadRecentEventsFromDB();
-    }, 60000); // Refresh every minute as backup (real-time updates handle immediate changes)
-
-    return () => clearInterval(interval);
-  }, [loadRecentEventsFromDB]);
-
-  // ✅ UPDATED: Initialize background service and connect to live stream
+  // Initialize once on mount only
   useEffect(() => {
     checkBackgroundService(); // Check once on mount
-    loadRecentEventsFromDB();
+    loadRecentEventsFromDB(); // Load events once
     connectToLiveStream(); // Connect to real-time stream
     
     // Cleanup on unmount
     return () => {
       disconnectFromLiveStream();
     };
-  }, [checkBackgroundService, loadRecentEventsFromDB, connectToLiveStream, disconnectFromLiveStream]);
+  }, []); // Empty dependency array - run only once on mount
 
-  // ✅ UPDATED: Connect to both background service and live stream
+  // Connect to both background service and live stream
   const connectSSE = useCallback(async (organizationId: string, apiKey: string) => {
     console.log('ℹ️ SSE: Connecting to background service and live stream...');
     await checkBackgroundService();
@@ -281,12 +273,12 @@ export function useSSE() {
     console.log('ℹ️ Live events managed by background service');
   };
 
-  // ✅ NEW: Manual refresh function
+  // Manual refresh function
   const refreshEvents = useCallback(() => {
     loadRecentEventsFromDB();
   }, [loadRecentEventsFromDB]);
 
-  // ✅ SIMPLIFIED: Control background service (check status only when starting)
+  // Control background service (check status only when starting)
   const startBackgroundService = useCallback(async () => {
     try {
       globalDebugLog('🚀 SSE: Starting background service...');
