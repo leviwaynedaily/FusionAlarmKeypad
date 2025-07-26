@@ -187,188 +187,21 @@ function SSEConnectionManager({ organization, apiKey }: { organization: any; api
     });
   }, [organization, apiKey, debugLog]);
 
+  // Background SSE service now auto-starts with server - just load events
   useEffect(() => {
-    const startBackgroundSSE = async () => {
-      // 🔍 Dependency validation with detailed debugging
-      if (!organization || !apiKey) {
-        debugLog('⏳ Waiting for dependencies...', {
-          organization: {
-            exists: !!organization,
-            value: organization
-          },
-          apiKey: {
-            exists: !!apiKey,
-            length: apiKey?.length
-          },
-          reason: !organization ? 'Missing organization' : 'Missing API key'
-        }, 'warn');
-        setAutoStartStatus('idle');
-        return;
-      }
-
-      debugLog('🚀 Starting auto-start sequence', {
-        organizationId: organization.id,
-        organizationName: organization.name,
-        apiKeyLength: apiKey.length,
-        retryAttempt: retryCount + 1,
-        maxRetries,
-        timestamp: new Date().toISOString()
-      });
-      
-      setAutoStartStatus('starting');
-      setLastError(null);
-      
-      try {
-        // 📊 Check current status with enhanced debugging
-        debugLog('🔍 Checking background service status...');
-        const statusController = new AbortController();
-        const statusTimeout = setTimeout(() => {
-          debugLog('⏰ Status check timeout triggered (10s)', {}, 'warn');
-          statusController.abort();
-        }, 10000);
-        
-        const statusResponse = await debugFetch('/api/background-sse', {
-          signal: statusController.signal
-        });
-        clearTimeout(statusTimeout);
-        
-        if (!statusResponse.ok) {
-          throw new Error(`Status check failed: ${statusResponse.status} ${statusResponse.statusText}`);
-        }
-        
-        const status = await statusResponse.json();
-        debugLog('📊 Background service status response:', status);
-        
-        if (status.status?.isRunning) {
-          debugLog('✅ Service already running, verifying connection...');
-          setAutoStartStatus('success');
-          
-          // Trust that the service is working - no need to verify again
-          debugLog('✅ Auto-start completed - service was already running');
-          
-          return;
-        }
-
-        // 🚀 Start the background service with enhanced debugging
-        debugLog('🚀 Service not running, starting background SSE service...');
-        const startController = new AbortController();
-        const startTimeout = setTimeout(() => {
-          debugLog('⏰ Start request timeout triggered (15s)', {}, 'warn');
-          startController.abort();
-        }, 15000);
-        
-        const startPayload = { 
-          action: 'start',
-          organizationId: organization.id,
-          apiKey: apiKey,
-          timestamp: new Date().toISOString(),
-          clientInfo: {
-            userAgent: navigator.userAgent,
-            url: window.location.href
-          }
-        };
-        
-        debugLog('📤 Sending start request with payload:', startPayload);
-        
-        const startResponse = await debugFetch('/api/background-sse', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(startPayload),
-          signal: startController.signal
-        });
-        clearTimeout(startTimeout);
-        
-        if (!startResponse.ok) {
-          throw new Error(`Start request failed: ${startResponse.status} ${startResponse.statusText}`);
-        }
-        
-        const result = await startResponse.json();
-        debugLog('🔄 Start service response:', result);
-        
-        if (result.success) {
-          debugLog('✅ Service start successful, verifying...');
-          setAutoStartStatus('success');
-          setRetryCount(0);
-          
-          // 🔄 Give service time to initialize with progress updates
-          debugLog('⏳ Waiting for service initialization (2s)...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // 🔄 Load recent events to populate the UI
-          debugLog('📥 Loading recent events...');
-          await sse.refreshEvents();
-          
-          debugLog('✅ Auto-start sequence completed successfully');
-        } else {
-          throw new Error(result.message || result.error || 'Failed to start service - unknown error');
-        }
-        
-      } catch (error: any) {
-        const errorMessage = error.name === 'AbortError' 
-          ? 'Request timeout - service may be unavailable'
-          : error.message || 'Unknown error occurred';
-          
-        debugLog('❌ Auto-start error occurred', {
-          error: errorMessage,
-          errorType: error.name,
-          errorStack: error.stack,
-          retryCount,
-          maxRetries,
-          organizationId: organization.id,
-          apiKeyLength: apiKey.length,
-          debugInfo,
-          timestamp: new Date().toISOString()
-        }, 'error');
-        
-        setLastError(errorMessage);
-        
-        // 🔄 Enhanced retry logic with exponential backoff
-        if (retryCount < maxRetries) {
-          const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Max 10s delay
-          debugLog(`🔄 Scheduling retry ${retryCount + 1}/${maxRetries} in ${retryDelay}ms...`, {
-            nextRetryIn: retryDelay,
-            reason: errorMessage
-          }, 'warn');
-          
-          setAutoStartStatus('retrying');
-          setRetryCount(prev => prev + 1);
-          
-          setTimeout(() => {
-            debugLog(`🔄 Executing retry ${retryCount + 2}/${maxRetries}...`);
-            startBackgroundSSE();
-          }, retryDelay);
-        } else {
-          debugLog('❌ Auto-start failed after maximum retries', {
-            totalRetries: maxRetries,
-            finalError: errorMessage,
-            debugInfo,
-            timestamp: new Date().toISOString()
-          }, 'error');
-          setAutoStartStatus('failed');
-        }
-      }
-    };
-
-    // 🔄 Reset retry count when dependencies change
-    if (retryCount > 0) {
-      debugLog('🔄 Dependencies changed, resetting retry count', {
-        previousRetryCount: retryCount
-      });
+    if (!organization || !apiKey) {
+      debugLog('No organization or API key available');
+      setAutoStartStatus('idle');
+      return;
     }
+    
+    debugLog('Background SSE service runs automatically with server, loading recent events...');
+    setAutoStartStatus('success');
     setRetryCount(0);
     setLastError(null);
     
-    // 🚀 Start with a small delay to ensure components are mounted
-    const timer = setTimeout(() => {
-      debugLog('⏰ Auto-start timer triggered, beginning sequence...');
-      startBackgroundSSE();
-    }, 1000);
-    
-    return () => {
-      debugLog('🧹 Cleaning up auto-start timer');
-      clearTimeout(timer);
-    };
-  }, [organization, apiKey, sse, retryCount, debugLog, debugFetch, performHealthCheck, debugInfo]);
+    // Events loaded automatically by background service and live stream
+  }, [organization, apiKey]); // Removed sse and debugLog from deps to prevent constant re-runs
 
   // 🔇 REMOVED: No periodic health monitoring needed with SSE - just trust the connection
   // The background SSE service will automatically reconnect if needed

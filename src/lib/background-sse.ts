@@ -11,7 +11,6 @@ class BackgroundSSEService {
   private config: BackgroundSSEConfig | null = null;
   private isRunning = false;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
   private reconnectDelay = 5000; // 5 seconds
   
   // 🔥 ADD: Event deduplication cache
@@ -83,10 +82,8 @@ class BackgroundSSEService {
     }
 
     try {
-      console.log('🔧 Background SSE: Starting native streaming connection...');
-      
-      const url = `${this.config.endpoint}?organizationId=${this.config.organizationId}&includeThumbnails=true`;
-      console.log('🔧 Background SSE: Connecting to', url);
+      const url = `${this.config.endpoint}?includeThumbnails=true`;
+      console.log(`Background SSE: Connecting to ${this.config.endpoint} (attempt ${this.reconnectAttempts + 1})`);
 
       // Use native fetch with streaming for better server-side compatibility
       const response = await fetch(url, {
@@ -107,7 +104,7 @@ class BackgroundSSEService {
         throw new Error('No response body received');
       }
 
-      console.log('✅ Background SSE: Connected successfully');
+      console.log('Background SSE: Connected successfully');
       this.isRunning = true;
       this.reconnectAttempts = 0;
       this.reconnectDelay = 5000;
@@ -129,7 +126,7 @@ class BackgroundSSEService {
             const { done, value } = await reader.read();
             
             if (done) {
-              console.log('🔧 Background SSE: Stream ended');
+              console.log('Background SSE: Stream ended');
               this.addConnectionEvent('disconnected', 'Stream ended normally');
               break;
             }
@@ -176,20 +173,26 @@ class BackgroundSSEService {
       };
 
       await processStream();
+      
+      // Stream ended normally, trigger reconnection
+      if (this.isRunning) {
+        this.reconnectAttempts++;
+        console.log(`Background SSE: Stream ended, retrying in ${Math.round(this.reconnectDelay / 1000)}s`);
+        setTimeout(() => this.connect(), this.reconnectDelay);
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 300000);
+      }
     } catch (error: any) {
       this.lastError = error instanceof Error ? error.message : 'Connection error';
-      console.error('❌ Background SSE: Connection error:', error);
+      const errorCode = error.cause?.code || error.code;
+      
+      console.error(`Background SSE: Connection failed${errorCode ? ` (${errorCode})` : ''}:`, error.message);
       this.addConnectionEvent('error', this.lastError);
       
-      if (this.isRunning && this.reconnectAttempts < this.maxReconnectAttempts) {
+      if (this.isRunning) {
         this.reconnectAttempts++;
-        console.log(`🔧 Background SSE: Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+        console.log(`Background SSE: Retrying in ${Math.round(this.reconnectDelay / 1000)}s (attempt ${this.reconnectAttempts})`);
         setTimeout(() => this.connect(), this.reconnectDelay);
-        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000); // Exponential backoff
-      } else {
-        console.error('❌ Background SSE: Max reconnection attempts reached');
-        this.isRunning = false;
-        this.addConnectionEvent('disconnected', 'Max reconnection attempts reached');
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 300000); // Exponential backoff, cap at 5 minutes
       }
     }
   }
@@ -418,19 +421,28 @@ class BackgroundSSEService {
 // Singleton instance
 let backgroundSSEService: BackgroundSSEService | null = null;
 
-export async function startBackgroundSSE() {
-  if (!backgroundSSEService) {
+// Auto-start the service when this module loads (server-side only)
+function initializeBackgroundService() {
+  if (typeof window === 'undefined' && !backgroundSSEService) {
+    console.log('Background SSE: Auto-starting service with server');
+    
     backgroundSSEService = new BackgroundSSEService();
+    
+    const config = {
+      apiKey: process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU',
+      organizationId: process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK',
+      endpoint: process.env.FUSION_ENDPOINT || 'https://fusion-bridge-production.up.railway.app/api/events/stream'
+    };
+
+    backgroundSSEService.start(config).catch(error => {
+      console.error('Background SSE: Failed to auto-start:', error.message);
+    });
   }
-
-  const config = {
-    apiKey: process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU',
-    organizationId: process.env.FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK',
-    endpoint: process.env.FUSION_ENDPOINT || 'https://fusion-bridge-production.up.railway.app/api/events/stream'
-  };
-
-  await backgroundSSEService.start(config);
 }
+
+// Initialize immediately when module loads
+initializeBackgroundService();
+
 
 export function stopBackgroundSSE() {
   if (backgroundSSEService) {

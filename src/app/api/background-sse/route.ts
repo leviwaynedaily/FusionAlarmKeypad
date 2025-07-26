@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { startBackgroundSSE, stopBackgroundSSE, getBackgroundSSEStatus } from '@/lib/background-sse';
+import { stopBackgroundSSE, getBackgroundSSEStatus } from '@/lib/background-sse';
 
 // 🔍 Enhanced server-side debugging utility
 const serverDebugLog = (message: string, data?: any, level: 'info' | 'warn' | 'error' = 'info') => {
@@ -91,94 +91,28 @@ export async function POST(req: Request) {
       serverTimestamp: new Date().toISOString()
     });
     
-    switch (action) {
-      case 'start':
-        serverDebugLog(`🚀 POST Request ${requestId} - Starting background SSE service...`, {
-          organizationId,
-          apiKeyProvided: !!apiKey,
-          apiKeyLength: apiKey?.length
-        });
-        
-        await startBackgroundSSE();
-        
-        const startStatus = getBackgroundSSEStatus();
-        const startDuration = Date.now() - startTime;
-        
-        serverDebugLog(`✅ POST Request ${requestId} - Background SSE service started`, {
-          status: startStatus,
-          duration: `${startDuration}ms`,
-          wasSuccessful: startStatus?.isRunning || false
-        });
-        
-        const startResponse = {
-          success: true,
-          message: 'Background SSE service started',
-          status: startStatus,
-          debug: {
-            requestId,
-            action: 'start',
-            timestamp: new Date().toISOString(),
-            duration: `${startDuration}ms`,
-            clientTimestamp,
-            organizationId,
-            apiKeyLength: apiKey?.length
-          }
-        };
-        
-        return NextResponse.json(startResponse);
-        
-      case 'stop':
-        serverDebugLog(`🛑 POST Request ${requestId} - Stopping background SSE service...`);
-        
-        stopBackgroundSSE();
-        
-        const stopStatus = getBackgroundSSEStatus();
-        const stopDuration = Date.now() - startTime;
-        
-        serverDebugLog(`✅ POST Request ${requestId} - Background SSE service stopped`, {
-          status: stopStatus,
-          duration: `${stopDuration}ms`,
-          wasStopped: !stopStatus?.isRunning
-        });
-        
-        const stopResponse = {
-          success: true,
-          message: 'Background SSE service stopped',
-          status: stopStatus,
-          debug: {
-            requestId,
-            action: 'stop',
-            timestamp: new Date().toISOString(),
-            duration: `${stopDuration}ms`
-          }
-        };
-        
-        return NextResponse.json(stopResponse);
-        
-      default:
-        const invalidDuration = Date.now() - startTime;
-        
-        serverDebugLog(`❌ POST Request ${requestId} - Invalid action`, {
-          action,
-          validActions: ['start', 'stop'],
-          duration: `${invalidDuration}ms`
-        }, 'warn');
-        
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Invalid action. Use "start" or "stop"',
-            debug: {
-              requestId,
-              timestamp: new Date().toISOString(),
-              duration: `${invalidDuration}ms`,
-              providedAction: action,
-              validActions: ['start', 'stop']
-            }
-          },
-          { status: 400 }
-        );
-    }
+    // Background service now auto-starts with server - no manual control needed
+    const duration = Date.now() - startTime;
+    const status = getBackgroundSSEStatus();
+    
+    serverDebugLog(`Background SSE: Status request for action '${action}'`, {
+      action,
+      currentStatus: status?.isRunning ? 'running' : 'stopped',
+      duration: `${duration}ms`
+    });
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Background SSE service runs automatically with server',
+      status: status,
+      info: 'Service auto-starts when server loads and runs continuously',
+      debug: {
+        requestId,
+        timestamp: new Date().toISOString(),
+        duration: `${duration}ms`,
+        note: 'Manual start/stop no longer supported - service runs automatically'
+      }
+    });
   } catch (error) {
     const duration = Date.now() - startTime;
     

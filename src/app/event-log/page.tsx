@@ -20,7 +20,7 @@ export default function EventLogPage() {
 }
 
 async function EventsTable() {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || '';
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   const res = await fetch(`${base}/api/events?limit=500`, { cache: 'no-store' });
   const events = await res.json();
 
