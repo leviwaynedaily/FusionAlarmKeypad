@@ -11,7 +11,8 @@ class BackgroundSSEService {
   private config: BackgroundSSEConfig | null = null;
   private isRunning = false;
   private reconnectAttempts = 0;
-  private reconnectDelay = 5000; // 5 seconds
+  private retryInterval = 5000; // 5 seconds
+  private static readonly maxRetryInterval = 60000; // 1 minute in milliseconds
   
   // 🔥 ADD: Event deduplication cache
   private processedEvents = new Set<string>();
@@ -107,7 +108,7 @@ class BackgroundSSEService {
       console.log('Background SSE: Connected successfully');
       this.isRunning = true;
       this.reconnectAttempts = 0;
-      this.reconnectDelay = 5000;
+      this.retryInterval = 5000;
       this.lastError = null;
 
       this.addConnectionEvent('connected', 'Successfully connected to SSE stream');
@@ -174,13 +175,13 @@ class BackgroundSSEService {
 
       await processStream();
       
-      // Stream ended normally, trigger reconnection
-      if (this.isRunning) {
-        this.reconnectAttempts++;
-        console.log(`Background SSE: Stream ended, retrying in ${Math.round(this.reconnectDelay / 1000)}s`);
-        setTimeout(() => this.connect(), this.reconnectDelay);
-        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 300000);
-      }
+              // Stream ended normally, trigger reconnection
+        if (this.isRunning) {
+          this.reconnectAttempts++;
+          console.log(`Background SSE: Stream ended, retrying in ${Math.round(this.retryInterval / 1000)}s`);
+          setTimeout(() => this.connect(), this.retryInterval);
+          this.retryInterval = Math.min(this.retryInterval * 2, BackgroundSSEService.maxRetryInterval);
+        }
     } catch (error: any) {
       this.lastError = error instanceof Error ? error.message : 'Connection error';
       const errorCode = error.cause?.code || error.code;
@@ -188,12 +189,12 @@ class BackgroundSSEService {
       console.error(`Background SSE: Connection failed${errorCode ? ` (${errorCode})` : ''}:`, error.message);
       this.addConnectionEvent('error', this.lastError);
       
-      if (this.isRunning) {
-        this.reconnectAttempts++;
-        console.log(`Background SSE: Retrying in ${Math.round(this.reconnectDelay / 1000)}s (attempt ${this.reconnectAttempts})`);
-        setTimeout(() => this.connect(), this.reconnectDelay);
-        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 300000); // Exponential backoff, cap at 5 minutes
-      }
+              if (this.isRunning) {
+          this.reconnectAttempts++;
+          console.log(`Background SSE: Retrying in ${Math.round(this.retryInterval / 1000)}s (attempt ${this.reconnectAttempts})`);
+          setTimeout(() => this.connect(), this.retryInterval);
+          this.retryInterval = Math.min(this.retryInterval * 2, BackgroundSSEService.maxRetryInterval); // Exponential backoff, cap at 1 minute
+        }
     }
   }
 
