@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { stopBackgroundSSE, getBackgroundSSEStatus } from '@/lib/background-sse';
+import { startBackgroundSSE, stopBackgroundSSE, getBackgroundSSEStatus } from '@/lib/background-sse';
 
 // 🔍 Enhanced server-side debugging utility
 const serverDebugLog = (message: string, data?: any, level: 'info' | 'warn' | 'error' = 'info') => {
@@ -91,26 +91,71 @@ export async function POST(req: Request) {
       serverTimestamp: new Date().toISOString()
     });
     
-    // Background service now auto-starts with server - no manual control needed
+    // Handle manual start/stop actions (service also auto-starts with server)
     const duration = Date.now() - startTime;
-    const status = getBackgroundSSEStatus();
-    
-    serverDebugLog(`Background SSE: Status request for action '${action}'`, {
-      action,
-      currentStatus: status?.isRunning ? 'running' : 'stopped',
-      duration: `${duration}ms`
-    });
+    let result;
+    let status;
+
+    if (action === 'start') {
+      try {
+        await startBackgroundSSE({ 
+          apiKey: apiKey || process.env.FUSION_API_KEY,
+          organizationId: organizationId || process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID,
+        });
+        status = getBackgroundSSEStatus();
+        result = {
+          success: true,
+          message: 'Background SSE service started successfully',
+          status: status
+        };
+        serverDebugLog(`✅ Background SSE service started manually`, { requestId, action });
+      } catch (error) {
+        status = getBackgroundSSEStatus();
+        result = {
+          success: false,
+          message: `Failed to start service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          status: status
+        };
+        serverDebugLog(`❌ Failed to start Background SSE service`, { requestId, action, error }, 'error');
+      }
+    } else if (action === 'stop') {
+      try {
+        stopBackgroundSSE();
+        status = getBackgroundSSEStatus();
+        result = {
+          success: true,
+          message: 'Background SSE service stopped successfully',
+          status: status
+        };
+        serverDebugLog(`✅ Background SSE service stopped manually`, { requestId, action });
+      } catch (error) {
+        status = getBackgroundSSEStatus();
+        result = {
+          success: false,
+          message: `Failed to stop service: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          status: status
+        };
+        serverDebugLog(`❌ Failed to stop Background SSE service`, { requestId, action, error }, 'error');
+      }
+    } else {
+      // Unknown action - just return status
+      status = getBackgroundSSEStatus();
+      result = {
+        success: true,
+        message: 'Background SSE service status retrieved',
+        status: status,
+        info: 'Service auto-starts with server and can be manually controlled'
+      };
+    }
     
     return NextResponse.json({
-      success: true,
-      message: 'Background SSE service runs automatically with server',
-      status: status,
-      info: 'Service auto-starts when server loads and runs continuously',
+      ...result,
       debug: {
         requestId,
         timestamp: new Date().toISOString(),
         duration: `${duration}ms`,
-        note: 'Manual start/stop no longer supported - service runs automatically'
+        action,
+        currentStatus: status?.isRunning ? 'running' : 'stopped'
       }
     });
   } catch (error) {

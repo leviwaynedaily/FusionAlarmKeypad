@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSSE } from '@/hooks/useSSE';
+import { useSSEContext } from '@/hooks/SSEContext';
 
 export default function BackgroundServicePage() {
   const { 
@@ -10,14 +10,22 @@ export default function BackgroundServicePage() {
     startBackgroundService, 
     stopBackgroundService,
     isConnected
-  } = useSSE();
+  } = useSSEContext();
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [lastCheckTime, setLastCheckTime] = useState<string>('Loading...');
 
+  // Set timestamp on page load since status is automatically checked
   useEffect(() => {
-    checkBackgroundService();
-  }, [checkBackgroundService]);
+    setLastCheckTime(new Date().toLocaleTimeString());
+  }, []);
+
+  // Wrapper to update timestamp whenever we check status
+  const checkStatusAndUpdateTime = async () => {
+    await checkBackgroundService();
+    setLastCheckTime(new Date().toLocaleTimeString());
+  };
 
   const handleStart = async () => {
     setLoading(true);
@@ -25,6 +33,8 @@ export default function BackgroundServicePage() {
     try {
       const result = await startBackgroundService();
       setMessage(result.message || 'Service started successfully');
+      // Refresh status immediately after starting
+      await checkStatusAndUpdateTime();
     } catch (error) {
       setMessage(`Error: ${error}`);
     } finally {
@@ -38,6 +48,8 @@ export default function BackgroundServicePage() {
     try {
       const result = await stopBackgroundService();
       setMessage(result.message || 'Service stopped successfully');
+      // Refresh status immediately after stopping
+      await checkStatusAndUpdateTime();
     } catch (error) {
       setMessage(`Error: ${error}`);
     } finally {
@@ -45,8 +57,8 @@ export default function BackgroundServicePage() {
     }
   };
 
-  const handleRefresh = () => {
-    checkBackgroundService();
+  const handleRefresh = async () => {
+    await checkStatusAndUpdateTime();
   };
 
   const getStatusColor = (isRunning: boolean) => {
@@ -90,7 +102,7 @@ export default function BackgroundServicePage() {
             <div className="bg-slate-700/50 rounded-lg p-4">
               <div className="text-sm text-slate-400 mb-1">Last Check</div>
               <div className="text-lg font-semibold">
-                {new Date().toLocaleTimeString()}
+                {lastCheckTime}
               </div>
             </div>
           </div>

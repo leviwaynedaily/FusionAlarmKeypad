@@ -29,6 +29,7 @@ export function useSSE() {
   const [recentEvents, setRecentEvents] = useState<SSEEventDisplay[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true); // 🆕 Track initial status check
   const [backgroundServiceStatus, setBackgroundServiceStatus] = useState<any>(null);
   const loadingRef = useRef(false);
   const liveSSERef = useRef<EventSource | null>(null);
@@ -36,6 +37,7 @@ export function useSSE() {
   // ✅ SIMPLIFIED: Only check background service status when needed (not continuously)
   const checkBackgroundService = useCallback(async () => {
     try {
+      setStatusLoading(true); // Start loading
       globalDebugLog('🔍 SSE: Checking background service status (one-time)...');
       const response = await fetch('/api/background-sse');
       const data = await response.json();
@@ -46,6 +48,8 @@ export function useSSE() {
       console.error('❌ Failed to check background service status:', error);
       globalDebugLog('❌ SSE: Failed to check background service status:', error);
       setIsConnected(false);
+    } finally {
+      setStatusLoading(false); // End loading
     }
   }, []);
 
@@ -324,6 +328,7 @@ export function useSSE() {
     recentEvents,
     isConnected,
     isLoading,
+    statusLoading,
     backgroundServiceStatus,
     connectSSE,
     disconnectSSE,

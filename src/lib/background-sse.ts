@@ -444,10 +444,38 @@ function initializeBackgroundService() {
 // Initialize immediately when module loads
 initializeBackgroundService();
 
+// Manual start function
+export function startBackgroundSSE(config?: { apiKey?: string; organizationId?: string; endpoint?: string }) {
+  if (backgroundSSEService && backgroundSSEService.getStatus().isRunning) {
+    console.log('🔧 Background SSE Service already running');
+    return Promise.resolve();
+  }
+
+  // Create new service if it doesn't exist
+  if (!backgroundSSEService) {
+    backgroundSSEService = new BackgroundSSEService();
+  }
+
+  const defaultConfig = {
+    apiKey: process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU',
+    organizationId: process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK',
+    endpoint: process.env.FUSION_ENDPOINT || 'https://fusion-bridge-production.up.railway.app/api/events/stream'
+  };
+
+  const finalConfig = { ...defaultConfig, ...config };
+  
+  console.log('🔧 Manually starting Background SSE Service...', {
+    endpoint: finalConfig.endpoint,
+    organizationId: finalConfig.organizationId
+  });
+
+  return backgroundSSEService.start(finalConfig);
+}
 
 export function stopBackgroundSSE() {
   if (backgroundSSEService) {
     backgroundSSEService.stop();
+    console.log('🔧 Background SSE Service manually stopped');
   }
 }
 
