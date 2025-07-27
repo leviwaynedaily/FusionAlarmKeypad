@@ -16,6 +16,9 @@ enum LogLevel {
 // Current log level (can be adjusted)
 const currentLogLevel = isDev ? LogLevel.WARN : LogLevel.ERROR;
 
+// Debug logging control (defaults to false if env var not set)
+const enableDebugLogs = process.env.NEXT_PUBLIC_ENABLE_DEBUG_LOGS === 'true';
+
 export const logger = {
   log: (message: string, ...args: any[]) => {
     // Only log in development and if above threshold
@@ -100,7 +103,7 @@ export const logger = {
 export const debug = {
   log: (message: string, ...args: any[]) => {
     // Only log debug messages if explicitly enabled and at debug level
-    if (isDev && currentLogLevel >= LogLevel.DEBUG && process.env.ENABLE_DEBUG_LOGS === 'true') {
+    if (isDev && currentLogLevel >= LogLevel.DEBUG && enableDebugLogs) {
       console.log(`[DEBUG] ${message}`, ...args);
     }
   }

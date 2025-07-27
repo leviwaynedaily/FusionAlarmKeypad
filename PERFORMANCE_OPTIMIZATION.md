@@ -112,7 +112,7 @@ trackAPICall(metric: APICallMetric) {
 ### Environment Variables
 ```bash
 # Enable debug logging (optional)
-ENABLE_DEBUG_LOGS=true
+NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true
 
 # Production optimizations are automatic based on NODE_ENV
 NODE_ENV=production
