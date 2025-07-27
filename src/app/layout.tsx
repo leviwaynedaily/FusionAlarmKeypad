@@ -86,27 +86,13 @@ export default function RootLayout({
                       if (res.ok) {
                         navigator.serviceWorker.register('/sw.js')
                           .then((registration) => {
-                            // Force update check
-                            registration.update();
-                            
-                            // Handle service worker updates automatically
-                            registration.addEventListener('updatefound', () => {
-                              const newWorker = registration.installing;
-                              if (newWorker) {
-                                newWorker.addEventListener('statechange', () => {
-                                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // New service worker available, reload page
-                                    window.location.reload();
-                                  }
-                                });
-                              }
-                            });
-                            
+                            // 🔥 FIX: Safe development check in browser
                             if (window.location.hostname === 'localhost') {
                               console.log('ServiceWorker registered successfully');
                             }
                           })
                           .catch((error) => {
+                            // 🔥 FIX: Safe development check in browser
                             if (window.location.hostname === 'localhost') {
                               console.error('ServiceWorker registration failed:', error);
                             }
