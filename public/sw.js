@@ -1,5 +1,5 @@
 // Service Worker for Fusion Alarm PWA
-const CACHE_NAME = 'fusion-alarm-v2';
+const CACHE_NAME = 'fusion-alarm-v3';
 const urlsToCache = [
   '/',
   '/CSG-v2.otf',
@@ -28,12 +28,16 @@ self.addEventListener('fetch', event => {
   // 2. Requests with Accept: text/event-stream header
   // 3. Requests to /api/events/stream
   // 4. External API requests (not same origin)
+  // 5. Next.js generated chunks (to prevent cache poisoning)
   const shouldBypass = 
     event.request.headers.get('Accept')?.includes('text/event-stream') ||
     url.pathname.includes('/api/events/stream') ||
     url.pathname.includes('/events/') ||
     url.hostname !== self.location.hostname ||
-    event.request.headers.get('X-Bypass-Service-Worker') === 'true';
+    event.request.headers.get('X-Bypass-Service-Worker') === 'true' ||
+    url.pathname.includes('/_next/static/chunks/') ||
+    url.pathname.includes('/_next/static/css/') ||
+    url.pathname.includes('/_next/static/js/');
 
   if (shouldBypass) {
     // Let the request go directly to the network
