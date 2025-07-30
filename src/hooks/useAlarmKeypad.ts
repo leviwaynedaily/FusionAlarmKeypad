@@ -111,9 +111,45 @@ export function useAlarmKeypad() {
   // Listen for alarm zone state changes from SSE
   useEffect(() => {
     const handleAlarmZoneStateChange = (event: any) => {
-      const { type, category, deviceName, spaceName, displayState, timestamp } = event.detail;
+      const eventDetail = event.detail;
       
-      console.log('🔒 Alarm Zone State Change Handler:', {
+      console.log('🔒 Alarm Zone State Change Handler:', eventDetail);
+      
+      // Handle direct alarm zone events (real Fusion events)
+      if (eventDetail.isDirectAlarmZoneEvent && eventDetail.alarmZoneId) {
+        const { alarmZoneId, alarmZoneName, currentState, previousState, timestamp } = eventDetail;
+        
+        console.log('🔒 Processing direct alarm zone event:', {
+          zoneId: alarmZoneId,
+          zoneName: alarmZoneName,
+          currentState,
+          previousState,
+          timestamp
+        });
+        
+        // Update the specific alarm zone directly by ID
+        setAlarmZones(prev => {
+          return prev.map(zone => {
+            if (zone.id === alarmZoneId) {
+              console.log(`🔒 Updating zone "${zone.name}" (${zone.id}) to state: ${currentState}`);
+              return {
+                ...zone,
+                armedState: currentState as 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED',
+                lastArmedStateChangeReason: `Real-time update: ${previousState} → ${currentState}`
+              };
+            }
+            return zone;
+          });
+        });
+        
+        console.log(`🔒 Successfully updated alarm zone "${alarmZoneName}" to ${currentState}`);
+        return; // Exit early for direct alarm zone events
+      }
+      
+      // Legacy handler for device-based events (keeping for backward compatibility)
+      const { type, category, deviceName, spaceName, displayState, timestamp } = eventDetail;
+      
+      console.log('🔒 Processing device-based alarm zone event:', {
         type,
         category,
         deviceName,

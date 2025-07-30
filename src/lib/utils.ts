@@ -56,6 +56,35 @@ export const testAlarmZoneEvent = (deviceName: string, eventType: 'armed' | 'dis
   return eventData;
 };
 
+// 🔒 Test function to simulate real Fusion alarm zone events
+export const testDirectAlarmZoneEvent = (zoneName: string, newState: 'ARMED' | 'DISARMED' | 'TRIGGERED' = 'ARMED', zoneId?: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const previousState = newState === 'ARMED' ? 'DISARMED' : 'ARMED';
+  
+  const eventData = {
+    type: 'arming',
+    alarmZoneId: zoneId || `test-zone-${Date.now()}`,
+    alarmZoneName: zoneName,
+    currentState: newState,
+    previousState: previousState,
+    locationId: 'test-location',
+    locationName: 'Test Location',
+    timestamp: new Date().toISOString(),
+    isDirectAlarmZoneEvent: true,
+    isAlarmZoneEvent: true
+  };
+  
+  console.log('🧪 Testing direct alarm zone event (Fusion format):', eventData);
+  
+  // Dispatch the same event that real Fusion SSE would dispatch
+  window.dispatchEvent(new CustomEvent('alarmZoneStateChange', {
+    detail: eventData
+  }));
+  
+  return eventData;
+};
+
 // Add test functions to window for easy console access
 export const addAlarmZoneTestFunctions = () => {
   if (typeof window !== 'undefined') {
@@ -63,11 +92,21 @@ export const addAlarmZoneTestFunctions = () => {
     (window as any).testAlarmZoneDisarmed = (deviceName: string, spaceName?: string) => testAlarmZoneEvent(deviceName, 'disarmed', spaceName);
     (window as any).testAlarmZoneTriggered = (deviceName: string, spaceName?: string) => testAlarmZoneEvent(deviceName, 'triggered', spaceName);
     
+    // Real Fusion alarm zone event tests
+    (window as any).testDirectAlarmZoneArmed = (zoneName: string, zoneId?: string) => testDirectAlarmZoneEvent(zoneName, 'ARMED', zoneId);
+    (window as any).testDirectAlarmZoneDisarmed = (zoneName: string, zoneId?: string) => testDirectAlarmZoneEvent(zoneName, 'DISARMED', zoneId);
+    (window as any).testDirectAlarmZoneTriggered = (zoneName: string, zoneId?: string) => testDirectAlarmZoneEvent(zoneName, 'TRIGGERED', zoneId);
+    
     console.log('🧪 Alarm Zone Test Functions Available:');
-    console.log('• testAlarmZoneArmed("Device Name", "Space Name")');
-    console.log('• testAlarmZoneDisarmed("Device Name", "Space Name")');
-    console.log('• testAlarmZoneTriggered("Device Name", "Space Name")');
-    console.log('• Example: testAlarmZoneArmed("Front Door Sensor", "Garage")');
+    console.log('• Legacy device-based tests:');
+    console.log('  - testAlarmZoneArmed("Device Name", "Space Name")');
+    console.log('  - testAlarmZoneDisarmed("Device Name", "Space Name")');
+    console.log('  - testAlarmZoneTriggered("Device Name", "Space Name")');
+    console.log('• Real Fusion alarm zone tests:');
+    console.log('  - testDirectAlarmZoneArmed("Garage", "zone-id")');
+    console.log('  - testDirectAlarmZoneDisarmed("Perimeter", "zone-id")');
+    console.log('  - testDirectAlarmZoneTriggered("Interior", "zone-id")');
+    console.log('• Example: testDirectAlarmZoneArmed("Garage")');
   }
 };
 

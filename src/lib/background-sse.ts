@@ -307,17 +307,19 @@ class BackgroundSSEService {
             timestamp: eventData.timestamp
           });
           
-          // Check for alarm zone state changes
+          // Check for alarm zone state changes - support both device events and direct alarm zone events
           const isAlarmZoneEvent = eventData.type?.toLowerCase().includes('armed') || 
                                   eventData.type?.toLowerCase().includes('disarmed') ||
                                   eventData.type?.toLowerCase().includes('arm') ||
                                   eventData.type?.toLowerCase().includes('disarm') ||
                                   eventData.type?.toLowerCase().includes('trigger') ||
+                                  eventData.type?.toLowerCase().includes('arming') || // ← Real Fusion alarm zone events
                                   eventData.category?.toLowerCase().includes('alarm') ||
                                   eventData.category?.toLowerCase().includes('security') ||
                                   eventData.category?.toLowerCase().includes('zone') ||
                                   (eventData.displayState?.toLowerCase().includes('arm') && 
-                                   !eventData.displayState?.toLowerCase().includes('alarm'));
+                                   !eventData.displayState?.toLowerCase().includes('alarm')) ||
+                                  rawEvent.alarmZone; // ← Direct alarm zone events from Fusion
           
           if (isAlarmZoneEvent) {
             console.log('🔒 Alarm Zone State Change Detected:', {
@@ -325,7 +327,8 @@ class BackgroundSSEService {
               category: eventData.category,
               device: eventData.deviceName,
               space: eventData.spaceName,
-              displayState: eventData.displayState
+              displayState: eventData.displayState,
+              alarmZone: rawEvent.alarmZone // ← Log alarm zone data if present
             });
           }
 
@@ -335,7 +338,29 @@ class BackgroundSSEService {
             if (typeof window === 'undefined') {
               // Dynamic import to avoid issues with client-side rendering
                           import('@/lib/event-broadcast').then(({ broadcastEvent }) => {
-              broadcastEvent({
+              
+              // Handle different event types - device events vs alarm zone events
+              let broadcastData;
+              
+              if (rawEvent.alarmZone) {
+                // Real Fusion alarm zone event
+                broadcastData = {
+                  id: rawEvent.alarmZone.id,
+                  type: eventData.type, // "arming"
+                  alarmZoneId: rawEvent.alarmZone.id,
+                  alarmZoneName: rawEvent.alarmZone.name,
+                  currentState: rawEvent.alarmZone.currentState, // ARMED/DISARMED
+                  previousState: rawEvent.alarmZone.previousState,
+                  locationId: rawEvent.alarmZone.locationId,
+                  locationName: rawEvent.alarmZone.locationName,
+                  timestamp: eventData.timestamp,
+                  eventSource: 'live-sse',
+                  isAlarmZoneEvent: true,
+                  isDirectAlarmZoneEvent: true // Flag for direct alarm zone events
+                };
+              } else {
+                // Device-based event (original format)
+                broadcastData = {
                   id: eventData.timestamp,
                   type: eventData.type,
                   deviceName: eventData.deviceName,
@@ -346,7 +371,10 @@ class BackgroundSSEService {
                   category: eventData.category,
                   eventSource: 'live-sse',
                   isAlarmZoneEvent: isAlarmZoneEvent
-                });
+                };
+              }
+              
+              broadcastEvent(broadcastData);
               }).catch(error => {
                 // Silently ignore broadcast errors - not critical
                 console.log('📡 Background SSE: Live broadcast unavailable:', error.message);

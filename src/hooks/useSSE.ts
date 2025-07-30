@@ -85,25 +85,22 @@ export function useSSE() {
             globalDebugLog('📡 SSE: Received live event:', data);
             
             // Check if this is an alarm zone event
-            if (data.isAlarmZoneEvent) {
+            if (data.isAlarmZoneEvent || data.isDirectAlarmZoneEvent) {
               globalDebugLog('🔒 SSE: Alarm zone event detected:', {
                 type: data.type,
                 category: data.category,
                 device: data.deviceName,
-                space: data.spaceName
+                space: data.spaceName,
+                alarmZoneId: data.alarmZoneId,
+                alarmZoneName: data.alarmZoneName,
+                currentState: data.currentState,
+                isDirectAlarmZoneEvent: data.isDirectAlarmZoneEvent
               });
               
               // Dispatch custom event for alarm zone updates
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('alarmZoneStateChange', {
-                  detail: {
-                    type: data.type,
-                    category: data.category,
-                    deviceName: data.deviceName,
-                    spaceName: data.spaceName,
-                    displayState: data.displayState,
-                    timestamp: data.timestamp
-                  }
+                  detail: data // Pass the entire data object for both event types
                 }));
               }
             }
@@ -356,4 +353,4 @@ export function useSSE() {
     showLiveEvents: true,
     isClient: typeof window !== 'undefined'
   };
-} 
+}
