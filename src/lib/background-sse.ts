@@ -332,49 +332,49 @@ class BackgroundSSEService {
             });
           }
 
-          // Broadcast to connected frontend clients for real-time updates
+          // Broadcast to connected frontend clients for real-time updates (ALL events)
           try {
             // Only broadcast if running in Next.js server context
             if (typeof window === 'undefined') {
               // Dynamic import to avoid issues with client-side rendering
-                          import('@/lib/event-broadcast').then(({ broadcastEvent }) => {
+              import('@/lib/event-broadcast').then(({ broadcastEvent }) => {
               
-              // Handle different event types - device events vs alarm zone events
-              let broadcastData;
-              
-              if (rawEvent.alarmZone) {
-                // Real Fusion alarm zone event
-                broadcastData = {
-                  id: rawEvent.alarmZone.id,
-                  type: eventData.type, // "arming"
-                  alarmZoneId: rawEvent.alarmZone.id,
-                  alarmZoneName: rawEvent.alarmZone.name,
-                  currentState: rawEvent.alarmZone.currentState, // ARMED/DISARMED
-                  previousState: rawEvent.alarmZone.previousState,
-                  locationId: rawEvent.alarmZone.locationId,
-                  locationName: rawEvent.alarmZone.locationName,
-                  timestamp: eventData.timestamp,
-                  eventSource: 'live-sse',
-                  isAlarmZoneEvent: true,
-                  isDirectAlarmZoneEvent: true // Flag for direct alarm zone events
-                };
-              } else {
-                // Device-based event (original format)
-                broadcastData = {
-                  id: eventData.timestamp,
-                  type: eventData.type,
-                  deviceName: eventData.deviceName,
-                  timestamp: eventData.timestamp,
-                  imageUrl: eventData.imageUrl,
-                  displayState: eventData.displayState,
-                  spaceName: eventData.spaceName,
-                  category: eventData.category,
-                  eventSource: 'live-sse',
-                  isAlarmZoneEvent: isAlarmZoneEvent
-                };
-              }
-              
-              broadcastEvent(broadcastData);
+                // Handle different event types - device events vs alarm zone events
+                let broadcastData;
+                
+                if (rawEvent.alarmZone) {
+                  // Real Fusion alarm zone event
+                  broadcastData = {
+                    id: rawEvent.alarmZone.id,
+                    type: eventData.type, // "arming"
+                    alarmZoneId: rawEvent.alarmZone.id,
+                    alarmZoneName: rawEvent.alarmZone.name,
+                    currentState: rawEvent.alarmZone.currentState, // ARMED/DISARMED
+                    previousState: rawEvent.alarmZone.previousState,
+                    locationId: rawEvent.alarmZone.locationId,
+                    locationName: rawEvent.alarmZone.locationName,
+                    timestamp: eventData.timestamp,
+                    eventSource: 'live-sse',
+                    isAlarmZoneEvent: true,
+                    isDirectAlarmZoneEvent: true // Flag for direct alarm zone events
+                  };
+                } else {
+                  // Device-based event (original format) - for camera events, etc.
+                  broadcastData = {
+                    id: eventData.timestamp,
+                    type: eventData.type,
+                    deviceName: eventData.deviceName,
+                    timestamp: eventData.timestamp,
+                    imageUrl: eventData.imageUrl,
+                    displayState: eventData.displayState,
+                    spaceName: eventData.spaceName,
+                    category: eventData.category,
+                    eventSource: 'live-sse',
+                    isAlarmZoneEvent: isAlarmZoneEvent
+                  };
+                }
+                
+                broadcastEvent(broadcastData);
               }).catch(error => {
                 // Silently ignore broadcast errors - not critical
                 console.log('📡 Background SSE: Live broadcast unavailable:', error.message);
@@ -382,7 +382,7 @@ class BackgroundSSEService {
             }
           } catch (error) {
             // Silently ignore broadcast errors - not critical
-            console.log('📡 Background SSE: Live broadcast failed:', error);
+            console.log('📡 Background SSE: Broadcast error:', error instanceof Error ? error.message : 'Unknown error');
           }
         })
         .catch((error) => {
