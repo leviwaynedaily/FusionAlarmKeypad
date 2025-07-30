@@ -111,61 +111,88 @@ export function useAlarmKeypad() {
   // Listen for alarm zone state changes from SSE
   useEffect(() => {
     const handleAlarmZoneStateChange = (event: any) => {
-      const { type, category, deviceName, spaceName, displayState } = event.detail;
+      const { type, category, deviceName, spaceName, displayState, timestamp } = event.detail;
       
       console.log('🔒 Alarm Zone State Change Handler:', {
         type,
         category,
         deviceName,
         spaceName,
-        displayState
+        displayState,
+        timestamp
       });
       
-      // Try to update specific zones more efficiently
-      if (deviceName) {
-        // Find which alarm zone contains this device
-        const affectedZones = alarmZones.filter(zone => 
-          zone.deviceIds?.some(deviceId => 
-            devices.find(device => device.id === deviceId && device.name === deviceName)
-          )
-        );
-        
-        if (affectedZones.length > 0) {
-          console.log('🔒 Found affected alarm zones:', affectedZones.map(z => z.name));
-          
-          // Update device state in local state
-          setDevices(prev => prev.map(device => {
-            if (device.name === deviceName) {
-              const newArmedState = type?.toLowerCase().includes('disarm') ? 'DISARMED' : 
-                                   type?.toLowerCase().includes('arm') ? 'ARMED_AWAY' : 
-                                   device.armedState;
-              return { ...device, armedState: newArmedState };
-            }
-            return device;
-          }));
-          
-          // Update alarm zone states based on their device states
-          setAlarmZones(prev => prev.map(zone => {
-            if (affectedZones.some(az => az.id === zone.id)) {
-              const zoneDevices = devices.filter(device => 
-                zone.deviceIds?.includes(device.id)
-              );
-              const armedDevices = zoneDevices.filter(d => d.armedState !== 'DISARMED');
-              const newZoneState = armedDevices.length > 0 ? 'ARMED_AWAY' : 'DISARMED';
-              
-              return { ...zone, armedState: newZoneState };
-            }
-            return zone;
-          }));
-          
-          return; // Skip full refresh if we handled it locally
-        }
+      // Determine the new armed state from the event type
+      const eventTypeLower = type?.toLowerCase() || '';
+      let newArmedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED' | null = null;
+      
+      if (eventTypeLower.includes('disarm')) {
+        newArmedState = 'DISARMED';
+      } else if (eventTypeLower.includes('arm')) {
+        // Default to ARMED_AWAY, could be enhanced to detect ARMED_STAY
+        newArmedState = 'ARMED_AWAY';
+      } else if (eventTypeLower.includes('trigger')) {
+        newArmedState = 'TRIGGERED';
       }
       
-      // Fallback: refresh all alarm zones if we can't handle it locally
-      if (selectedLocation) {
-        console.log('🔒 Fallback: Refreshing all alarm zones from API');
+      if (!newArmedState) {
+        console.log('🔒 Could not determine armed state from event type:', type);
+        return;
+      }
+      
+      console.log('🔒 Determined new armed state:', newArmedState);
+      
+      // Update alarm zones that contain the affected device
+      const zonesUpdated = new Set<string>();
+      
+      setAlarmZones(prev => {
+        return prev.map(zone => {
+          // Check if this zone contains the device by name or space
+          const zoneDevices = devices.filter(device => 
+            zone.deviceIds?.includes(device.id)
+          );
+          
+          const affectedByDevice = zoneDevices.some(device => 
+            device.name === deviceName
+          );
+          
+          const affectedBySpace = spaceName && zoneDevices.some(device => 
+            device.spaceName === spaceName
+          );
+          
+          if (affectedByDevice || affectedBySpace) {
+            console.log(`🔒 Updating zone "${zone.name}" to state: ${newArmedState}`);
+            zonesUpdated.add(zone.id);
+            
+            // Update the zone's armed state
+            return { 
+              ...zone, 
+              armedState: newArmedState,
+              lastArmedStateChangeReason: `Real-time update from ${deviceName || spaceName}` 
+            };
+          }
+          
+          return zone;
+        });
+      });
+      
+      // Also update device states for consistency
+      if (deviceName) {
+        setDevices(prev => prev.map(device => {
+          if (device.name === deviceName) {
+            console.log(`🔒 Updating device "${deviceName}" to state: ${newArmedState}`);
+            return { ...device, armedState: newArmedState };
+          }
+          return device;
+        }));
+      }
+      
+      // If no zones were updated and we have a valid location, do a targeted refresh
+      if (zonesUpdated.size === 0 && selectedLocation && (deviceName || spaceName)) {
+        console.log('🔒 No zones updated locally, refreshing alarm zones from API');
         loadAlarmZones(selectedLocation);
+      } else if (zonesUpdated.size > 0) {
+        console.log(`🔒 Successfully updated ${zonesUpdated.size} alarm zone(s) in real-time`);
       }
     };
 
@@ -176,7 +203,7 @@ export function useAlarmKeypad() {
         window.removeEventListener('alarmZoneStateChange', handleAlarmZoneStateChange);
       };
     }
-  }, [selectedLocation, alarmZones, devices]);
+  }, [selectedLocation, devices]); // Removed alarmZones from deps to prevent infinite loops
 
   // SSE context for real-time space and device updates
   const sseCtx = useSSEContext();

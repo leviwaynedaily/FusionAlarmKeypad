@@ -32,35 +32,42 @@ export const isDebugMode = (): boolean => {
   return false;
 };
 
-// 🔒 Alarm Zone Testing Utilities
-export const testAlarmZoneEvent = (deviceName: string, eventType: 'armed' | 'disarmed' = 'armed') => {
-  if (typeof window !== 'undefined') {
-    const testEvent = {
-      type: eventType,
-      category: 'security',
-      deviceName,
-      spaceName: 'Test Space',
-      displayState: eventType === 'armed' ? 'Armed Away' : 'Disarmed',
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('🔒 Test: Dispatching alarm zone event:', testEvent);
-    
-    window.dispatchEvent(new CustomEvent('alarmZoneStateChange', {
-      detail: testEvent
-    }));
-  }
+// 🔒 Test function to simulate alarm zone events for development
+export const testAlarmZoneEvent = (deviceName: string, eventType: 'armed' | 'disarmed' | 'triggered' = 'armed', spaceName?: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const eventData = {
+    type: eventType,
+    category: 'security',
+    deviceName: deviceName,
+    spaceName: spaceName || `Space for ${deviceName}`,
+    displayState: eventType === 'armed' ? 'Armed Away' : eventType === 'disarmed' ? 'Disarmed' : 'Triggered',
+    timestamp: new Date().toISOString(),
+    isAlarmZoneEvent: true
+  };
+  
+  console.log('🧪 Testing alarm zone event:', eventData);
+  
+  // Dispatch the same event that SSE would dispatch
+  window.dispatchEvent(new CustomEvent('alarmZoneStateChange', {
+    detail: eventData
+  }));
+  
+  return eventData;
 };
 
-// Helper to add test functions to window for easy console access
+// Add test functions to window for easy console access
 export const addAlarmZoneTestFunctions = () => {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    (window as any).testAlarmZoneArmed = (deviceName: string) => testAlarmZoneEvent(deviceName, 'armed');
-    (window as any).testAlarmZoneDisarmed = (deviceName: string) => testAlarmZoneEvent(deviceName, 'disarmed');
+  if (typeof window !== 'undefined') {
+    (window as any).testAlarmZoneArmed = (deviceName: string, spaceName?: string) => testAlarmZoneEvent(deviceName, 'armed', spaceName);
+    (window as any).testAlarmZoneDisarmed = (deviceName: string, spaceName?: string) => testAlarmZoneEvent(deviceName, 'disarmed', spaceName);
+    (window as any).testAlarmZoneTriggered = (deviceName: string, spaceName?: string) => testAlarmZoneEvent(deviceName, 'triggered', spaceName);
     
-    console.log('🔒 Test functions added to window:');
-    console.log('• testAlarmZoneArmed("Device Name")');
-    console.log('• testAlarmZoneDisarmed("Device Name")');
+    console.log('🧪 Alarm Zone Test Functions Available:');
+    console.log('• testAlarmZoneArmed("Device Name", "Space Name")');
+    console.log('• testAlarmZoneDisarmed("Device Name", "Space Name")');
+    console.log('• testAlarmZoneTriggered("Device Name", "Space Name")');
+    console.log('• Example: testAlarmZoneArmed("Front Door Sensor", "Garage")');
   }
 };
 

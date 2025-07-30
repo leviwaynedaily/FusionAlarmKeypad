@@ -310,8 +310,14 @@ class BackgroundSSEService {
           // Check for alarm zone state changes
           const isAlarmZoneEvent = eventData.type?.toLowerCase().includes('armed') || 
                                   eventData.type?.toLowerCase().includes('disarmed') ||
+                                  eventData.type?.toLowerCase().includes('arm') ||
+                                  eventData.type?.toLowerCase().includes('disarm') ||
+                                  eventData.type?.toLowerCase().includes('trigger') ||
                                   eventData.category?.toLowerCase().includes('alarm') ||
-                                  eventData.category?.toLowerCase().includes('security');
+                                  eventData.category?.toLowerCase().includes('security') ||
+                                  eventData.category?.toLowerCase().includes('zone') ||
+                                  (eventData.displayState?.toLowerCase().includes('arm') && 
+                                   !eventData.displayState?.toLowerCase().includes('alarm'));
           
           if (isAlarmZoneEvent) {
             console.log('🔒 Alarm Zone State Change Detected:', {
