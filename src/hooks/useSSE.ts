@@ -81,7 +81,7 @@ export function useSSE() {
           }
           
           // Add new event to the top of the list
-          if (data.deviceName && data.type !== 'unknown') {
+          if ((data.deviceName && data.type !== 'unknown') || data.isDirectAlarmZoneEvent || data.isAlarmZoneEvent) {
             globalDebugLog('📡 SSE: Received live event:', data);
             
             // Check if this is an alarm zone event
