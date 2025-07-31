@@ -1229,8 +1229,8 @@ export function LiveEventsTicker({
               <button
                 key={event.id || idx}
                 onClick={() => setSelected(event)}
-                className="group flex flex-col items-center min-w-[140px] max-w-[140px] sm:min-w-[180px] sm:max-w-[180px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105"
-                title={`${deviceName} – ${primaryLabel}: ${secondaryLabel}`}
+                className="group flex flex-col items-center min-w-[120px] max-w-[120px] sm:min-w-[140px] sm:max-w-[140px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105"
+                title={`${deviceName} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
                 {/* Timeline dot indicator */}
                 <div className="relative">
@@ -1238,8 +1238,8 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Enhanced for 16:9 images */}
-                  <div className="w-32 h-20 sm:w-40 sm:h-24 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
+                  {/* Image or Icon Container - Made smaller and cleaner */}
+                  <div className="w-28 h-18 sm:w-32 sm:h-20 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
                       
@@ -1303,16 +1303,10 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details */}
+                {/* Event details - Simplified without event type labels */}
                 <div className="mt-2 text-center space-y-1">
                   <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">
                     {deviceName}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                    {primaryLabel}
-                  </div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                    {secondaryLabel}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-500">
                     {formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}
