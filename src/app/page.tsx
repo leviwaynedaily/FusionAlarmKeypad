@@ -705,7 +705,7 @@ function AlarmKeypad() {
 
   // Show PIN entry interface
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full flex flex-col relative">
       {/* SSE Connection Manager */}
       <SSEConnectionManager 
         organization={alarmKeypad.organization} 
@@ -713,16 +713,8 @@ function AlarmKeypad() {
       />
       
 
-      {/* Live Events Ticker */}
-      <LiveEventsTicker
-        showLiveEvents={alarmKeypad.showLiveEvents}
-        recentEvents={sse.recentEvents}
-        debugMode={debugMode}
-        cameras={alarmKeypad.cameras}
-        spaces={alarmKeypad.spaces}
-        eventFilterSettings={alarmKeypad.eventFilterSettings}
-        alarmZones={alarmKeypad.alarmZones}
-      />
+      {/* Main Layout Container */}
+      <div className="flex-1 min-h-0">
       {/* Layout Selection */}
       {alarmKeypad.useTestDesign2 ? (
         <VisionProLayout
@@ -868,6 +860,19 @@ function AlarmKeypad() {
         }}
         requireApiKey={requireApiKey}
       />
+      
+      {/* Live Events Ticker - Now in proper layout flow */}
+      <div className="flex-shrink-0">
+        <LiveEventsTicker
+          showLiveEvents={alarmKeypad.showLiveEvents}
+          recentEvents={sse.recentEvents}
+          debugMode={debugMode}
+          cameras={alarmKeypad.cameras}
+          spaces={alarmKeypad.spaces}
+          eventFilterSettings={alarmKeypad.eventFilterSettings}
+          alarmZones={alarmKeypad.alarmZones}
+        />
+      </div>
     </div>
   );
 } 

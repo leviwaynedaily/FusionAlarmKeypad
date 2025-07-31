@@ -380,7 +380,7 @@ export function LiveEventsTicker({
   if (!filteredEvents.length) {
     debugLog('🔍 Timeline: No filtered events, showing debug message');
     return (
-      <div className="fixed bottom-0 left-0 w-full z-40 pointer-events-none">
+      <div className="relative w-full bg-white dark:bg-[#0f0f0f] border-t border-gray-200 dark:border-gray-800 pointer-events-none">
         <div className="relative">
           <div className="pointer-events-auto bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 p-4 text-center border-t border-yellow-200 dark:border-yellow-700">
             <div className="text-sm font-medium">
@@ -565,7 +565,7 @@ export function LiveEventsTicker({
 
   return (
     <>
-    <div className="fixed bottom-0 left-0 w-full z-40 pointer-events-none">
+    <div className="relative w-full pointer-events-none">
       <div className="relative">
         {/* Timeline header with quick settings */}
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/60 dark:from-[#0f0f0f]/60 to-transparent flex items-center justify-between px-4">
@@ -716,7 +716,7 @@ export function LiveEventsTicker({
         {/* Scrollable timeline */}
         <div
           ref={rowRef}
-          className="relative flex gap-4 py-4 px-8 bg-white dark:bg-[#0f0f0f] shadow-2xl rounded-t-3xl overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto border-t border-gray-200/50 dark:border-gray-800/50"
+          className="relative flex gap-2 sm:gap-4 py-2 sm:py-4 px-4 sm:px-8 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto"
         >
           {/* Timeline connector line - centered */}
           <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none transform -translate-y-1/2" />
@@ -1229,7 +1229,7 @@ export function LiveEventsTicker({
               <button
                 key={event.id || idx}
                 onClick={() => setSelected(event)}
-                className="group flex flex-col items-center min-w-[120px] max-w-[120px] sm:min-w-[140px] sm:max-w-[140px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105"
+                className="group flex flex-col items-center min-w-[100px] max-w-[100px] sm:min-w-[120px] sm:max-w-[120px] md:min-w-[140px] md:max-w-[140px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105"
                 title={`${deviceName} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
                 {/* Timeline dot indicator */}
@@ -1238,8 +1238,8 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Made smaller and cleaner */}
-                  <div className="w-28 h-16 sm:w-32 sm:h-20 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
+                  {/* Image or Icon Container - Responsive sizing */}
+                  <div className="w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
                       
@@ -1284,7 +1284,7 @@ export function LiveEventsTicker({
                               />
                               {/* Icon fallback (hidden by default) */}
                               <div 
-                                className="absolute inset-0 items-center justify-center w-full h-full text-4xl sm:text-5xl text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl"
+                                className="absolute inset-0 items-center justify-center w-full h-full text-2xl sm:text-3xl md:text-4xl text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl"
                                 style={{ display: 'none' }}
                               >
                                 {getEventIcon(event)}
@@ -1295,7 +1295,7 @@ export function LiveEventsTicker({
                       }
                       
                       return (
-                        <div className="flex items-center justify-center w-full h-full text-4xl sm:text-5xl text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center justify-center w-full h-full text-2xl sm:text-3xl md:text-4xl text-gray-600 dark:text-gray-400">
                           {getEventIcon(event)}
                         </div>
                       );
@@ -1303,9 +1303,9 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details - Simplified without event type labels */}
-                <div className="mt-2 text-center space-y-1">
-                  <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">
+                {/* Event details - Responsive text sizing */}
+                <div className="mt-1 sm:mt-2 text-center space-y-1">
+                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">
                     {deviceName}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-500">
