@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Action required' }, { status: 400 });
     }
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     switch (action) {
       case 'set':
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
     // Check if API key exists in secure cookie
     const apiKeyCookie = cookieStore.get('fusion_api_key_secure');

@@ -28,12 +28,12 @@ export class SecureServerStorage {
   /**
    * Store API key securely in HTTP-only cookie
    */
-  static setApiKey(apiKey: string): void {
+  static async setApiKey(apiKey: string): Promise<void> {
     if (typeof window !== 'undefined') {
       throw new Error('SecureServerStorage can only be used server-side');
     }
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(
       SECURE_STORAGE_CONFIG.API_KEY_COOKIE,
       apiKey,
@@ -44,12 +44,12 @@ export class SecureServerStorage {
   /**
    * Retrieve API key from HTTP-only cookie
    */
-  static getApiKey(): string | null {
+  static async getApiKey(): Promise<string | null> {
     if (typeof window !== 'undefined') {
       throw new Error('SecureServerStorage can only be used server-side');
     }
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cookie = cookieStore.get(SECURE_STORAGE_CONFIG.API_KEY_COOKIE);
     return cookie?.value || null;
   }
@@ -57,24 +57,24 @@ export class SecureServerStorage {
   /**
    * Remove API key cookie
    */
-  static clearApiKey(): void {
+  static async clearApiKey(): Promise<void> {
     if (typeof window !== 'undefined') {
       throw new Error('SecureServerStorage can only be used server-side');
     }
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete(SECURE_STORAGE_CONFIG.API_KEY_COOKIE);
   }
 
   /**
    * Store organization data securely
    */
-  static setOrganization(orgData: any): void {
+  static async setOrganization(orgData: any): Promise<void> {
     if (typeof window !== 'undefined') {
       throw new Error('SecureServerStorage can only be used server-side');
     }
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(
       SECURE_STORAGE_CONFIG.ORGANIZATION_COOKIE,
       JSON.stringify(orgData),
@@ -85,12 +85,12 @@ export class SecureServerStorage {
   /**
    * Retrieve organization data
    */
-  static getOrganization(): any | null {
+  static async getOrganization(): Promise<any | null> {
     if (typeof window !== 'undefined') {
       throw new Error('SecureServerStorage can only be used server-side');
     }
     
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cookie = cookieStore.get(SECURE_STORAGE_CONFIG.ORGANIZATION_COOKIE);
     
     if (!cookie?.value) return null;
@@ -228,7 +228,11 @@ export class SecureStorage {
     
     // Try server-side secure storage if available
     if (typeof window === 'undefined') {
-      return SecureServerStorage.getApiKey();
+      try {
+        return await SecureServerStorage.getApiKey();
+      } catch {
+        return null;
+      }
     }
     
     // Client-side: try secure storage, fallback to migration
@@ -243,10 +247,10 @@ export class SecureStorage {
   /**
    * Set API key using the most secure method available
    */
-  static setApiKey(apiKey: string): void {
+  static async setApiKey(apiKey: string): Promise<void> {
     if (typeof window === 'undefined') {
       // Server-side: use HTTP-only cookies
-      SecureServerStorage.setApiKey(apiKey);
+      await SecureServerStorage.setApiKey(apiKey);
     } else {
       // Client-side: use encrypted sessionStorage
       SecureClientStorage.setApiKey(apiKey);
@@ -256,9 +260,9 @@ export class SecureStorage {
   /**
    * Clear API key from all storage methods
    */
-  static clearApiKey(): void {
+  static async clearApiKey(): Promise<void> {
     if (typeof window === 'undefined') {
-      SecureServerStorage.clearApiKey();
+      await SecureServerStorage.clearApiKey();
     } else {
       SecureClientStorage.clearApiKey();
       // Also clear old localStorage for cleanup
