@@ -17,7 +17,12 @@ export default function DebugPage() {
     addResult('Testing API key...');
     try {
       const response = await getApiKeyDetails();
-      console.log('API Key test response:', response);
+      // 🔒 SECURITY: Only log safe parts of API response
+      console.log('API Key test response status:', {
+        hasData: !!response.data,
+        hasError: !!response.error,
+        organizationName: response.data?.organizationInfo?.name || 'Unknown'
+      });
       
       if (response.error) {
         addResult(`API Error: ${response.error}`, true);
@@ -37,7 +42,12 @@ export default function DebugPage() {
     addResult('Testing get locations...');
     try {
       const response = await getLocations();
-      console.log('Locations response:', response);
+      // 🔒 SECURITY: Only log safe parts of locations response
+      console.log('Locations response status:', {
+        hasData: !!response.data,
+        hasError: !!response.error,
+        locationCount: response.data?.length || 0
+      });
       
       if (response.error) {
         addResult(`Locations Error: ${response.error}`, true);
@@ -49,7 +59,12 @@ export default function DebugPage() {
           // Test getting areas for first location
           addResult('Testing get areas...');
           const areasResponse = await getAreas(response.data[0].id);
-          console.log('Areas response:', areasResponse);
+          // 🔒 SECURITY: Only log safe parts of areas response
+          console.log('Areas response status:', {
+            hasData: !!areasResponse.data,
+            hasError: !!areasResponse.error,
+            areaCount: areasResponse.data?.length || 0
+          });
           
           if (areasResponse.error) {
             addResult(`Areas Error: ${areasResponse.error}`, true);

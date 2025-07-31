@@ -251,7 +251,12 @@ export function useAlarmKeypad() {
     console.log('🏢 Loading organization and locations...');
     try {
       const apiKeyDetails = await getApiKeyDetails();
-      console.log('🏢 getApiKeyDetails RAW response:', apiKeyDetails);
+      // 🔒 SECURITY: Only log safe parts of API response to prevent exposure of sensitive data
+      console.log('🏢 getApiKeyDetails response status:', {
+        hasData: !!apiKeyDetails.data,
+        hasError: !!apiKeyDetails.error,
+        organizationId: apiKeyDetails.data?.organizationInfo?.id || 'none'
+      });
       
       if (apiKeyDetails.error) {
         logger.error('Error fetching API key details:', apiKeyDetails.error);

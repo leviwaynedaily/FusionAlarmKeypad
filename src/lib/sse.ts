@@ -88,9 +88,11 @@ class SSEClient implements FusionSSEClient {
         };
 
         console.log('🔍 SSE: Connecting to:', url.toString());
+        // 🔒 SECURITY: Use consistent API key masking
+        const maskedKey = this.config.apiKey ? `${this.config.apiKey.substring(0, 8)}...${this.config.apiKey.substring(this.config.apiKey.length - 4)}` : 'MISSING';
         console.log('🔍 SSE: Headers:', { 
           'Accept': headers.Accept,
-          'x-api-key': this.config.apiKey ? `${this.config.apiKey.substring(0, 10)}...` : 'MISSING'
+          'x-api-key': maskedKey
         });
 
         this.abortController = new AbortController();

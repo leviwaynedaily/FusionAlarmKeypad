@@ -198,7 +198,10 @@ export const apiFetch = async <T>(path: string, options: RequestInit = {}): Prom
   // Use the Fusion API key from localStorage first, then environment variable
   const key = localStorage.getItem('fusion_api_key') || process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
   const baseUrl = localStorage.getItem('fusion_api_url') || API_BASE_URL;
-  console.log('[apiFetch] Using API key:', key);
+  
+  // 🔒 SECURITY: Only log truncated API key to prevent exposure
+  const maskedKey = key ? `${key.substring(0, 8)}...${key.substring(key.length - 4)}` : 'NONE';
+  console.log('[apiFetch] Using API key:', maskedKey);
   console.log('[apiFetch] Request URL:', `${baseUrl}${path}`);
 
   try {
