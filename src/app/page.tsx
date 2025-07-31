@@ -816,7 +816,21 @@ function AlarmKeypad() {
           onSettingsClick={handleSettingsClick}
         />
       )}
-      
+      </div>
+
+      {/* Live Events Ticker - Now in proper layout flow */}
+      <div className="flex-shrink-0">
+        <LiveEventsTicker
+          showLiveEvents={alarmKeypad.showLiveEvents}
+          recentEvents={sse.recentEvents}
+          debugMode={debugMode}
+          cameras={alarmKeypad.cameras}
+          spaces={alarmKeypad.spaces}
+          eventFilterSettings={alarmKeypad.eventFilterSettings}
+          alarmZones={alarmKeypad.alarmZones}
+        />
+      </div>
+
       {/* Settings Modal */}
       <SettingsModal 
         open={settingsModalOpen} 
@@ -860,19 +874,6 @@ function AlarmKeypad() {
         }}
         requireApiKey={requireApiKey}
       />
-      
-      {/* Live Events Ticker - Now in proper layout flow */}
-      <div className="flex-shrink-0">
-        <LiveEventsTicker
-          showLiveEvents={alarmKeypad.showLiveEvents}
-          recentEvents={sse.recentEvents}
-          debugMode={debugMode}
-          cameras={alarmKeypad.cameras}
-          spaces={alarmKeypad.spaces}
-          eventFilterSettings={alarmKeypad.eventFilterSettings}
-          alarmZones={alarmKeypad.alarmZones}
-        />
-      </div>
     </div>
   );
 } 
