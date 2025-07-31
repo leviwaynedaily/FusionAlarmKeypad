@@ -375,6 +375,26 @@ export const updateAlarmZone = async (zoneId: string, zoneData: Partial<AlarmZon
   return { data: response.data?.data || {} as AlarmZone };
 };
 
+export const getAlarmZoneDevices = async (zoneId: string): Promise<ApiResponse<Device[]>> => {
+  const response = await apiFetch<{ success: boolean; data: Device[] }>(`/api/alarm-zones/${zoneId}/devices`);
+  if (response.error) {
+    return { data: [], error: response.error };
+  }
+  return { data: response.data?.data || [] };
+};
+
+export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
+  const response = await apiFetch<{ success: boolean; data: { success: boolean } }>(`/api/alarm-zones/${zoneId}/arm-state`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ armedState })
+  });
+  if (response.error) {
+    return { data: { success: false }, error: response.error };
+  }
+  return { data: response.data?.data || { success: true } };
+};
+
 // Device State Management
 export const updateDeviceState = async (deviceId: string, state: string): Promise<ApiResponse<{ success: boolean }>> => {
   const response = await apiFetch<{ success: boolean; data: { success: boolean } }>(`/api/devices/${deviceId}/state`, {

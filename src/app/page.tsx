@@ -490,7 +490,7 @@ function AlarmKeypad() {
             {/* Compact Alarm Zones */}
             <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
               <h2 className={`font-semibold text-gray-900 dark:text-white ${isMobile ? 'text-lg mb-3' : 'text-xl mb-4'}`}>
-                Security Zones
+                Alarm Zones
               </h2>
               
               {alarmKeypad.alarmZones && alarmKeypad.alarmZones.length > 0 ? (

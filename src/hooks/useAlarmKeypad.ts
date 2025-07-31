@@ -14,6 +14,8 @@ import {
   armDevices,
   disarmDevices,
   getAlarmZones,
+  getAlarmZoneDevices,
+  setAlarmZoneArmedState,
   getCameras,
   saveUserPreferences,
   loadUserPreferences
@@ -443,6 +445,39 @@ export function useAlarmKeypad() {
       setAlarmZones(transformedZones);
       console.log('🔒 Successfully loaded', transformedZones.length, 'alarm zones:');
       console.log('🔒 Zones:', transformedZones.map(z => ({ id: z.id, name: z.name, armedState: z.armedState, deviceCount: z.deviceIds?.length || 0 })));
+      
+      // After loading zones, load device counts for each zone
+      // Note: We'll use setTimeout to allow state to update first
+      setTimeout(() => {
+        if (transformedZones.length > 0) {
+          console.log('🔒 Loading device counts for zones...');
+          // Load device counts asynchronously after zones are set
+          Promise.all(
+            transformedZones.map(async (zone) => {
+              try {
+                const response = await getAlarmZoneDevices(zone.id);
+                if (!response.error) {
+                  console.log(`🔒 Zone "${zone.name}" has ${response.data.length} devices`);
+                  return {
+                    ...zone,
+                    deviceIds: response.data.map(device => device.id),
+                    devices: response.data
+                  };
+                } else {
+                  console.error(`❌ Failed to load devices for zone "${zone.name}":`, response.error);
+                  return zone;
+                }
+              } catch (error) {
+                console.error(`💥 Exception loading devices for zone "${zone.name}":`, error);
+                return zone;
+              }
+            })
+          ).then(zoneUpdates => {
+            setAlarmZones(zoneUpdates);
+            console.log('🔒 Finished loading device counts for all zones');
+          });
+        }
+      }, 100);
       
     } catch (error) {
       logger.error('Error loading alarm zones:', error);
@@ -979,7 +1014,7 @@ export function useAlarmKeypad() {
     return 'Just now';
   };
 
-  // Get zones with devices
+  // Get zones with devices (using cached device data)
   const getZonesWithDevices = (): ZoneWithDevices[] => {
     return alarmZones.map(zone => {
       // Find devices that belong to this zone using deviceIds from the API
@@ -996,39 +1031,53 @@ export function useAlarmKeypad() {
     });
   };
 
-  // Handle zone toggle with proper device management
+  // Load device counts for each alarm zone
+  const loadZoneDeviceCounts = async () => {
+    console.log('🔒 Loading device counts for alarm zones...');
+    
+    const zoneUpdates = await Promise.all(
+      alarmZones.map(async (zone) => {
+        try {
+          const response = await getAlarmZoneDevices(zone.id);
+          if (!response.error) {
+            console.log(`🔒 Zone "${zone.name}" has ${response.data.length} devices`);
+            return {
+              ...zone,
+              deviceIds: response.data.map(device => device.id),
+              devices: response.data
+            };
+          } else {
+            console.error(`❌ Failed to load devices for zone "${zone.name}":`, response.error);
+            return zone;
+          }
+        } catch (error) {
+          console.error(`💥 Exception loading devices for zone "${zone.name}":`, error);
+          return zone;
+        }
+      })
+    );
+
+    setAlarmZones(zoneUpdates);
+    console.log('🔒 Finished loading device counts for all zones');
+  };
+
+  // Handle zone toggle using proper alarm zone API
   const handleZoneToggle = async (zone: AlarmZone) => {
-    const zonesWithDevices = getZonesWithDevices();
-    const zoneData = zonesWithDevices.find(z => z.id === zone.id);
-    
-    if (!zoneData || zoneData.devices.length === 0) {
-      setError(`No devices found in ${zone.name}`);
-      return;
-    }
-    
-    const newState = zoneData.armedCount > 0 ? 'DISARMED' : 'ARMED_AWAY';
-    const deviceIds = zoneData.devices.map(d => d.id);
+    const newState = zone.armedState === 'DISARMED' ? 'ARMED' : 'DISARMED';
     
     setIsProcessing(true);
     try {
-      let result;
-      if (newState === 'DISARMED') {
-        result = await disarmDevices(deviceIds);
-      } else {
-        result = await armDevices(deviceIds, 'ARMED_AWAY');
-      }
+      console.log(`🔒 Toggling zone "${zone.name}" from ${zone.armedState} to ${newState}`);
+      
+      const result = await setAlarmZoneArmedState(zone.id, newState);
       
       if (result.data.success) {
-        // Update local device states
-        setDevices(prev => prev.map(device => {
-          const isInZone = deviceIds.includes(device.id);
-          return isInZone ? { ...device, armedState: newState } : device;
-        }));
-        
-        // Update alarm zone state
+        // Update local alarm zone state
         setAlarmZones(prev => prev.map(z => 
           z.id === zone.id ? { ...z, armedState: newState } : z
         ));
+        
+        console.log(`🔒 Successfully toggled zone "${zone.name}" to ${newState}`);
         
         analytics.track({
           action: 'zone_toggle',
@@ -1036,8 +1085,8 @@ export function useAlarmKeypad() {
           properties: {
             zoneId: zone.id,
             zoneName: zone.name,
-            newState: newState,
-            deviceCount: deviceIds.length
+            previousState: zone.armedState,
+            newState: newState
           }
         });
       } else {
@@ -1112,6 +1161,7 @@ export function useAlarmKeypad() {
     alarmZones,
     setAlarmZones,
     getZonesWithDevices,
+    loadZoneDeviceCounts,
     handleZoneToggle,
     
     // System health
