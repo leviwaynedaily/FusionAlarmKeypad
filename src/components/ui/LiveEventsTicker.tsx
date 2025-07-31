@@ -295,21 +295,27 @@ export function LiveEventsTicker({
     if (!eventFilterSettings) return recentEvents;
     
     return recentEvents.filter(event => {
-      // If showing all events, don't filter
-      if (eventFilterSettings.showAllEvents) return true;
-      
-      // Check individual event type settings first (most specific)
       const eventType = event.type?.toLowerCase();
-      if (eventType && eventFilterSettings.eventTypeSettings[eventType]) {
-        return eventFilterSettings.eventTypeSettings[eventType].showInTimeline;
-      }
       
-      // Fallback to legacy event type filtering
+      // ✅ FIXED: Check individual event type settings first (highest priority)
       if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
-        return eventFilterSettings.eventTypes[eventType] !== false;
+        const isEnabled = eventFilterSettings.eventTypes[eventType] !== false;
+        // If "Show All Events" is enabled, it can override disabled events to show them
+        // But if an event is explicitly disabled, "Show All Events" can still enable it
+        if (eventFilterSettings.showAllEvents) {
+          return true; // Show all events when explicitly requested
+        }
+        return isEnabled; // Respect individual toggle when "Show All Events" is off
       }
       
-      // Fallback to legacy category-based filtering
+      // Check new event type settings format
+      if (eventType && eventFilterSettings.eventTypeSettings[eventType]) {
+        const isEnabled = eventFilterSettings.eventTypeSettings[eventType].showInTimeline;
+        if (eventFilterSettings.showAllEvents) {
+          return true; // Show all events when explicitly requested
+        }
+        return isEnabled;
+      }
       
       // NEW: Alarm zone specific filtering
       const eventAlarmZone = getAlarmZoneForEvent(event);
@@ -338,9 +344,9 @@ export function LiveEventsTicker({
                                isInAlarmZone; // Also include our new alarm zone detection
       if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) return true;
       
-      // If no specific filtering rules match, default to showing the event
-      // This ensures backward compatibility and shows events by default
-      return true;
+      // ✅ FIXED: Default fallback - only show if "Show All Events" is enabled
+      // This prevents unknown event types from appearing when user wants filtered events
+      return eventFilterSettings.showAllEvents;
     });
   }, [recentEvents, eventFilterSettings, alarmZones]);
 
