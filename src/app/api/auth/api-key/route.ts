@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { withRateLimit, RateLimitPresets } from '@/lib/rateLimiter';
 
 const SECURE_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -12,6 +13,17 @@ const SECURE_COOKIE_OPTIONS = {
 };
 
 export async function POST(request: NextRequest) {
+  // 🔒 SECURITY: Apply rate limiting for auth endpoints
+  const rateLimit = withRateLimit(RateLimitPresets.AUTH.limit, RateLimitPresets.AUTH.windowMs);
+  const { isAllowed, headers: rateLimitHeaders } = rateLimit(request);
+  
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: rateLimitHeaders }
+    );
+  }
+
   try {
     const { apiKey, action } = await request.json();
     
@@ -33,7 +45,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           success: true, 
           message: 'API key stored securely' 
-        });
+        }, { headers: rateLimitHeaders });
 
       case 'clear':
         // Clear API key cookie
@@ -42,7 +54,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           success: true, 
           message: 'API key cleared' 
-        });
+        }, { headers: rateLimitHeaders });
 
       case 'validate':
         if (!apiKey) {
@@ -86,7 +98,7 @@ export async function POST(request: NextRequest) {
             success: true, 
             message: 'API key validated and stored securely',
             organizationInfo: data.data?.organizationInfo || null
-          });
+          }, { headers: rateLimitHeaders });
           
         } catch (error) {
           return NextResponse.json({ 
@@ -108,6 +120,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // 🔒 SECURITY: Apply rate limiting for auth endpoints  
+  const rateLimit = withRateLimit(RateLimitPresets.API.limit, RateLimitPresets.API.windowMs);
+  const { isAllowed, headers: rateLimitHeaders } = rateLimit(request);
+  
+  if (!isAllowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: rateLimitHeaders }
+    );
+  }
+
   try {
     const cookieStore = cookies();
     
@@ -129,7 +152,7 @@ export async function GET(request: NextRequest) {
       organizationInfo,
       // 🔒 SECURITY: Never return the actual API key
       apiKeyStatus: apiKeyCookie?.value ? 'present' : 'missing'
-    });
+    }, { headers: rateLimitHeaders });
     
   } catch (error) {
     console.error('API key status check error:', error);
