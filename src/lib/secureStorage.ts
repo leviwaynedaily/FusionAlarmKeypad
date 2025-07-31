@@ -219,7 +219,7 @@ export class SecureStorage {
   /**
    * Get API key using the most secure method available
    */
-  static getApiKey(): string | null {
+  static async getApiKey(): Promise<string | null> {
     // Try environment variable first (most secure)
     const envKey = process.env.NEXT_PUBLIC_FUSION_API_KEY;
     if (envKey) {
