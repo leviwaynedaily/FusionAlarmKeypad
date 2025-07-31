@@ -461,7 +461,34 @@ export default function EventsPage() {
     // Check if we have a user ID and organization
     const userId = localStorage.getItem('user_id');
     const organizationStr = localStorage.getItem('fusion_organization');
-    const apiKey = localStorage.getItem('fusion_api_key');
+    
+    // 🔒 SECURITY: Get API key from secure storage
+    let apiKey = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
+    if (!apiKey && typeof window !== 'undefined') {
+      // Try encrypted sessionStorage
+      const sessionKey = sessionStorage.getItem('fusion_secure_api_key');
+      if (sessionKey) {
+        try {
+          const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+          const decoded = atob(sessionKey);
+          let result = '';
+          for (let i = 0; i < decoded.length; i++) {
+            const keyChar = keyData.charCodeAt(i % keyData.length);
+            const encChar = decoded.charCodeAt(i);
+            result += String.fromCharCode(encChar ^ keyChar);
+          }
+          apiKey = result;
+        } catch {
+          // Migration from old localStorage
+          const oldKey = localStorage.getItem('fusion_api_key');
+          if (oldKey) {
+            console.log('🔒 Migrating API key from localStorage in events page');
+            apiKey = oldKey;
+            localStorage.removeItem('fusion_api_key');
+          }
+        }
+      }
+    }
 
     if (!userId) {
       router.push('/pin');

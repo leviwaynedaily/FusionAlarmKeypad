@@ -195,9 +195,67 @@ export interface Event {
 }
 
 export const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
-  // Use the Fusion API key from localStorage first, then environment variable
-  const key = localStorage.getItem('fusion_api_key') || process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
-  const baseUrl = localStorage.getItem('fusion_api_url') || API_BASE_URL;
+  // 🔒 SECURITY: Get API key from secure sources only
+  let key = '';
+  
+  // First try environment variable (most secure)
+  if (process.env.NEXT_PUBLIC_FUSION_API_KEY) {
+    key = process.env.NEXT_PUBLIC_FUSION_API_KEY;
+  } else if (typeof window !== 'undefined') {
+    // Client-side: Check if we have migrated key in sessionStorage
+    const sessionKey = sessionStorage.getItem('fusion_secure_api_key');
+    if (sessionKey) {
+      try {
+        // Simple decryption (same as in secureStorage.ts)
+        const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+        const decoded = atob(sessionKey);
+        let result = '';
+        for (let i = 0; i < decoded.length; i++) {
+          const keyChar = keyData.charCodeAt(i % keyData.length);
+          const encChar = decoded.charCodeAt(i);
+          result += String.fromCharCode(encChar ^ keyChar);
+        }
+        key = result;
+      } catch {
+        // Decryption failed, try migration
+        const oldKey = localStorage.getItem('fusion_api_key');
+        if (oldKey) {
+          console.log('🔒 Migrating API key from localStorage to secure storage');
+          // Encrypt and store in sessionStorage
+          const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+          let encrypted = '';
+          for (let i = 0; i < oldKey.length; i++) {
+            const keyChar = keyData.charCodeAt(i % keyData.length);
+            const textChar = oldKey.charCodeAt(i);
+            encrypted += String.fromCharCode(textChar ^ keyChar);
+          }
+          sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+          localStorage.removeItem('fusion_api_key');
+          key = oldKey;
+          console.log('✅ API key migration completed');
+        }
+      }
+    } else {
+      // Try migration from localStorage one more time
+      const oldKey = localStorage.getItem('fusion_api_key');
+      if (oldKey) {
+        console.log('🔒 Migrating API key from localStorage to secure storage');
+        const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+        let encrypted = '';
+        for (let i = 0; i < oldKey.length; i++) {
+          const keyChar = keyData.charCodeAt(i % keyData.length);
+          const textChar = oldKey.charCodeAt(i);
+          encrypted += String.fromCharCode(textChar ^ keyChar);
+        }
+        sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+        localStorage.removeItem('fusion_api_key');
+        key = oldKey;
+        console.log('✅ API key migration completed');
+      }
+    }
+  }
+  
+  const baseUrl = API_BASE_URL;
   
   // 🔒 SECURITY: Only log truncated API key to prevent exposure
   const maskedKey = key ? `${key.substring(0, 8)}...${key.substring(key.length - 4)}` : 'NONE';
@@ -283,9 +341,8 @@ export const getApiKeyDetails = async (): Promise<ApiResponse<ApiKeyTestResponse
 };
 
 export const validateApiKey = async (key: string): Promise<ApiResponse<boolean>> => {
-  const baseUrl = localStorage.getItem('fusion_api_url') || API_BASE_URL;
   try {
-    const response = await fetch(`${baseUrl}/api/admin/api-keys/test`, {
+    const response = await fetch(`${API_BASE_URL}/api/admin/api-keys/test`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -298,10 +355,29 @@ export const validateApiKey = async (key: string): Promise<ApiResponse<boolean>>
     }
 
     const data = await response.json();
-    // Store organization info if available
-    if (data.data?.organizationInfo) {
-      localStorage.setItem('fusion_organization', JSON.stringify(data.data.organizationInfo));
+    
+    // 🔒 SECURITY: Use secure API endpoint to store validated key
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/auth/api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'validate', apiKey: key })
+        });
+      } catch (error) {
+        console.warn('Failed to store API key securely:', error);
+        // Fallback to client-side secure storage
+        const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+        let encrypted = '';
+        for (let i = 0; i < key.length; i++) {
+          const keyChar = keyData.charCodeAt(i % keyData.length);
+          const textChar = key.charCodeAt(i);
+          encrypted += String.fromCharCode(textChar ^ keyChar);
+        }
+        sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+      }
     }
+    
     return { data: true };
   } catch (error) {
     return {

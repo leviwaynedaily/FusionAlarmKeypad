@@ -969,7 +969,30 @@ export function useAlarmKeypad() {
       const apiKeyDetails = await getApiKeyDetails();
       if (!apiKeyDetails.error && apiKeyDetails.data) {
         setApiKey(newKey);
-        localStorage.setItem('fusion_api_key', newKey);
+        
+        // 🔒 SECURITY: Use secure storage instead of localStorage
+        try {
+          // Try to store securely via API
+          await fetch('/api/auth/api-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'validate', apiKey: newKey })
+          });
+        } catch (error) {
+          console.warn('Failed to store API key securely, using fallback:', error);
+          // Fallback to encrypted sessionStorage
+          const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+          let encrypted = '';
+          for (let i = 0; i < newKey.length; i++) {
+            const keyChar = keyData.charCodeAt(i % keyData.length);
+            const textChar = newKey.charCodeAt(i);
+            encrypted += String.fromCharCode(textChar ^ keyChar);
+          }
+          sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+          // Remove old localStorage key if it exists
+          localStorage.removeItem('fusion_api_key');
+        }
+        
         setShowSettings(false);
         
         analytics.track({

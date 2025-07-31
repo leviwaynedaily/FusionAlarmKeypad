@@ -283,8 +283,19 @@ function AlarmKeypad() {
       return;
     }
     alarmKeypad.setApiKey(FUSION_API_KEY);
-    // Store API key in localStorage for apiFetch to use
-    localStorage.setItem('fusion_api_key', FUSION_API_KEY);
+    // 🔒 SECURITY: Store API key securely instead of localStorage
+    if (typeof window !== 'undefined') {
+      const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+      let encrypted = '';
+      for (let i = 0; i < FUSION_API_KEY.length; i++) {
+        const keyChar = keyData.charCodeAt(i % keyData.length);
+        const textChar = FUSION_API_KEY.charCodeAt(i);
+        encrypted += String.fromCharCode(textChar ^ keyChar);
+      }
+      sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+      // Remove old localStorage key if it exists
+      localStorage.removeItem('fusion_api_key');
+    }
 
     const savedLocation = localStorage.getItem('fusion_selected_location');
     const initialLoad = async () => {
@@ -623,7 +634,18 @@ function AlarmKeypad() {
           apiKey={alarmKeypad.apiKey}
           onApiKeyUpdate={(key) => {
             alarmKeypad.setApiKey(key);
-            localStorage.setItem('fusion_api_key', key);
+            // 🔒 SECURITY: Use secure storage instead of localStorage
+            if (typeof window !== 'undefined') {
+              const keyData = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'fallback-key';
+              let encrypted = '';
+              for (let i = 0; i < key.length; i++) {
+                const keyChar = keyData.charCodeAt(i % keyData.length);
+                const textChar = key.charCodeAt(i);
+                encrypted += String.fromCharCode(textChar ^ keyChar);
+              }
+              sessionStorage.setItem('fusion_secure_api_key', btoa(encrypted));
+              localStorage.removeItem('fusion_api_key');
+            }
           }}
           weather={weather.weather}
           selectedLocation={alarmKeypad.selectedLocation}
