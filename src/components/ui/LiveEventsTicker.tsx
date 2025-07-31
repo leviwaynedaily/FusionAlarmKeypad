@@ -1239,7 +1239,7 @@ export function LiveEventsTicker({
                   )}
                   
                   {/* Image or Icon Container - Made smaller and cleaner */}
-                  <div className="w-28 h-18 sm:w-32 sm:h-20 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
+                  <div className="w-28 h-16 sm:w-32 sm:h-20 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
                       
