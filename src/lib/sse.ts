@@ -56,7 +56,7 @@ class SSEClient implements FusionSSEClient {
 
   constructor(config: FusionSSEConfig) {
     this.config = {
-      baseUrl: 'https://fusion-bridge-production.up.railway.app',
+      baseUrl: process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io',
       categories: MONITORED_CATEGORIES,
       eventTypes: [],
       ...config

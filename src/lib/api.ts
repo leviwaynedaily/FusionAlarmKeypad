@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://fusion-bridge-production.up.railway.app';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io';
 
 export interface ApiResponse<T> {
   data: T;

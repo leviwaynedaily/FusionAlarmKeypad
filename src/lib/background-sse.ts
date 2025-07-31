@@ -9,7 +9,7 @@ interface BackgroundSSEConfig {
 // Configuration constants
 const DEFAULT_API_KEY = process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU';
 const DEFAULT_ORGANIZATION_ID = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
-const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://fusion-bridge-production.up.railway.app';
+const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io';
 
 class BackgroundSSEService {
   private eventSource: any = null;

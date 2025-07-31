@@ -122,7 +122,7 @@ export default function SSEDebugPage() {
       console.log('🔍 SSE Debug: Creating direct fetch connection (bypassing singleton)...');
       
       // ✅ FIXED: Create direct fetch connection instead of using the singleton SSE client
-      const url = `https://fusion-bridge-production.up.railway.app/api/events/stream?includeThumbnails=true`;
+      const url = `${process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io'}/api/events/stream?includeThumbnails=true`;
       const headers = {
         'Accept': 'text/event-stream',
         'x-api-key': apiKey
@@ -277,7 +277,7 @@ export default function SSEDebugPage() {
       return;
     }
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://fusion-bridge-production.up.railway.app'}/api/locations`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io'}/api/locations`, {
         headers: {
           'x-api-key': apiKey,
         },

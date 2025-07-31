@@ -30,7 +30,7 @@ export function useSSEDebug() {
     // Test 1: Check if the base API works
     try {
       addLog('🔍 TEST 1: Testing base API endpoint...');
-      const baseUrl = 'https://fusion-bridge-production.up.railway.app';
+      const baseUrl = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io';
       const testResponse = await fetch(`${baseUrl}/api/admin/api-keys/test`, {
         method: 'GET',
         headers: {
@@ -68,7 +68,7 @@ export function useSSEDebug() {
       try {
         addLog(`🔍 TEST 2: Trying SSE endpoint: ${endpoint}`);
         
-        const url = new URL(endpoint, 'https://fusion-bridge-production.up.railway.app');
+        const url = new URL(endpoint, process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io');
         // No organizationId needed - it's implicit in the API key scope
         
         addLog(`🔗 Full URL: ${url.toString()}`);
@@ -122,9 +122,9 @@ export function useSSEDebug() {
     addLog('🔍 Testing WebSocket connection as SSE alternative...');
     
     const wsEndpoints = [
-      'wss://fusion-bridge-production.up.railway.app/ws',
-      'wss://fusion-bridge-production.up.railway.app/websocket',
-      'wss://fusion-bridge-production.up.railway.app/events/ws'
+      `wss://${(process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io').replace('https://', '')}/ws`,
+      `wss://${(process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io').replace('https://', '')}/websocket`,
+      `wss://${(process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io').replace('https://', '')}/events/ws`
     ];
 
     for (const wsUrl of wsEndpoints) {
