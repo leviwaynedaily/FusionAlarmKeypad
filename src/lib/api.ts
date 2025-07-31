@@ -383,11 +383,14 @@ export const getAlarmZoneDevices = async (zoneId: string): Promise<ApiResponse<D
   return { data: response.data?.data || [] };
 };
 
-export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
+export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
+  // Map frontend types to API types
+  const apiArmedState = armedState === 'ARMED_AWAY' || armedState === 'ARMED_STAY' ? 'ARMED' : armedState;
+  
   const response = await apiFetch<{ success: boolean; data: { success: boolean } }>(`/api/alarm-zones/${zoneId}/arm-state`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ armedState })
+    body: JSON.stringify({ armedState: apiArmedState })
   });
   if (response.error) {
     return { data: { success: false }, error: response.error };

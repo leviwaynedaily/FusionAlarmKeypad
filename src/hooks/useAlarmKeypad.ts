@@ -1063,7 +1063,7 @@ export function useAlarmKeypad() {
 
   // Handle zone toggle using proper alarm zone API
   const handleZoneToggle = async (zone: AlarmZone) => {
-    const newState = zone.armedState === 'DISARMED' ? 'ARMED' : 'DISARMED';
+    const newState = zone.armedState === 'DISARMED' ? 'ARMED_AWAY' : 'DISARMED';
     
     setIsProcessing(true);
     try {
