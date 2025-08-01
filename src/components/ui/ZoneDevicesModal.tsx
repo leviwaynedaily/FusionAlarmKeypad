@@ -90,11 +90,7 @@ export function ZoneDevicesModal({ zone, spaces, isOpen, onClose }: ZoneDevicesM
                       <span className="font-medium text-gray-900 dark:text-white text-sm">
                         {device.name}
                       </span>
-                      {isArmed && (
-                        <svg className="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C13.1 2 14 2.9 14 4V8H16C17.1 8 18 8.9 18 10V20C18 21.1 17.1 22 16 22H8C6.9 22 6 21.1 6 20V10C6 8.9 6.9 8 8 8H10V4C10 2.9 10.9 2 12 2M12 4C11.4 4 11 4.4 11 5V8H13V5C13 4.4 12.6 4 12 4Z"/>
-                        </svg>
-                      )}
+
                     </div>
                     
                     {deviceSpace && (
@@ -110,7 +106,7 @@ export function ZoneDevicesModal({ zone, spaces, isOpen, onClose }: ZoneDevicesM
                   
                   <div className="text-right">
                     <div className={`text-xs font-medium ${isArmed ? 'text-red-500' : 'text-green-500'}`}>
-                      {device.armedState}
+                      {device.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
                     </div>
                   </div>
                 </div>
