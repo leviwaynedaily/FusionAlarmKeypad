@@ -24,23 +24,28 @@ export function ZoneStatus({
   useDesign2, 
   showZonesPreview 
 }: ZoneStatusProps) {
-  if (!showZonesPreview) {
+  // Always show alarm zones if they exist (ignore showZonesPreview for alarm zones)
+  if (!alarmZones || alarmZones.length === 0) {
     return null;
   }
 
   // Get zones with device data
   const zonesWithDevices = getZonesWithDevices();
-  const activeZones = zonesWithDevices.filter(zone => zone.totalCount > 0);
-  const armedZonesCount = activeZones.filter(zone => zone.armedCount > 0).length;
-
-  // Return early if no active zones
-  if (activeZones.length === 0) {
-    return null;
-  }
+  
+  // Show all alarm zones, even if they don't have devices loaded yet
+  const displayZones = zonesWithDevices.length > 0 ? zonesWithDevices : 
+    alarmZones.map(zone => ({
+      ...zone,
+      devices: [],
+      armedCount: zone.armedState === 'DISARMED' ? 0 : 1, // Fallback for armed state
+      totalCount: zone.deviceIds?.length || 0
+    }));
+  
+  const armedZonesCount = displayZones.filter(zone => zone.armedCount > 0).length;
 
   return (
-    <div className="flex-shrink-0 px-4 mb-4">
-      {/* Header with weather or title */}
+    <div className="flex-shrink-0 px-4 mb-6 min-h-[100px]">
+      {/* Weather Header (if enabled) */}
       {useDesign2 && weather && (
         <div className="flex items-center gap-2 mb-3">
           <img 
@@ -57,33 +62,35 @@ export function ZoneStatus({
         </div>
       )}
       
-      {/* Alarm Zones */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      {/* Alarm Zones Section */}
+      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 space-y-2">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             Alarm Zones
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {activeZones.length} Zone{activeZones.length !== 1 ? 's' : ''}
+            {displayZones.length} Zone{displayZones.length !== 1 ? 's' : ''}
           </span>
         </div>
         
-        {activeZones.map((zone) => (
+        {displayZones.length > 0 ? displayZones.map((zone) => (
           <div
             key={zone.id}
-            className="flex items-center justify-between bg-white dark:bg-gray-800/50 rounded-lg p-2 border border-gray-200 dark:border-gray-700"
+            className="flex items-center justify-between bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm"
           >
             <div className="flex items-center gap-2">
               <div 
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: zone.color }}
+                className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600"
+                style={{ backgroundColor: zone.color || '#10b981' }}
               />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {zone.name}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {zone.totalCount} device{zone.totalCount !== 1 ? 's' : ''}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {zone.name}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {zone.totalCount > 0 ? `${zone.totalCount} device${zone.totalCount !== 1 ? 's' : ''}` : 'Loading...'}
+                </span>
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
@@ -93,12 +100,16 @@ export function ZoneStatus({
                 </svg>
               )}
               <span className={`text-xs font-medium ${zone.armedCount > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {zone.armedCount > 0 ? `${zone.armedCount} Armed` : 'All Clear'}
+                {zone.armedCount > 0 ? `Armed` : 'Clear'}
               </span>
               <div className={`w-2 h-2 rounded-full ${zone.armedCount > 0 ? 'bg-red-500' : 'bg-green-500'}`} />
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+            Loading alarm zones...
+          </div>
+        )}
       </div>
     </div>
   );
