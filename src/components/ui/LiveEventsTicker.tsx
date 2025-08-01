@@ -565,7 +565,7 @@ export function LiveEventsTicker({
 
   return (
     <>
-    <div className="relative w-full pointer-events-none">
+    <div className="relative w-full pointer-events-none hidden sm:block">
       <div className="relative">
         {/* Timeline header with quick settings */}
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/60 dark:from-[#0f0f0f]/60 to-transparent flex items-center justify-between px-4">
