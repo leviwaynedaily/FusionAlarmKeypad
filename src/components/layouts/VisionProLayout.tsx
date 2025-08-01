@@ -71,6 +71,20 @@ export function VisionProLayout({
   onPressedButtonChange,
   onSettingsClick,
 }: VisionProLayoutProps) {
+  const [selectedZone, setSelectedZone] = useState<ZoneWithDevices | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleZoneClick = (zone: any) => {
+    console.log('🔍 [VisionProLayout] Zone clicked:', zone.name);
+    setSelectedZone(zone);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedZone(null);
+  };
+
   if (isMobile) {
     return (
       <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 overflow-hidden flex flex-col">
@@ -173,7 +187,7 @@ export function VisionProLayout({
                       </div>
                     )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -467,15 +481,15 @@ export function VisionProLayout({
             <p className="text-lg font-semibold text-white">Authenticating...</p>
           </div>
         </div>
-      )}
-    </div>
+              )}
 
-    {/* Zone Devices Modal */}
-    <ZoneDevicesModal
-      zone={selectedZone}
-      spaces={spaces}
-      isOpen={showModal}
-      onClose={handleCloseModal}
-    />
+        {/* Zone Devices Modal */}
+        <ZoneDevicesModal
+          zone={selectedZone}
+          spaces={spaces}
+          isOpen={showModal}
+          onClose={handleCloseModal}
+        />
+    </div>
   );
 } 
