@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Area, Space, AlarmZone, ZoneWithDevices } from '@/lib/api';
+import { ZoneDevicesModal } from './ZoneDevicesModal';
 
 interface WeatherData {
   temp: number;
@@ -24,6 +25,10 @@ export function ZoneStatus({
   useDesign2, 
   showZonesPreview 
 }: ZoneStatusProps) {
+  // State for modal
+  const [selectedZone, setSelectedZone] = useState<ZoneWithDevices | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
   // Always show alarm zones if they exist (ignore showZonesPreview for alarm zones)
   if (!alarmZones || alarmZones.length === 0) {
     return null;
@@ -42,6 +47,17 @@ export function ZoneStatus({
     }));
   
   const armedZonesCount = displayZones.filter(zone => zone.armedCount > 0).length;
+
+  // Handle zone click
+  const handleZoneClick = (zone: ZoneWithDevices) => {
+    setSelectedZone(zone);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedZone(null);
+  };
 
   return (
     <div className="flex-shrink-0 px-4 mb-1">
@@ -74,9 +90,10 @@ export function ZoneStatus({
         </div>
         
         {displayZones.map((zone) => (
-          <div
+          <button
             key={zone.id}
-            className="flex items-center justify-between bg-white dark:bg-gray-800/80 rounded-sm py-1 px-2"
+            onClick={() => handleZoneClick(zone)}
+            className="w-full flex items-center justify-between bg-white dark:bg-gray-800/80 rounded-sm py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors active:bg-gray-100 dark:active:bg-gray-600 cursor-pointer"
           >
             <div className="flex items-center gap-1.5">
               <div 
@@ -98,9 +115,17 @@ export function ZoneStatus({
               </span>
               <div className={`w-1.5 h-1.5 rounded-full ${zone.armedCount > 0 ? 'bg-red-500' : 'bg-green-500'}`} />
             </div>
-          </div>
+          </button>
         ))}
       </div>
+      
+      {/* Zone Devices Modal */}
+      <ZoneDevicesModal
+        zone={selectedZone}
+        spaces={spaces}
+        isOpen={showModal}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 } 
