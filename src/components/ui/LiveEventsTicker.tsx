@@ -713,10 +713,10 @@ export function LiveEventsTicker({
           </button>
         )}
 
-        {/* Scrollable timeline */}
+        {/* Scrollable timeline with better responsive behavior */}
         <div
           ref={rowRef}
-          className="relative flex gap-2 sm:gap-4 py-2 sm:py-4 px-4 sm:px-8 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto"
+          className="relative flex gap-1 sm:gap-2 md:gap-4 py-2 sm:py-4 px-2 sm:px-4 md:px-8 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
         >
           {/* Timeline connector line - centered */}
           <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none transform -translate-y-1/2" />
@@ -1229,8 +1229,8 @@ export function LiveEventsTicker({
               <button
                 key={event.id || idx}
                 onClick={() => setSelected(event)}
-                className="group flex flex-col items-center min-w-[100px] max-w-[100px] sm:min-w-[120px] sm:max-w-[120px] md:min-w-[140px] md:max-w-[140px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105"
-                title={`${deviceName} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
+                className="group flex flex-col items-center min-w-[90px] w-[90px] sm:min-w-[110px] sm:w-[110px] md:min-w-[130px] md:w-[130px] lg:min-w-[140px] lg:w-[140px] scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105 flex-shrink-0"
+                title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
                 {/* Timeline dot indicator */}
                 <div className="relative">
@@ -1238,8 +1238,8 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Responsive sizing */}
-                  <div className="w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
+                  {/* Image or Icon Container - Better responsive sizing */}
+                  <div className="w-16 h-10 sm:w-20 sm:h-12 md:w-24 md:h-14 lg:w-28 lg:h-16 rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800">
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
                       
@@ -1284,7 +1284,7 @@ export function LiveEventsTicker({
                               />
                               {/* Icon fallback (hidden by default) */}
                               <div 
-                                className="absolute inset-0 items-center justify-center w-full h-full text-2xl sm:text-3xl md:text-4xl text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl"
+                                className="absolute inset-0 items-center justify-center w-full h-full text-xl sm:text-2xl md:text-3xl lg:text-4xl text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl"
                                 style={{ display: 'none' }}
                               >
                                 {getEventIcon(event)}
@@ -1295,7 +1295,7 @@ export function LiveEventsTicker({
                       }
                       
                       return (
-                        <div className="flex items-center justify-center w-full h-full text-2xl sm:text-3xl md:text-4xl text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center justify-center w-full h-full text-xl sm:text-2xl md:text-3xl lg:text-4xl text-gray-600 dark:text-gray-400">
                           {getEventIcon(event)}
                         </div>
                       );
@@ -1303,10 +1303,13 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details - Responsive text sizing */}
-                <div className="mt-1 sm:mt-2 text-center space-y-1">
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">
+                {/* Event details - Restored with responsive text sizing */}
+                <div className="mt-1 sm:mt-2 text-center space-y-0.5">
+                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
                     {deviceName}
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium line-clamp-1">
+                    {secondaryLabel}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-500">
                     {formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}
