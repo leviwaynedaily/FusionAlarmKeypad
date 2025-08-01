@@ -30,16 +30,27 @@ export default function Header({ locationName, postalCode, organizationName, onS
   }, []);
 
   return (
-    <header className="bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800 px-3 sm:px-4 md:px-6 py-2 sm:py-3">
+    <header className="bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800"
+      style={{
+        padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(0.75rem, 2.5vw, 1.5rem)'
+      }}>
       <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <svg viewBox="0 0 375 375" xmlns="http://www.w3.org/2000/svg" className="h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 text-[#22c55f]">
+        <div className="flex items-center" style={{ gap: 'clamp(0.5rem, 1.5vw, 0.75rem)' }}>
+          <svg viewBox="0 0 375 375" xmlns="http://www.w3.org/2000/svg" className="text-[#22c55f]" 
+            style={{ 
+              width: 'clamp(1.5rem, 3vw, 2rem)', 
+              height: 'clamp(1.5rem, 3vw, 2rem)' 
+            }}>
             <g fill="currentColor">
               <path d="M35.32 25.422h124.578c7.457 0 13.5 6.043 13.5 13.5v158.894c0 7.457-6.043 13.5-13.5 13.5H35.32c-7.457 0-13.5-6.043-13.5-13.5V38.922c0-7.457 6.043-13.5 13.5-13.5ZM35.32 242.773h124.578a13.503 13.503 0 0 1 13.5 13.5v82.387c0 7.453-6.043 13.5-13.5 13.5H35.32a13.503 13.503 0 0 1-13.5-13.5v-82.387c0-7.453 6.043-13.5 13.5-13.5ZM218.844 25.422h124.574a13.5 13.5 0 0 1 13.5 13.5v82.348c0 7.457-6.043 13.5-13.5 13.5H218.844a13.5 13.5 0 0 1-13.5-13.5V38.922c0-7.457 6.043-13.5 13.5-13.5ZM218.844 163.672h124.574a13.51 13.51 0 0 1 9.547 3.957 13.497 13.497 0 0 1 3.953 9.543v158.926c0 7.457-6.043 13.5-13.5 13.5H218.844a13.5 13.5 0 0 1-13.5-13.5V177.172c0-7.453 6.043-13.5 13.5-13.5Z" />
             </g>
           </svg>
           <div className="flex items-center">
-            <h1 className="text-lg sm:text-xl text-gray-900 dark:text-white" style={{ fontFamily: 'CSG, sans-serif', letterSpacing: '0.05em' }}>FUSION</h1>
+            <h1 className="text-gray-900 dark:text-white" style={{ 
+              fontFamily: 'CSG, sans-serif', 
+              letterSpacing: '0.05em',
+              fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'
+            }}>FUSION</h1>
           </div>
         </div>
         

@@ -81,19 +81,34 @@ export function DesktopLayout({
       <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center max-w-screen-xl mx-auto w-full px-1 sm:px-2 py-1 sm:py-2 md:py-4 gap-2 sm:gap-3 md:gap-4 bg-gray-100 dark:bg-[#0f0f0f]">
         {/* Left column: clock, date, zone status, areas, latest event - Tablet optimized */}
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto md:mx-0 md:items-start">
-          <div className="mb-1 sm:mb-2 text-sm sm:text-base md:text-lg text-gray-500 dark:text-gray-400">{currentDate}</div>
-          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-thin text-gray-900 dark:text-white mb-1 sm:mb-2 md:mb-3">{currentTime}</div>
-          <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Alarm Zones</div>
-          <div className="space-y-1 sm:space-y-1.5 w-full">
+          <div className="text-gray-500 dark:text-gray-400" 
+            style={{ 
+              fontSize: 'clamp(0.75rem, 2vw, 1.125rem)',
+              marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+            }}>{currentDate}</div>
+          <div className="font-thin text-gray-900 dark:text-white" 
+            style={{ 
+              fontSize: 'clamp(2rem, 6vw, 4rem)',
+              marginBottom: 'clamp(0.25rem, 1vw, 1rem)'
+            }}>{currentTime}</div>
+          <div className="font-semibold text-gray-800 dark:text-gray-200" 
+            style={{ 
+              fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)',
+              marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+            }}>Alarm Zones</div>
+          <div className="w-full" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', display: 'flex', flexDirection: 'column' }}>
             {areas.length === 0 && (
               <div className="text-gray-400 text-xs">No alarm zones configured</div>
             )}
             {areas.map((area) => (
-                              <div key={area.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 shadow border border-gray-100 dark:border-gray-700">
+                              <div key={area.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-md shadow border border-gray-100 dark:border-gray-700"
+                style={{
+                  padding: 'clamp(0.375rem, 1vw, 0.75rem) clamp(0.5rem, 1.5vw, 1rem)'
+                }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{area.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{area.name}</span>
                 </div>
-                <span className={`text-xs font-semibold ${area.armedState !== 'DISARMED' ? 'text-rose-500' : 'text-green-500'}`}>{area.armedState}</span>
+                <span className={`font-semibold ${area.armedState !== 'DISARMED' ? 'text-rose-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{area.armedState}</span>
               </div>
             ))}
           </div>

@@ -99,13 +99,17 @@ export function PinEntry({
   return (
     <div className="max-w-xs w-full mx-auto">
       {!useDesign2 && (
-        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-900 dark:text-white mb-3 sm:mb-4">
+        <h2 className="font-semibold text-center text-gray-900 dark:text-white" 
+          style={{ 
+            fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+            marginBottom: 'clamp(0.75rem, 2vw, 1rem)'
+          }}>
           Enter PIN to Access
         </h2>
       )}
 
       {/* PIN Display */}
-      <div className="mb-4 sm:mb-6">
+      <div style={{ marginBottom: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
         {useDesign2 ? (
           <div className="flex justify-center gap-3">
             {[...Array(6)].map((_, i) => (
@@ -120,15 +124,19 @@ export function PinEntry({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                      <div className="grid grid-cols-6" style={{ gap: 'clamp(0.375rem, 1vw, 0.5rem)' }}>
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className={`h-8 sm:h-10 rounded-lg flex items-center justify-center text-lg sm:text-xl font-bold border-2 transition-all ${
+                className={`rounded-lg flex items-center justify-center font-bold border-2 transition-all ${
                   pin[i] 
                     ? 'bg-[#22c55f] border-[#22c55f] text-white' 
                     : 'bg-gray-100 dark:bg-[#161c25] border-gray-300 dark:border-gray-800'
                 }`}
+                style={{
+                  height: 'clamp(2rem, 4vw, 2.5rem)',
+                  fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'
+                }}
               >
                 {pin[i] ? '•' : ''}
               </div>
