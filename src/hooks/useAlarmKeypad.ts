@@ -460,7 +460,7 @@ export function useAlarmKeypad() {
           Promise.all(
             transformedZones.map(async (zone) => {
               try {
-                const response = await getAlarmZoneDevices(zone.id);
+                const response = await getAlarmZoneDevices(zone.id, zone.armedState);
                 if (!response.error) {
                   console.log(`🔒 Zone "${zone.name}" has ${response.data.length} devices`);
                   return {
@@ -1066,7 +1066,7 @@ export function useAlarmKeypad() {
     const zoneUpdates = await Promise.all(
       alarmZones.map(async (zone) => {
         try {
-          const response = await getAlarmZoneDevices(zone.id);
+          const response = await getAlarmZoneDevices(zone.id, zone.armedState);
           if (!response.error) {
             console.log(`🔒 Zone "${zone.name}" has ${response.data.length} devices`);
             return {

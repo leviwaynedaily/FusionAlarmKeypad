@@ -454,8 +454,8 @@ export const updateAlarmZone = async (zoneId: string, zoneData: Partial<AlarmZon
   return { data: response.data?.data || {} as AlarmZone };
 };
 
-export const getAlarmZoneDevices = async (zoneId: string): Promise<ApiResponse<Device[]>> => {
-  console.log(`🔍 [getAlarmZoneDevices] Loading devices for zone: ${zoneId}`);
+export const getAlarmZoneDevices = async (zoneId: string, zoneArmedState?: 'DISARMED' | 'ARMED' | 'TRIGGERED'): Promise<ApiResponse<Device[]>> => {
+  console.log(`🔍 [getAlarmZoneDevices] Loading devices for zone: ${zoneId}, zone state: ${zoneArmedState}`);
   
   const response = await apiFetch<{ success: boolean; data: Device[] }>(`/api/alarm-zones/${zoneId}/devices`);
   
@@ -479,21 +479,34 @@ export const getAlarmZoneDevices = async (zoneId: string): Promise<ApiResponse<D
       id: devices[0].id,
       name: devices[0].name,
       type: devices[0].type,
-      armedState: devices[0].armedState
+      status: devices[0].status,
+      originalArmedState: devices[0].armedState,
+      hasArmedState: 'armedState' in devices[0]
     });
   }
   
-  return { data: devices };
+  // Transform devices to inherit the zone's armed state
+  // Individual devices don't have armedState - they inherit it from their zone
+  const transformedDevices = devices.map(device => ({
+    ...device,
+    // Devices inherit the armed state from their alarm zone
+    armedState: (zoneArmedState || 'DISARMED') as 'DISARMED' | 'ARMED' | 'TRIGGERED',
+    // Ensure we have the required fields for the UI
+    spaceId: device.spaceId || null,
+    spaceName: device.spaceName || null
+  }));
+  
+  console.log(`🔧 [getAlarmZoneDevices] Transformed ${transformedDevices.length} devices with zone armedState: ${zoneArmedState}`);
+  
+  return { data: transformedDevices };
 };
 
-export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
-  // Map frontend types to API types
-  const apiArmedState = armedState === 'ARMED_AWAY' || armedState === 'ARMED_STAY' ? 'ARMED' : armedState;
+export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
   
   const response = await apiFetch<{ success: boolean; data: { success: boolean } }>(`/api/alarm-zones/${zoneId}/arm-state`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ armedState: apiArmedState })
+    body: JSON.stringify({ armedState: armedState })
   });
   if (response.error) {
     return { data: { success: false }, error: response.error };
