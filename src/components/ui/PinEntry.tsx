@@ -99,13 +99,13 @@ export function PinEntry({
   return (
     <div className="max-w-xs w-full mx-auto">
       {!useDesign2 && (
-        <h2 className="text-xl font-semibold text-center text-gray-900 dark:text-white mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-900 dark:text-white mb-3 sm:mb-4">
           Enter PIN to Access
         </h2>
       )}
 
       {/* PIN Display */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         {useDesign2 ? (
           <div className="flex justify-center gap-3">
             {[...Array(6)].map((_, i) => (
@@ -120,11 +120,11 @@ export function PinEntry({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className={`h-10 rounded-lg flex items-center justify-center text-xl font-bold border-2 transition-all ${
+                className={`h-8 sm:h-10 rounded-lg flex items-center justify-center text-lg sm:text-xl font-bold border-2 transition-all ${
                   pin[i] 
                     ? 'bg-[#22c55f] border-[#22c55f] text-white' 
                     : 'bg-gray-100 dark:bg-[#161c25] border-gray-300 dark:border-gray-800'
@@ -139,14 +139,14 @@ export function PinEntry({
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-3 bg-rose-500/90 rounded-lg text-white text-center backdrop-blur-sm shadow-lg">
+        <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-rose-500/90 rounded-lg text-white text-center backdrop-blur-sm shadow-lg">
           <p className="font-medium text-sm">Authentication Failed</p>
           <p className="text-xs opacity-90">Please try again</p>
         </div>
       )}
 
       {/* PIN Pad */}
-      <div className={`grid grid-cols-3 ${useDesign2 ? 'gap-1' : 'gap-2'}`}>
+      <div className={`grid grid-cols-3 ${useDesign2 ? 'gap-1' : 'gap-1.5 sm:gap-2'}`}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
             key={num}
