@@ -455,11 +455,35 @@ export const updateAlarmZone = async (zoneId: string, zoneData: Partial<AlarmZon
 };
 
 export const getAlarmZoneDevices = async (zoneId: string): Promise<ApiResponse<Device[]>> => {
+  console.log(`🔍 [getAlarmZoneDevices] Loading devices for zone: ${zoneId}`);
+  
   const response = await apiFetch<{ success: boolean; data: Device[] }>(`/api/alarm-zones/${zoneId}/devices`);
+  
+  console.log(`🔍 [getAlarmZoneDevices] API response for zone ${zoneId}:`, {
+    error: response.error,
+    hasData: !!response.data,
+    dataStructure: response.data ? Object.keys(response.data) : 'no data',
+    deviceCount: response.data?.data?.length || 0
+  });
+  
   if (response.error) {
+    console.error(`❌ [getAlarmZoneDevices] Error for zone ${zoneId}:`, response.error);
     return { data: [], error: response.error };
   }
-  return { data: response.data?.data || [] };
+  
+  const devices = response.data?.data || [];
+  console.log(`✅ [getAlarmZoneDevices] Successfully loaded ${devices.length} devices for zone ${zoneId}`);
+  
+  if (devices.length > 0) {
+    console.log(`🔍 [getAlarmZoneDevices] Sample device:`, {
+      id: devices[0].id,
+      name: devices[0].name,
+      type: devices[0].type,
+      armedState: devices[0].armedState
+    });
+  }
+  
+  return { data: devices };
 };
 
 export const setAlarmZoneArmedState = async (zoneId: string, armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED'): Promise<ApiResponse<{ success: boolean }>> => {
