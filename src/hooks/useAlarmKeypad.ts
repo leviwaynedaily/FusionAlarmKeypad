@@ -136,7 +136,7 @@ export function useAlarmKeypad() {
               console.log(`🔒 Updating zone "${zone.name}" (${zone.id}) to state: ${currentState}`);
               return {
                 ...zone,
-                armedState: currentState as 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED',
+                armedState: currentState as 'DISARMED' | 'ARMED' | 'TRIGGERED',
                 lastArmedStateChangeReason: `Real-time update: ${previousState} → ${currentState}`
               };
             }
@@ -162,13 +162,12 @@ export function useAlarmKeypad() {
       
       // Determine the new armed state from the event type
       const eventTypeLower = type?.toLowerCase() || '';
-      let newArmedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED' | null = null;
+      let newArmedState: 'DISARMED' | 'ARMED' | 'TRIGGERED' | null = null;
       
       if (eventTypeLower.includes('disarm')) {
         newArmedState = 'DISARMED';
       } else if (eventTypeLower.includes('arm')) {
-        // Default to ARMED_AWAY, could be enhanced to detect ARMED_STAY
-        newArmedState = 'ARMED_AWAY';
+        newArmedState = 'ARMED';
       } else if (eventTypeLower.includes('trigger')) {
         newArmedState = 'TRIGGERED';
       }
@@ -1091,7 +1090,7 @@ export function useAlarmKeypad() {
 
   // Handle zone toggle using proper alarm zone API
   const handleZoneToggle = async (zone: AlarmZone) => {
-    const newState = zone.armedState === 'DISARMED' ? 'ARMED_AWAY' : 'DISARMED';
+    const newState = zone.armedState === 'DISARMED' ? 'ARMED' : 'DISARMED';
     
     setIsProcessing(true);
     try {

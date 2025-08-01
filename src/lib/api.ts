@@ -493,7 +493,7 @@ export const getAlarmZoneDevices = async (zoneId: string, zoneArmedState?: 'DISA
     armedState: (zoneArmedState || 'DISARMED') as 'DISARMED' | 'ARMED' | 'TRIGGERED',
     // Ensure we have the required fields for the UI
     spaceId: device.spaceId || null,
-    spaceName: device.spaceName || null
+    spaceName: device.spaceName || undefined
   }));
   
   console.log(`🔧 [getAlarmZoneDevices] Transformed ${transformedDevices.length} devices with zone armedState: ${zoneArmedState}`);
