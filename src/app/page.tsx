@@ -30,7 +30,7 @@ import {
   VisionProLayout
 } from '@/components';
 import { SettingsModal } from '@/components/ui/SettingsModal';
-import { updateClock, isMobileDevice } from '@/lib/alarmKeypadUtils';
+import { updateClock, isMobileDevice, getDeviceType } from '@/lib/alarmKeypadUtils';
 import { SSEProvider, useSSEContext } from '@/hooks/SSEContext';
 
 // API keys from environment variables
@@ -258,6 +258,7 @@ function AlarmKeypad() {
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [isClient, setIsClient] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [requireApiKey, setRequireApiKey] = useState(false);
@@ -328,7 +329,9 @@ function AlarmKeypad() {
       setCurrentDate(dateString);
     }, 1000);
     const updateMobileState = () => {
-      setIsMobile(isMobileDevice());
+      const device = getDeviceType();
+      setDeviceType(device);
+      setIsMobile(device === 'mobile'); // Keep legacy isMobile for compatibility
     };
     updateMobileState();
     window.addEventListener('resize', updateMobileState);
@@ -767,7 +770,7 @@ function AlarmKeypad() {
           onPressedButtonChange={handlePressedButtonChange}
           onSettingsClick={handleSettingsClick}
         />
-      ) : isMobile ? (
+      ) : deviceType === 'mobile' ? (
         <MobileLayout
           locationName={locationName}
           postalCode={postalCode}
@@ -778,6 +781,32 @@ function AlarmKeypad() {
           showSeconds={alarmKeypad.showSeconds}
           spaces={alarmKeypad.spaces}
           alarmZones={alarmKeypad.alarmZones}
+          getZonesWithDevices={alarmKeypad.getZonesWithDevices}
+          weather={weather.weather}
+          useDesign2={alarmKeypad.useDesign2}
+          showZonesPreview={alarmKeypad.showZonesPreview}
+          pin={auth.pin}
+          isProcessing={auth.isProcessing}
+          error={auth.error}
+          highlightPinButtons={alarmKeypad.highlightPinButtons}
+          pressedButton={alarmKeypad.pressedButton}
+          onPinKeyPress={handlePinKeyPress}
+          onClear={handlePinClear}
+          onBackspace={handlePinBackspace}
+          onPressedButtonChange={handlePressedButtonChange}
+          onSettingsClick={handleSettingsClick}
+        />
+      ) : deviceType === 'tablet' ? (
+        <DesktopLayout
+          locationName={locationName}
+          postalCode={postalCode}
+          organizationName={organizationName}
+          currentTime={currentTime}
+          currentDate={currentDate}
+          selectedLocation={alarmKeypad.selectedLocation}
+          showSeconds={alarmKeypad.showSeconds}
+          alarmZones={alarmKeypad.alarmZones}
+          spaces={alarmKeypad.spaces}
           getZonesWithDevices={alarmKeypad.getZonesWithDevices}
           weather={weather.weather}
           useDesign2={alarmKeypad.useDesign2}

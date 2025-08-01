@@ -35,13 +35,33 @@ export const updateClock = () => {
   return { timeString, dateString };
 };
 
-// Check if device is mobile
-export const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
+// Responsive breakpoint detection
+export const getDeviceType = () => {
+  if (typeof window === 'undefined') return 'desktop';
   const width = window.innerWidth;
-  const isMobile = width <= 1024; // Use 1024px as breakpoint for mobile/tablet
-  console.log(`[isMobileDevice] width: ${width}, isMobile: ${isMobile}`);
-  return isMobile;
+  
+  let deviceType: 'mobile' | 'tablet' | 'desktop';
+  
+  // Mobile: Small phones to large phones  
+  if (width <= 767) {
+    deviceType = 'mobile';
+  }
+  // Tablet: iPad Mini to iPad Pro 13"
+  else if (width >= 768 && width <= 1199) {
+    deviceType = 'tablet';
+  }
+  // Desktop: Laptops and monitors
+  else {
+    deviceType = 'desktop';
+  }
+  
+  console.log(`[getDeviceType] width: ${width}px → ${deviceType}`);
+  return deviceType;
+};
+
+// Legacy mobile detection (kept for compatibility)
+export const isMobileDevice = () => {
+  return getDeviceType() === 'mobile';
 };
 
 // Get weather style based on condition
