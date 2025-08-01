@@ -380,7 +380,7 @@ export function LiveEventsTicker({
   if (!filteredEvents.length) {
     debugLog('🔍 Timeline: No filtered events, showing debug message');
     return (
-      <div className="relative w-full bg-white dark:bg-[#0f0f0f] border-t border-gray-200 dark:border-gray-800 pointer-events-none">
+      <div className="relative w-full bg-white dark:bg-[#0f0f0f] border-t border-gray-200 dark:border-gray-800 pointer-events-none hidden sm:block">
         <div className="relative">
           <div className="pointer-events-auto bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 p-4 text-center border-t border-yellow-200 dark:border-yellow-700">
             <div className="text-sm font-medium">
@@ -716,11 +716,11 @@ export function LiveEventsTicker({
         {/* Scrollable timeline with fluid responsive behavior */}
         <div
           ref={rowRef}
-          className="relative flex py-4 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
+          className="relative flex py-2 sm:py-3 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: 'clamp(0.5rem, 1vw, 1.5rem)',
-            paddingLeft: 'clamp(1rem, 2vw, 3rem)',
-            paddingRight: 'clamp(1rem, 2vw, 3rem)'
+            gap: 'clamp(0.25rem, 0.75vw, 1rem)',
+            paddingLeft: 'clamp(0.5rem, 1.5vw, 2rem)',
+            paddingRight: 'clamp(0.5rem, 1.5vw, 2rem)'
           }}
         >
           {/* Timeline connector line - centered */}
@@ -1320,8 +1320,8 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details - Enhanced for tablet visibility */}
-                <div className="mt-1 sm:mt-2 text-center space-y-0.5">
+                {/* Event details - Moved closer to thumbnails */}
+                <div className="mt-0.5 text-center space-y-0">
                   <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
                     {deviceName}
                   </div>

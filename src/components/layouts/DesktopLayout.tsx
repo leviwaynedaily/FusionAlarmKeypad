@@ -77,12 +77,12 @@ export function DesktopLayout({
         organizationName={organizationName}
         onSettingsClick={onSettingsClick}
       />
-      {/* Main content: two columns with tablet-optimized spacing */}
-      <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center max-w-screen-xl mx-auto w-full px-2 sm:px-4 py-4 sm:py-6 md:py-8 gap-4 sm:gap-6 md:gap-8 bg-gray-100 dark:bg-[#0f0f0f]">
+      {/* Main content: two columns with ultra-compact spacing */}
+      <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center max-w-screen-xl mx-auto w-full px-1 sm:px-3 py-2 sm:py-4 md:py-6 gap-3 sm:gap-4 md:gap-6 bg-gray-100 dark:bg-[#0f0f0f]">
         {/* Left column: clock, date, zone status, areas, latest event - Tablet optimized */}
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto md:mx-0 md:items-start">
           <div className="mb-1 sm:mb-2 text-sm sm:text-base md:text-lg text-gray-500 dark:text-gray-400">{currentDate}</div>
-          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-thin text-gray-900 dark:text-white mb-3 sm:mb-4 md:mb-6">{currentTime}</div>
+          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-thin text-gray-900 dark:text-white mb-2 sm:mb-3 md:mb-4">{currentTime}</div>
           <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1 sm:mb-2">Alarm Zones</div>
           <div className="space-y-1.5 sm:space-y-2 w-full">
             {areas.length === 0 && (
@@ -104,7 +104,7 @@ export function DesktopLayout({
         </div>
         {/* Right column: PIN entry and keypad - Tablet optimized */}
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto md:mx-0">
-                      <div className="w-full bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-100 dark:border-transparent p-4 sm:p-6 md:p-8">
+                      <div className="w-full bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-100 dark:border-transparent p-3 sm:p-4 md:p-6">
             <PinEntry
               pin={pin}
               isProcessing={isProcessing}
