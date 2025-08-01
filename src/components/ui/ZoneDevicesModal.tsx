@@ -57,7 +57,7 @@ export function ZoneDevicesModal({ zone, spaces, isOpen, onClose }: ZoneDevicesM
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">Zone Status</span>
             <span className={`font-medium ${zone.armedCount > 0 ? 'text-red-500' : 'text-green-500'}`}>
-              {zone.armedCount > 0 ? `${zone.armedCount}/${zone.totalCount} Armed` : 'All Clear'}
+              {zone.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">

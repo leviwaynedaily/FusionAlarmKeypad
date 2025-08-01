@@ -147,7 +147,7 @@ export function VisionProLayout({
                         <div>
                           <h4 className="text-xs font-semibold text-white/90">{zone.name}</h4>
                           <p className="text-xs text-white/60">
-                            {zone.armedCount > 0 ? `${zone.armedCount}/${zone.totalCount} Armed` : 'All Clear'}
+                            {zone.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
                           </p>
                         </div>
                       </div>
@@ -351,7 +351,7 @@ export function VisionProLayout({
                       <div>
                         <h3 className="text-lg font-semibold text-white/90">{zone.name}</h3>
                         <p className="text-sm text-white/60">
-                          {zone.totalCount} device{zone.totalCount !== 1 ? 's' : ''} • {zone.armedCount > 0 ? `${zone.armedCount} armed` : 'All clear'}
+                          {zone.totalCount} device{zone.totalCount !== 1 ? 's' : ''} • {zone.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
                         </p>
                       </div>
                     </div>

@@ -148,14 +148,14 @@ export function DesktopLayout({
                 style={{
                   padding: 'clamp(0.375rem, 1vw, 0.75rem) clamp(0.5rem, 1.5vw, 1rem)'
                 }}>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${zone.armedCount > 0 ? 'bg-red-500' : 'bg-green-500'}`} />
-                  <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{zone.name}</span>
-                </div>
+                                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${zone.armedState !== 'DISARMED' ? 'bg-red-500' : 'bg-green-500'}`} />
+                    <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{zone.name}</span>
+                  </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400">{zone.totalCount} devices</span>
-                  <span className={`font-semibold ${zone.armedCount > 0 ? 'text-red-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>
-                    {zone.armedCount > 0 ? 'Armed' : 'Clear'}
+                  <span className={`font-semibold ${zone.armedState !== 'DISARMED' ? 'text-red-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>
+                    {zone.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
                   </span>
                 </div>
               </button>
