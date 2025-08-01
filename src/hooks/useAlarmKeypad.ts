@@ -1044,10 +1044,18 @@ export function useAlarmKeypad() {
   // Get zones with devices (using cached device data)
   const getZonesWithDevices = (): ZoneWithDevices[] => {
     return alarmZones.map(zone => {
-      // Find devices that belong to this zone using deviceIds from the API
-      const zoneDevices = devices.filter(device => 
-        zone.deviceIds?.includes(device.id) || false
-      );
+      // Use devices that were loaded directly for this zone, fallback to matching from general devices array
+      const zoneDevices = zone.devices && zone.devices.length > 0 
+        ? zone.devices 
+        : devices.filter(device => zone.deviceIds?.includes(device.id) || false);
+      
+      console.log(`🔍 [getZonesWithDevices] Zone "${zone.name}":`, {
+        hasZoneDevices: !!(zone.devices && zone.devices.length > 0),
+        zoneDevicesCount: zone.devices?.length || 0,
+        fallbackDevicesCount: devices.filter(device => zone.deviceIds?.includes(device.id) || false).length,
+        finalDevicesCount: zoneDevices.length,
+        deviceIds: zone.deviceIds
+      });
       
       return {
         ...zone,

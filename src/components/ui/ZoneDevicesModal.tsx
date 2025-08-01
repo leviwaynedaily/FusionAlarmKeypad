@@ -11,6 +11,16 @@ interface ZoneDevicesModalProps {
 export function ZoneDevicesModal({ zone, spaces, isOpen, onClose }: ZoneDevicesModalProps) {
   if (!isOpen || !zone) return null;
 
+  console.log('🔍 [ZoneDevicesModal] Modal opened with zone:', {
+    zoneName: zone.name,
+    zoneId: zone.id,
+    deviceCount: zone.devices?.length || 0,
+    totalCount: zone.totalCount,
+    armedCount: zone.armedCount,
+    devices: zone.devices,
+    spacesCount: spaces.length
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}

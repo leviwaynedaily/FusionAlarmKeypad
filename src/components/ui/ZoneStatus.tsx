@@ -50,6 +50,15 @@ export function ZoneStatus({
 
   // Handle zone click
   const handleZoneClick = (zone: ZoneWithDevices) => {
+    console.log('🔍 [ZoneStatus] Zone clicked:', {
+      zoneName: zone.name,
+      zoneId: zone.id,
+      deviceCount: zone.devices?.length || 0,
+      totalCount: zone.totalCount,
+      armedCount: zone.armedCount,
+      devices: zone.devices,
+      hasDevices: !!zone.devices && zone.devices.length > 0
+    });
     setSelectedZone(zone);
     setShowModal(true);
   };
