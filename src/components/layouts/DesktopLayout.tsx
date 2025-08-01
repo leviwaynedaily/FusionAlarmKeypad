@@ -76,7 +76,26 @@ export function DesktopLayout({
   const [selectedZone, setSelectedZone] = useState<ZoneWithDevices | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Always use alarmZones directly for real-time SSE updates (same fix as mobile)
   const zonesWithDevices = getZonesWithDevices();
+  
+  // Ensure we always use the latest alarmZones data for armed states (SSE updates)
+  const displayZones = alarmZones.map(zone => {
+    // Find matching zone from getZonesWithDevices for device data
+    const zoneWithDevices = zonesWithDevices.find(z => z.id === zone.id);
+    
+    return {
+      ...zone, // Always use latest zone data from SSE
+      devices: zoneWithDevices?.devices || [],
+      armedCount: zone.armedState === 'DISARMED' ? 0 : (zoneWithDevices?.armedCount || 1),
+      totalCount: zoneWithDevices?.totalCount || zone.deviceIds?.length || 0
+    };
+  });
+  
+  console.log('🔍 [DesktopLayout] SSE-reactive render:', {
+    alarmZonesCount: alarmZones.length,
+    displayZones: displayZones.map(z => ({ name: z.name, armedState: z.armedState, totalCount: z.totalCount }))
+  });
   
   const handleZoneClick = (zone: ZoneWithDevices) => {
     console.log('🔍 [DesktopLayout] Tablet Zone clicked:', zone.name);
@@ -118,10 +137,10 @@ export function DesktopLayout({
               marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
             }}>Alarm Zones</div>
           <div className="w-full" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', display: 'flex', flexDirection: 'column' }}>
-            {zonesWithDevices.length === 0 && (
+            {displayZones.length === 0 && (
               <div className="text-gray-400 text-xs">No alarm zones configured</div>
             )}
-            {zonesWithDevices.map((zone) => (
+            {displayZones.map((zone) => (
               <button
                 key={zone.id} 
                 onClick={() => handleZoneClick(zone)}
