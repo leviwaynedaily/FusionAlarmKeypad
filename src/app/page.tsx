@@ -802,7 +802,9 @@ function AlarmKeypad() {
           currentDate={currentDate}
           selectedLocation={alarmKeypad.selectedLocation}
           showSeconds={alarmKeypad.showSeconds}
-          areas={alarmKeypad.alarmZones}
+          alarmZones={alarmKeypad.alarmZones}
+          spaces={alarmKeypad.spaces}
+          getZonesWithDevices={alarmKeypad.getZonesWithDevices}
           weather={weather.weather}
           useDesign2={alarmKeypad.useDesign2}
           showZonesPreview={alarmKeypad.showZonesPreview}

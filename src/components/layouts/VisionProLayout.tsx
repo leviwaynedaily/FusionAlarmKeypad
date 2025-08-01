@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../Header';
 import { WeatherWidget } from '../ui/WeatherWidget';
-import { Area, Device, Space } from '@/lib/api';
+import { ZoneDevicesModal } from '../ui/ZoneDevicesModal';
+import { Area, Device, Space, ZoneWithDevices } from '@/lib/api';
 import { getWeatherStyle } from '@/lib/alarmKeypadUtils';
 
 interface WeatherData {
@@ -107,9 +108,10 @@ export function VisionProLayout({
           <div className="flex-shrink-0 px-4 mb-6">
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {getZonesWithDevices().filter(zone => zone.totalCount > 0).slice(0, 3).map((zone: any, index: number) => (
-                <div
+                <button
                   key={zone.id}
-                  className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-xl relative overflow-hidden"
+                  onClick={() => handleZoneClick(zone)}
+                  className="backdrop-blur-3xl bg-white/5 border border-white/10 rounded-xl p-3 shadow-xl relative overflow-hidden hover:bg-white/10 transition-all cursor-pointer w-full text-left"
                 >
                   {/* Glass overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-xl"></div>
@@ -467,5 +469,13 @@ export function VisionProLayout({
         </div>
       )}
     </div>
+
+    {/* Zone Devices Modal */}
+    <ZoneDevicesModal
+      zone={selectedZone}
+      spaces={spaces}
+      isOpen={showModal}
+      onClose={handleCloseModal}
+    />
   );
 } 

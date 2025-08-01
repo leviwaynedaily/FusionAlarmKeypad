@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../Header';
 import { Clock } from '../ui/Clock';
 import { ZoneStatus } from '../ui/ZoneStatus';
 import { PinEntry } from '../ui/PinEntry';
 import { ProcessingOverlay } from '../ui/ProcessingOverlay';
-import { Area } from '@/lib/api';
+import { ZoneDevicesModal } from '../ui/ZoneDevicesModal';
+import { AlarmZone, ZoneWithDevices, Space } from '@/lib/api';
 
 interface WeatherData {
   temp: number;
@@ -24,7 +25,9 @@ interface DesktopLayoutProps {
   showSeconds: boolean;
   
   // Zone status props
-  areas: Area[];
+  alarmZones: AlarmZone[];
+  spaces: Space[];
+  getZonesWithDevices: () => ZoneWithDevices[];
   weather: WeatherData | null;
   useDesign2: boolean;
   showZonesPreview: boolean;
@@ -52,7 +55,9 @@ export function DesktopLayout({
   currentDate,
   selectedLocation,
   showSeconds,
-  areas,
+  alarmZones,
+  spaces,
+  getZonesWithDevices,
   weather,
   useDesign2,
   showZonesPreview,
@@ -68,6 +73,22 @@ export function DesktopLayout({
   onSettingsClick,
   lastEvent,
 }: DesktopLayoutProps) {
+  const [selectedZone, setSelectedZone] = useState<ZoneWithDevices | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const zonesWithDevices = getZonesWithDevices();
+  
+  const handleZoneClick = (zone: ZoneWithDevices) => {
+    console.log('🔍 [DesktopLayout] Zone clicked:', zone.name);
+    setSelectedZone(zone);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedZone(null);
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-gray-100 dark:bg-[#0f0f0f]">
       {/* Header with logo */}
@@ -97,19 +118,28 @@ export function DesktopLayout({
               marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
             }}>Alarm Zones</div>
           <div className="w-full" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', display: 'flex', flexDirection: 'column' }}>
-            {areas.length === 0 && (
+            {zonesWithDevices.length === 0 && (
               <div className="text-gray-400 text-xs">No alarm zones configured</div>
             )}
-            {areas.map((area) => (
-                              <div key={area.id} className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-md shadow border border-gray-100 dark:border-gray-700"
+            {zonesWithDevices.map((zone) => (
+              <button
+                key={zone.id} 
+                onClick={() => handleZoneClick(zone)}
+                className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-md shadow border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 style={{
                   padding: 'clamp(0.375rem, 1vw, 0.75rem) clamp(0.5rem, 1.5vw, 1rem)'
                 }}>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{area.name}</span>
+                  <div className={`w-2 h-2 rounded-full ${zone.armedCount > 0 ? 'bg-red-500' : 'bg-green-500'}`} />
+                  <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{zone.name}</span>
                 </div>
-                <span className={`font-semibold ${area.armedState !== 'DISARMED' ? 'text-rose-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{area.armedState}</span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{zone.totalCount} devices</span>
+                  <span className={`font-semibold ${zone.armedCount > 0 ? 'text-red-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>
+                    {zone.armedCount > 0 ? 'Armed' : 'Clear'}
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
           {/* Optionally, latest event/activity */}
@@ -136,6 +166,14 @@ export function DesktopLayout({
           <ProcessingOverlay isProcessing={isProcessing} />
         </div>
       </div>
+      
+      {/* Zone Devices Modal */}
+      <ZoneDevicesModal
+        zone={selectedZone}
+        spaces={spaces}
+        isOpen={showModal}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 } 
