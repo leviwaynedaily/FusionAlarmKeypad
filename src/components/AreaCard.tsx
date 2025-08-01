@@ -34,10 +34,10 @@ export default function AreaCard({ area, onStateChange }: AreaCardProps) {
 
   const getStateColor = (state: Area['armedState']) => {
     switch (state) {
-      case 'ARMED_AWAY':
+      case 'ARMED':
         return 'bg-red-500';
-      case 'ARMED_STAY':
-        return 'bg-yellow-500';
+      case 'TRIGGERED':
+        return 'bg-red-600';
       default:
         return 'bg-green-500';
     }
@@ -45,10 +45,10 @@ export default function AreaCard({ area, onStateChange }: AreaCardProps) {
 
   const getStateText = (state: Area['armedState']) => {
     switch (state) {
-      case 'ARMED_AWAY':
-        return 'Armed Away';
-      case 'ARMED_STAY':
-        return 'Armed Stay';
+      case 'ARMED':
+        return 'Armed';
+      case 'TRIGGERED':
+        return 'Triggered';
       default:
         return 'Disarmed';
     }
@@ -76,18 +76,11 @@ export default function AreaCard({ area, onStateChange }: AreaCardProps) {
           Disarm
         </button>
         <button
-          onClick={() => handleStateChange('ARMED_STAY')}
-          disabled={loading || area.armedState === 'ARMED_STAY'}
-          className="py-2 px-4 bg-yellow-500 text-white rounded hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
-        >
-          Stay
-        </button>
-        <button
-          onClick={() => handleStateChange('ARMED_AWAY')}
-          disabled={loading || area.armedState === 'ARMED_AWAY'}
+          onClick={() => handleStateChange('ARMED')}
+          disabled={loading || area.armedState === 'ARMED'}
           className="py-2 px-4 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
         >
-          Away
+          Arm
         </button>
       </div>
     </div>

@@ -79,7 +79,7 @@ export interface Device {
   spaceName?: string;
   locationId?: string | null;
   status?: 'online' | 'offline' | 'error';
-  armedState?: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  armedState?: 'DISARMED' | 'ARMED' | 'TRIGGERED';
   capabilities?: string[];
   lastSeen?: string;
   online?: boolean;

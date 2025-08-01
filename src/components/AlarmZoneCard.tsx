@@ -200,7 +200,7 @@ export default function AlarmZoneCard({
                       area.armedState !== 'DISARMED' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-400'
                     }`}>
                       {area.armedState === 'DISARMED' ? 'Disarmed' : 
-                       area.armedState === 'ARMED_AWAY' ? 'Armed Away' : 'Armed Stay'}
+                       area.armedState === 'ARMED' ? 'Armed' : 'Triggered'}
                     </p>
                   </div>
                   {hasWarnings && onShowWarningDetails && (

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { validatePin, getAlarmZones, updateAlarmZone, armDevices, AlarmZone } from '@/lib/api';
 
-type ArmingAction = 'DISARMED' | 'ARMED_STAY' | 'ARMED_AWAY';
+type ArmingAction = 'DISARMED' | 'ARMED';
 
 export default function PinPage() {
   const [pin, setPin] = useState('');
@@ -118,7 +118,7 @@ export default function PinPage() {
         const deviceIdsToArm = zone.devices?.map(device => device.id) || [];
         
         if (deviceIdsToArm.length > 0) {
-          await armDevices(deviceIdsToArm, action);
+          await armDevices(deviceIdsToArm, 'ARMED');
         }
         
         // Update the zone state
@@ -160,7 +160,7 @@ export default function PinPage() {
     switch (action) {
       case 'DISARMED':
         return `${baseClass} ${isActive ? 'bg-green-600 text-white' : 'bg-green-100 hover:bg-green-200 text-green-700'}`;
-      case 'ARMED_AWAY':
+      case 'ARMED':
         return `${baseClass} ${isActive ? 'bg-red-600 text-white' : 'bg-red-100 hover:bg-red-200 text-red-700'}`;
       default:
         return baseClass;
@@ -171,12 +171,12 @@ export default function PinPage() {
     setProcessing(true);
     try {
       for (const zone of alarmZones) {
-        if (zone.armedState !== 'ARMED_AWAY') {
+        if (zone.armedState !== 'ARMED') {
           const deviceIdsToArm = zone.devices?.map(device => device.id) || [];
           if (deviceIdsToArm.length > 0) {
-            await armDevices(deviceIdsToArm, 'ARMED_AWAY');
+            await armDevices(deviceIdsToArm, 'ARMED');
           }
-          await updateAlarmZone(zone.id, { armedState: 'ARMED_AWAY' });
+          await updateAlarmZone(zone.id, { armedState: 'ARMED' });
         }
       }
       await loadAlarmZones();
@@ -407,9 +407,9 @@ export default function PinPage() {
                         </button>
                         
                         <button
-                          onClick={() => handleZoneAction(zone, 'ARMED_AWAY')}
+                          onClick={() => handleZoneAction(zone, 'ARMED')}
                           disabled={processing}
-                          className={getActionButtonClass('ARMED_AWAY', zone)}
+                          className={getActionButtonClass('ARMED', zone)}
                         >
                           <div className="text-xs">🔴</div>
                           <div>ARM</div>
