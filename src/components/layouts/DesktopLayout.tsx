@@ -78,27 +78,8 @@ export function DesktopLayout({
 
   const zonesWithDevices = getZonesWithDevices();
   
-  console.log('🔍 [DesktopLayout] Tablet render update:', {
-    zonesWithDevicesCount: zonesWithDevices.length,
-    alarmZonesCount: alarmZones.length,
-    timestamp: new Date().toISOString(),
-    zonesData: zonesWithDevices.map(z => ({
-      name: z.name,
-      totalCount: z.totalCount,
-      armedCount: z.armedCount,
-      deviceCount: z.devices?.length || 0
-    }))
-  });
-  
   const handleZoneClick = (zone: ZoneWithDevices) => {
-    console.log('🔍 [DesktopLayout] Tablet Zone clicked:', {
-      zoneName: zone.name,
-      zoneId: zone.id,
-      deviceCount: zone.devices?.length || 0,
-      totalCount: zone.totalCount,
-      armedCount: zone.armedCount,
-      timestamp: new Date().toISOString()
-    });
+    console.log('🔍 [DesktopLayout] Tablet Zone clicked:', zone.name);
     setSelectedZone(zone);
     setShowModal(true);
   };

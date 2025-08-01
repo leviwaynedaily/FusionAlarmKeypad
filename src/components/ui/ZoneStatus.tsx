@@ -34,20 +34,8 @@ export function ZoneStatus({
     return null;
   }
 
-  // Get zones with device data - force refresh on every render for real-time updates
+  // Get zones with device data for real-time updates
   const zonesWithDevices = getZonesWithDevices();
-  
-  console.log('🔍 [ZoneStatus] Mobile render update:', {
-    zonesWithDevicesCount: zonesWithDevices.length,
-    alarmZonesCount: alarmZones.length,
-    timestamp: new Date().toISOString(),
-    zonesData: zonesWithDevices.map(z => ({
-      name: z.name,
-      totalCount: z.totalCount,
-      armedCount: z.armedCount,
-      deviceCount: z.devices?.length || 0
-    }))
-  });
   
   // Show all alarm zones, even if they don't have devices loaded yet
   const displayZones = zonesWithDevices.length > 0 ? zonesWithDevices : 
@@ -62,16 +50,7 @@ export function ZoneStatus({
 
   // Handle zone click
   const handleZoneClick = (zone: ZoneWithDevices) => {
-    console.log('🔍 [ZoneStatus] Mobile Zone clicked:', {
-      zoneName: zone.name,
-      zoneId: zone.id,
-      deviceCount: zone.devices?.length || 0,
-      totalCount: zone.totalCount,
-      armedCount: zone.armedCount,
-      devices: zone.devices,
-      hasDevices: !!zone.devices && zone.devices.length > 0,
-      timestamp: new Date().toISOString()
-    });
+    console.log('🔍 [ZoneStatus] Mobile Zone clicked:', zone.name);
     setSelectedZone(zone);
     setShowModal(true);
   };

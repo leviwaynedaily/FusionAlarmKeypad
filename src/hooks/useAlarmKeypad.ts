@@ -133,7 +133,7 @@ export function useAlarmKeypad() {
         setAlarmZones(prev => {
           return prev.map(zone => {
             if (zone.id === alarmZoneId) {
-              console.log(`🔒 Updating zone "${zone.name}" (${zone.id}) to state: ${currentState}`);
+              console.log(`🔒 SSE Direct Update: Zone "${zone.name}" → ${currentState}`);
               return {
                 ...zone,
                 armedState: currentState as 'DISARMED' | 'ARMED' | 'TRIGGERED',
@@ -198,7 +198,7 @@ export function useAlarmKeypad() {
           );
           
           if (affectedByDevice || affectedBySpace) {
-            console.log(`🔒 Updating zone "${zone.name}" to state: ${newArmedState}`);
+            console.log(`🔒 SSE Update: Zone "${zone.name}" → ${newArmedState}`);
             zonesUpdated.add(zone.id);
             
             // Update the zone's armed state
@@ -1048,14 +1048,6 @@ export function useAlarmKeypad() {
       const zoneDevices = zone.devices && zone.devices.length > 0 
         ? zone.devices 
         : devices.filter(device => zone.deviceIds?.includes(device.id) || false);
-      
-      console.log(`🔍 [getZonesWithDevices] Zone "${zone.name}":`, {
-        hasZoneDevices: !!(zone.devices && zone.devices.length > 0),
-        zoneDevicesCount: zone.devices?.length || 0,
-        fallbackDevicesCount: devices.filter(device => zone.deviceIds?.includes(device.id) || false).length,
-        finalDevicesCount: zoneDevices.length,
-        deviceIds: zone.deviceIds
-      });
       
       return {
         ...zone,
