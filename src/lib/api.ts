@@ -588,7 +588,7 @@ export const loadUserPreferences = async (
   return { data: result.data };
 };
 
-export const armDevices = async (deviceIds: string[], armState: 'ARMED_AWAY' | 'ARMED_STAY'): Promise<ApiResponse<{ success: boolean; results: any[] }>> => {
+export const armDevices = async (deviceIds: string[], armState: 'ARMED'): Promise<ApiResponse<{ success: boolean; results: any[] }>> => {
   const response = await apiFetch<{ success: boolean; data: { success: boolean; results: any[] } }>('/api/devices/arm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

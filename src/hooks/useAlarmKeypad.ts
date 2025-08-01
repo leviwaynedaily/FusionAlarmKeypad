@@ -827,7 +827,7 @@ export function useAlarmKeypad() {
       if (newState === 'DISARMED') {
         result = await disarmDevices(deviceIds);
       } else {
-        result = await armDevices(deviceIds, 'ARMED_AWAY');
+        result = await armDevices(deviceIds, 'ARMED');
       }
       
       const duration = performance.now() - startTime;
@@ -910,7 +910,7 @@ export function useAlarmKeypad() {
       if (newState === 'DISARMED') {
         result = await disarmDevices(deviceIds);
       } else {
-        result = await armDevices(deviceIds, 'ARMED_AWAY');
+        result = await armDevices(deviceIds, 'ARMED');
       }
       
       const duration = performance.now() - startTime;
