@@ -34,17 +34,27 @@ export function ZoneStatus({
     return null;
   }
 
-  // Get zones with device data for real-time updates
+  // Always use alarmZones directly for real-time SSE updates
+  // getZonesWithDevices adds device data but we need to ensure we get latest armed states
   const zonesWithDevices = getZonesWithDevices();
   
-  // Show all alarm zones, even if they don't have devices loaded yet
-  const displayZones = zonesWithDevices.length > 0 ? zonesWithDevices : 
-    alarmZones.map(zone => ({
-      ...zone,
-      devices: [],
-      armedCount: zone.armedState === 'DISARMED' ? 0 : 1, // Fallback for armed state
-      totalCount: zone.deviceIds?.length || 0
-    }));
+  // Ensure we always use the latest alarmZones data for armed states (SSE updates)
+  const displayZones = alarmZones.map(zone => {
+    // Find matching zone from getZonesWithDevices for device data
+    const zoneWithDevices = zonesWithDevices.find(z => z.id === zone.id);
+    
+    return {
+      ...zone, // Always use latest zone data from SSE
+      devices: zoneWithDevices?.devices || [],
+      armedCount: zone.armedState === 'DISARMED' ? 0 : (zoneWithDevices?.armedCount || 1),
+      totalCount: zoneWithDevices?.totalCount || zone.deviceIds?.length || 0
+    };
+  });
+  
+  console.log('🔍 [ZoneStatus] SSE-reactive render:', {
+    alarmZonesCount: alarmZones.length,
+    displayZones: displayZones.map(z => ({ name: z.name, armedState: z.armedState, totalCount: z.totalCount }))
+  });
   
   const armedZonesCount = displayZones.filter(zone => zone.armedCount > 0).length;
 
