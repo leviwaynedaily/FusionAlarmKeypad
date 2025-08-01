@@ -1236,8 +1236,8 @@ export function LiveEventsTicker({
                 onClick={() => setSelected(event)}
                 className="group flex flex-col items-center scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105 flex-shrink-0"
                 style={{ 
-                  width: 'clamp(120px, 10vw, 180px)',
-                  minWidth: 'clamp(120px, 10vw, 180px)'
+                  width: 'clamp(100px, 12vw, 160px)',
+                  minWidth: 'clamp(100px, 12vw, 160px)'
                 }}
                 title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
@@ -1250,8 +1250,8 @@ export function LiveEventsTicker({
                   {/* Image or Icon Container - Fluid responsive sizing */}
                   <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800"
                     style={{
-                      width: 'clamp(80px, 8vw, 140px)',
-                      height: 'clamp(50px, 5vw, 87px)'
+                      width: 'clamp(70px, 10vw, 120px)',
+                      height: 'clamp(44px, 6.25vw, 75px)'
                     }}>
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
@@ -1320,15 +1320,17 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details - Restored with responsive text sizing */}
+                {/* Event details - Enhanced for tablet visibility */}
                 <div className="mt-1 sm:mt-2 text-center space-y-0.5">
                   <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
                     {deviceName}
                   </div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium line-clamp-1">
-                    {secondaryLabel}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">
+                  {secondaryLabel && (
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium line-clamp-1">
+                      {secondaryLabel}
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500 dark:text-gray-500 line-clamp-1">
                     {formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}
                   </div>
                 </div>
