@@ -116,7 +116,7 @@ export interface AlarmZone {
   name: string;
   locationId: string;
   description: string | null;
-  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  armedState: 'DISARMED' | 'ARMED' | 'TRIGGERED';
   lastArmedStateChangeReason: string | null;
   triggerBehavior: string;
   locationName: string;
@@ -161,7 +161,7 @@ export interface EventFilterSettings {
 export interface Area {
   id: string;
   name: string;
-  armedState: 'DISARMED' | 'ARMED_AWAY' | 'ARMED_STAY' | 'TRIGGERED';
+  armedState: 'DISARMED' | 'ARMED' | 'TRIGGERED';
 }
 
 export interface Event {
