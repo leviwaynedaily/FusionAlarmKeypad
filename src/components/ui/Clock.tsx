@@ -28,16 +28,16 @@ export function Clock({
   };
 
   return (
-    <div className="flex-shrink-0 px-4 pt-8 pb-4">
+    <div className="flex-shrink-0 px-4 pt-4 pb-2">
       <div className="text-center">
-        <div className="text-base text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           {currentDate}
         </div>
-        <div className="text-4xl font-light text-gray-900 dark:text-white">
+        <div className="text-3xl font-light text-gray-900 dark:text-white">
           {formatTime(currentTime)}
         </div>
         {selectedLocation && (
-          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {selectedLocation.name}
           </div>
         )}
