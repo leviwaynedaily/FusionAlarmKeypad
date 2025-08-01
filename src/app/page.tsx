@@ -777,6 +777,8 @@ function AlarmKeypad() {
           selectedLocation={alarmKeypad.selectedLocation}
           showSeconds={alarmKeypad.showSeconds}
           spaces={alarmKeypad.spaces}
+          alarmZones={alarmKeypad.alarmZones}
+          getZonesWithDevices={alarmKeypad.getZonesWithDevices}
           weather={weather.weather}
           useDesign2={alarmKeypad.useDesign2}
           showZonesPreview={alarmKeypad.showZonesPreview}

@@ -4,7 +4,7 @@ import { Clock } from '../ui/Clock';
 import { ZoneStatus } from '../ui/ZoneStatus';
 import { PinEntry } from '../ui/PinEntry';
 import { ProcessingOverlay } from '../ui/ProcessingOverlay';
-import { Area, Space } from '@/lib/api';
+import { Area, Space, AlarmZone, ZoneWithDevices } from '@/lib/api';
 
 interface WeatherData {
   temp: number;
@@ -25,6 +25,8 @@ interface MobileLayoutProps {
   
   // Zone status props
   spaces: Space[];
+  alarmZones: AlarmZone[];
+  getZonesWithDevices: () => ZoneWithDevices[];
   weather: WeatherData | null;
   useDesign2: boolean;
   showZonesPreview: boolean;
@@ -51,6 +53,8 @@ export function MobileLayout({
   selectedLocation,
   showSeconds,
   spaces,
+  alarmZones,
+  getZonesWithDevices,
   weather,
   useDesign2,
   showZonesPreview,
@@ -85,6 +89,8 @@ export function MobileLayout({
       {/* Zone Status Summary - Compact view */}
       <ZoneStatus 
         spaces={spaces}
+        alarmZones={alarmZones}
+        getZonesWithDevices={getZonesWithDevices}
         weather={weather}
         useDesign2={useDesign2}
         showZonesPreview={showZonesPreview}
