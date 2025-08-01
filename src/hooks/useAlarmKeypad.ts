@@ -806,7 +806,7 @@ export function useAlarmKeypad() {
     
     // Determine new state based on current device states
     const armedDevices = spaceDevices.filter(device => device.armedState && device.armedState !== 'DISARMED');
-    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED_AWAY';
+    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED';
     const warnings = checkDeviceStatus(space);
     
     if (warnings.length > 0 && !skipConfirmation) {
@@ -888,7 +888,7 @@ export function useAlarmKeypad() {
     // Check if any devices in any space are armed
     const allDevices = devices;
     const armedDevices = allDevices.filter(d => d.armedState !== 'DISARMED');
-    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED_AWAY';
+    const newState = armedDevices.length > 0 ? 'DISARMED' : 'ARMED';
     
     const allWarnings = spaces.flatMap(space => checkDeviceStatus(space));
     
