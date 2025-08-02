@@ -96,6 +96,10 @@ export function useAlarmKeypad() {
   const [pendingSpaceToggle, setPendingSpaceToggle] = useState<{ space: Space, newState: string } | null>(null);
   const [pendingToggleAll, setPendingToggleAll] = useState<string | null>(null);
   const [spaceWarnings, setSpaceWarnings] = useState<Record<string, string[]>>({});
+  
+  // Zone-specific warning state
+  const [zoneWarnings, setZoneWarnings] = useState<Record<string, string[]>>({});
+  const [pendingZoneToggle, setPendingZoneToggle] = useState<{ zone: AlarmZone, newState: string } | null>(null);
 
   // Alarm zones (now fetched from Fusion API)
   const [alarmZones, setAlarmZones] = useState<AlarmZone[]>([]);
@@ -787,8 +791,101 @@ export function useAlarmKeypad() {
         if (displayState === 'tamper' || displayState === 'tampered') {
           warnings.push(`${space.name} - ${device.name}: Tamper detected`);
         }
+        
+        // Check for open doors/windows
+        if (displayState === 'open' || displayState === 'opened' || 
+            displayState === 'on' || status === 'open') {
+          // Determine device type for appropriate messaging
+          const isWindow = type.includes('window') || device.name.toLowerCase().includes('window');
+          const isDoor = type.includes('door') || device.name.toLowerCase().includes('door');
+          const deviceTypeStr = isWindow ? 'window' : isDoor ? 'door' : 'device';
+          warnings.push(`${space.name} - ${device.name}: ${deviceTypeStr.charAt(0).toUpperCase() + deviceTypeStr.slice(1)} is open`);
+        }
+        
+        // Check for unlocked locks
+        if (displayState && /unlock/i.test(displayState)) {
+          warnings.push(`${space.name} - ${device.name}: Lock is unlocked`);
+        }
       });
     });
+    
+    return warnings;
+  };
+
+  // Check device status for alarm zones (similar to spaces but for zone devices)
+  const checkZoneDeviceStatus = async (zone: AlarmZone): Promise<string[]> => {
+    const warnings: string[] = [];
+    
+    try {
+      // Get devices for this specific zone
+      const result = await getAlarmZoneDevices(zone.id, zone.armedState);
+      
+      if (result.error) {
+        warnings.push(`${zone.name}: Unable to check device status`);
+        return warnings;
+      }
+      
+      const zoneDevices = result.data || [];
+      
+      if (zoneDevices.length === 0) {
+        warnings.push(`${zone.name}: No devices found in zone`);
+        return warnings;
+      }
+      
+      zoneDevices.forEach((device: Device) => {
+        const type = device.type.toLowerCase();
+        const deviceType = device.deviceTypeInfo?.type?.toLowerCase() || '';
+        const status = device.status?.toLowerCase() || '';
+        const displayState = device.displayState?.toLowerCase() || '';
+        
+        // Check for offline devices
+        if (status === 'offline' || displayState === 'offline') {
+          warnings.push(`${device.name}: Device offline`);
+        }
+        
+        // Check for low battery
+        if ((type === 'keypad' || deviceType === 'keypad') && 
+            displayState === 'low battery') {
+          warnings.push(`${device.name}: Low battery`);
+        }
+        
+        // Check for tamper alerts
+        if (displayState === 'tamper' || displayState === 'tampered') {
+          warnings.push(`${device.name}: Tamper detected`);
+        }
+        
+        // Check for open doors/windows/sensors
+        if (displayState === 'open' || displayState === 'opened' || 
+            displayState === 'on' || status === 'open') {
+          // Determine device type for appropriate messaging
+          const isWindow = type.includes('window') || device.name.toLowerCase().includes('window');
+          const isDoor = type.includes('door') || device.name.toLowerCase().includes('door');
+          const isSensor = type.includes('sensor') || device.name.toLowerCase().includes('sensor');
+          
+          let deviceTypeStr = 'device';
+          if (isWindow) deviceTypeStr = 'window';
+          else if (isDoor) deviceTypeStr = 'door';
+          else if (isSensor) deviceTypeStr = 'sensor';
+          
+          warnings.push(`${device.name}: ${deviceTypeStr.charAt(0).toUpperCase() + deviceTypeStr.slice(1)} is open`);
+        }
+        
+        // Check for unlocked locks
+        if (displayState && /unlock/i.test(displayState)) {
+          warnings.push(`${device.name}: Lock is unlocked`);
+        }
+        
+        // Check for motion detected (if arming and motion sensor shows activity)
+        if ((type.includes('motion') || deviceType.includes('motion')) && 
+            (displayState === 'motion' || displayState === 'detected' || displayState === 'active')) {
+          warnings.push(`${device.name}: Motion currently detected`);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error checking zone device status:', error);
+      warnings.push(`${zone.name}: Error checking device status`);
+    }
     
     return warnings;
   };
@@ -1088,9 +1185,31 @@ export function useAlarmKeypad() {
     console.log('🔒 Finished loading device counts for all zones');
   };
 
-  // Handle zone toggle using proper alarm zone API
-  const handleZoneToggle = async (zone: AlarmZone) => {
+  // Handle zone toggle using proper alarm zone API with device checking
+  const handleZoneToggle = async (zone: AlarmZone, skipConfirmation = false) => {
+    if (isProcessing) return;
+    
     const newState = zone.armedState === 'DISARMED' ? 'ARMED' : 'DISARMED';
+    
+    // Only check devices when arming (not when disarming)
+    if (newState === 'ARMED' && !skipConfirmation) {
+      console.log(`🔍 Checking devices before arming zone "${zone.name}"`);
+      
+      try {
+        const warnings = await checkZoneDeviceStatus(zone);
+        
+        if (warnings.length > 0) {
+          console.log(`⚠️ Found ${warnings.length} device warnings for zone "${zone.name}":`, warnings);
+          setZoneWarnings(prev => ({ ...prev, [zone.id]: warnings }));
+          setPendingZoneToggle({ zone, newState });
+          setShowWarningConfirm(true);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking zone device status:', error);
+        // Continue with arming even if check fails
+      }
+    }
     
     setIsProcessing(true);
     try {
@@ -1106,6 +1225,13 @@ export function useAlarmKeypad() {
         
         console.log(`🔒 Successfully toggled zone "${zone.name}" to ${newState}`);
         
+        // Clear any warnings for this zone
+        setZoneWarnings(prev => {
+          const newWarnings = { ...prev };
+          delete newWarnings[zone.id];
+          return newWarnings;
+        });
+        
         analytics.track({
           action: 'zone_toggle',
           category: 'security',
@@ -1113,7 +1239,8 @@ export function useAlarmKeypad() {
             zoneId: zone.id,
             zoneName: zone.name,
             previousState: zone.armedState,
-            newState: newState
+            newState: newState,
+            hadDeviceWarnings: zoneWarnings[zone.id]?.length > 0
           }
         });
       } else {
@@ -1124,6 +1251,24 @@ export function useAlarmKeypad() {
       setError(`Failed to ${newState.toLowerCase()} ${zone.name}`);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Handle warning confirmation for zones
+  const handleZoneWarningConfirm = async () => {
+    if (pendingZoneToggle) {
+      setShowWarningConfirm(false);
+      
+      // Clear warnings for this zone
+      setZoneWarnings(prev => {
+        const newWarnings = { ...prev };
+        delete newWarnings[pendingZoneToggle.zone.id];
+        return newWarnings;
+      });
+      
+      // Proceed with the zone toggle, skipping confirmation
+      await handleZoneToggle(pendingZoneToggle.zone, true);
+      setPendingZoneToggle(null);
     }
   };
 
@@ -1190,6 +1335,9 @@ export function useAlarmKeypad() {
     getZonesWithDevices,
     loadZoneDeviceCounts,
     handleZoneToggle,
+    handleZoneWarningConfirm,
+    zoneWarnings,
+    pendingZoneToggle,
     
     // System health
     systemStatus,

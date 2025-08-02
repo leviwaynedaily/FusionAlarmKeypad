@@ -30,6 +30,7 @@ import {
   VisionProLayout
 } from '@/components';
 import { SettingsModal } from '@/components/ui/SettingsModal';
+import { ZoneWarningModal } from '@/components/ui/ZoneWarningModal';
 import { updateClock, isMobileDevice, getDeviceType } from '@/lib/alarmKeypadUtils';
 import { SSEProvider, useSSEContext } from '@/hooks/SSEContext';
 
@@ -771,6 +772,15 @@ function AlarmKeypad() {
             // Handle location change if needed
           }}
           requireApiKey={!FUSION_API_KEY}
+        />
+
+        {/* Zone Warning Modal */}
+        <ZoneWarningModal
+          isOpen={alarmKeypad.showWarningConfirm && !!alarmKeypad.pendingZoneToggle}
+          onClose={() => alarmKeypad.setShowWarningConfirm(false)}
+          onConfirm={alarmKeypad.handleZoneWarningConfirm}
+          zone={alarmKeypad.pendingZoneToggle?.zone || null}
+          warnings={alarmKeypad.pendingZoneToggle ? (alarmKeypad.zoneWarnings[alarmKeypad.pendingZoneToggle.zone.id] || []) : []}
         />
       </div>
     );
