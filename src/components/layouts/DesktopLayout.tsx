@@ -148,7 +148,7 @@ export function DesktopLayout({
             </div>
           ) : (
             <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-              Weather loading... {console.log('🌤️ Weather Debug:', { weather, hasWeather: !!weather })}
+              Weather loading...
             </div>
           )}
            <div className="font-semibold text-gray-800 dark:text-gray-200" 
