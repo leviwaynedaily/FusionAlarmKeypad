@@ -5,6 +5,15 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2025-01-08
+
+### 🔧 Enhanced
+- **Clean Dashboard View**: Removed live events thumbnails from main authenticated dashboard
+  - Eliminates event thumbnail carousel from top of dashboard when logged in
+  - Improves focus on core alarm zone controls
+  - Event thumbnails still accessible via dedicated Events page and mobile view
+  - Creates cleaner, less cluttered main interface
+
 ## [1.6.0] - 2025-01-08
 
 ### ✨ Added
