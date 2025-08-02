@@ -5,6 +5,42 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-01-08
+
+### ✨ Added
+- **Carousel Navigation System**: Revolutionary swipe-based interface for events access
+  - Horizontal carousel replacing separate page navigation
+  - Smooth touch and mouse gesture support with 300ms CSS transitions
+  - Swipe threshold recognition (20% swipe distance) for intuitive navigation
+  - Two-slide carousel: Main Dashboard → Events Grid
+  - Pagination dots with active slide indicator
+  - Visual swipe hints with animated arrows and instructional text
+  - EventsGridSlide component for embedded events viewing
+
+### 🎨 UI/UX Revolution
+- **App-Like Navigation**: Seamless horizontal sliding between dashboard and events
+  - Replace "View All →" button with "Swipe left →" action card
+  - Eliminate page transitions for fluid user experience
+  - Maintain all responsive design across mobile, tablet, and desktop
+  - Preserve full events grid functionality within carousel context
+  - Back navigation from events grid to dashboard via gesture or button
+  - Real-time visual feedback during drag/swipe operations
+
+### 🔧 Technical Excellence
+- **Advanced Gesture Recognition**: Support both touch and mouse interactions
+  - Touch events (touchstart, touchmove, touchend) for mobile devices
+  - Mouse events (mousedown, mousemove, mouseup) for desktop
+  - Carousel state management with translateX positioning
+  - Proper event cleanup on mouse leave to prevent stuck states
+  - Threshold-based slide changes with smooth snap-back animations
+
+### 🚀 Performance Optimizations
+- **Efficient Rendering**: Events grid embedded directly in carousel slide
+  - Eliminate separate page loads and routing overhead
+  - Maintain existing EventDetailsModal integration
+  - CSS transform-based animations for 60fps performance
+  - Flex-shrink-0 slides for proper carousel width management
+
 ## [1.6.3] - 2025-01-08
 
 ### ✨ Added

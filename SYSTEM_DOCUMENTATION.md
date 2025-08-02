@@ -195,14 +195,17 @@ const result = await validatePin(pin);
 - **Renders appropriate layout** (mobile/desktop/VisionPro)
 - **Handles PIN vs dashboard state**
 - **Manages global settings**
+- **Carousel navigation system** for authenticated dashboard
+  - Two-slide horizontal carousel: Dashboard → Events Grid
+  - Touch and mouse gesture support with threshold recognition
+  - Smooth CSS transitions with translateX positioning
+  - Pagination dots and visual swipe indicators
 
 #### `src/app/events-grid/page.tsx`
-- **Responsive events gallery** with thumbnail grid display
+- **Standalone events grid page** (legacy route maintained for direct access)
 - **Responsive grid layout**: 2-8 columns based on screen size (6-8 events per row on tablet)
 - **Event filtering**: Shows only events with camera images
 - **Smart sorting**: Events sorted by timestamp (newest first)
-- **Interactive thumbnails** with hover overlays showing device info
-- **Relative timestamps** (e.g., "2h ago", "Just now")
 - **EventDetailsModal integration** for full event viewing
 - **Next.js router navigation** with proper back button support
 
@@ -229,6 +232,18 @@ const result = await validatePin(pin);
   - Location & Device (device, space, location, device ID, system)
   - Technical Details (track ID, resource ID, analytics engine, category/type IDs)
 - **Enhanced dark mode support** with consistent Tailwind color scheme
+
+#### `src/components/ui/EventsGridSlide.tsx`
+- **Carousel-embedded events grid** component for seamless navigation
+- **Responsive grid layout**: 2-8 columns based on screen size (matches standalone page)
+- **Reusable component architecture** with optional back navigation callback
+- **Full-height layout** with flex-col structure and overflow handling
+- **Event filtering and sorting** identical to standalone events-grid page
+- **EventDetailsModal integration** for detailed event viewing
+- **Smart empty state handling** with appropriate messaging
+- **Hover effects and animations** for enhanced user interaction
+- **Time badge overlays** with relative timestamp display
+- **Device type labeling** and event categorization
 - **Mobile-first responsive design** with optimal layouts for all screen sizes
 
 ### API Layer
