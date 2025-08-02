@@ -196,6 +196,16 @@ const result = await validatePin(pin);
 - **Handles PIN vs dashboard state**
 - **Manages global settings**
 
+#### `src/app/events-grid/page.tsx`
+- **Responsive events gallery** with thumbnail grid display
+- **Responsive grid layout**: 2-8 columns based on screen size (6-8 events per row on tablet)
+- **Event filtering**: Shows only events with camera images
+- **Smart sorting**: Events sorted by timestamp (newest first)
+- **Interactive thumbnails** with hover overlays showing device info
+- **Relative timestamps** (e.g., "2h ago", "Just now")
+- **EventDetailsModal integration** for full event viewing
+- **Next.js router navigation** with proper back button support
+
 #### `src/components/layouts/`
 - **DesktopLayout.tsx**: Traditional desktop interface
 - **MobileLayout.tsx**: Mobile-optimized keypad

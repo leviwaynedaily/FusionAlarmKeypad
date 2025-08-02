@@ -5,6 +5,36 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2025-01-08
+
+### ✨ Added
+- **Events Grid Page**: Complete responsive events gallery with thumbnail navigation
+  - New `/events-grid` route with dedicated events visualization
+  - Responsive grid layout: 2-8 columns based on screen size (6-8 events per row on tablet)
+  - Events preview section in authenticated dashboard with 4 thumbnail slots
+  - Elegant "swipe to view" navigation card with visual indicators
+  - Event count display and smooth hover transitions
+  - Direct integration with EventDetailsModal for full event viewing
+
+### 🎨 UI/UX Improvements
+- **Dashboard Navigation Enhancement**: New events access point in authenticated view
+  - Preview thumbnails showing most recent events with images
+  - Swipe-style action card with gradient background and animations
+  - Smart empty state handling for missing event thumbnails
+  - Visual event count indicators
+- **Events Grid Features**: Professional gallery experience
+  - Hover overlays showing device name and event type
+  - Time badges on thumbnails (relative format: "2h ago", "Just now")
+  - Proper back navigation with Next.js router
+  - Filter to show only events with camera images
+  - Sort by timestamp (newest events first)
+
+### 🔧 Enhanced
+- **TypeScript Improvements**: Better type safety for event timestamp handling
+- **Router Integration**: Proper Next.js navigation throughout the app
+- **Responsive Design**: Optimized layout for all device sizes
+- **Performance**: Efficient event filtering and sorting
+
 ## [1.6.2] - 2025-01-08
 
 ### ✨ Added
