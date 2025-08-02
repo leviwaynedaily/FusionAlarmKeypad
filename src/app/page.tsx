@@ -320,7 +320,9 @@ function AlarmKeypad() {
         await alarmKeypad.loadOrganizationAndLocations(savedLocation);
         
         // Wait for areas to be loaded before continuing
+        console.error('🔥 CHECKING selectedLocation condition:', !!alarmKeypad.selectedLocation);
         if (alarmKeypad.selectedLocation) {
+          console.error('✅ INSIDE selectedLocation IF block');
           // Give a small delay to ensure areas are loaded from the previous call
           await new Promise(resolve => setTimeout(resolve, 100));
           
