@@ -554,18 +554,7 @@ function AlarmKeypad() {
   if (auth.isAuthenticated) {
     return (
       <div className="w-full h-full bg-gray-50 dark:bg-gray-900">
-        {/* Live Events Ticker - Hidden on small screens */}
-        {!isMobile && (
-          <LiveEventsTicker
-            showLiveEvents={alarmKeypad.showLiveEvents}
-            recentEvents={sse.recentEvents}
-            debugMode={debugMode}
-            cameras={alarmKeypad.cameras}
-            spaces={alarmKeypad.spaces}
-            eventFilterSettings={alarmKeypad.eventFilterSettings}
-            alarmZones={alarmKeypad.alarmZones}
-          />
-        )}
+        {/* Live Events Ticker removed from main dashboard view */}
 
         {/* Main Content */}
         <div className="flex flex-col items-center justify-center min-h-screen p-3">
