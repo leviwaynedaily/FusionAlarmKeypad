@@ -3,6 +3,7 @@ export { PinEntry } from './PinEntry';
 export { ZoneStatus } from './ZoneStatus';
 export { ZoneDevicesModal } from './ZoneDevicesModal';
 export { ZoneWarningModal } from './ZoneWarningModal';
+export { EventsGridSlide } from './EventsGridSlide';
 export { Clock } from './Clock';
 export { IconPicker } from './IconPicker';
 export { ProcessingOverlay } from './ProcessingOverlay';
