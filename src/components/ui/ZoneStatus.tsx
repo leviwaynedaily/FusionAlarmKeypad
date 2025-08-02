@@ -73,7 +73,7 @@ export function ZoneStatus({
   return (
     <div className="flex-shrink-0 px-4 mb-1">
       {/* Weather Header (if enabled) */}
-      {useDesign2 && weather && (
+      {weather && (
         <div className="flex items-center gap-2 mb-1">
           <img 
             src={`https://openweathermap.org/img/wn/${weather.icon}.png`} 
