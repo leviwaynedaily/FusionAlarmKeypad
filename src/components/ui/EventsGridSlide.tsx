@@ -51,17 +51,128 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  const getEventTypeLabel = (event: SSEEventDisplay) => {
+  // Enhanced event label generation (matches LiveEventsTicker logic)
+  const getEventLabels = (event: SSEEventDisplay) => {
+    const deviceName = event.deviceName || 'Unknown Device';
+    let primaryLabel = 'Event';
+    let secondaryLabel = '';
+    
     try {
+      let parsedEventType: any = event.type;
+      
+      // Parse JSON event types
       if (typeof event.type === 'string' && event.type.startsWith('{')) {
-        const parsed = JSON.parse(event.type);
-        return parsed.type || parsed.displayState || 'Event';
+        parsedEventType = JSON.parse(event.type);
       }
-      return event.type || 'Event';
-    } catch {
-      return event.type || 'Event';
+      
+      // If we have a parsed JSON event type
+      if (typeof parsedEventType === 'object' && parsedEventType) {
+        
+        // For intrusion/analytics events - show specific detection type
+        if (parsedEventType.type === 'Intrusion Detected' || parsedEventType.type === 'intrusion detected') {
+          primaryLabel = 'Intrusion Detected';
+          
+          // Extract object type from caption
+          const caption = (event as any).caption || 
+                        parsedEventType.caption || 
+                        parsedEventType.payload?.caption || 
+                        (event as any).event_data?.payload?.caption ||
+                        (event as any).event_data?.caption ||
+                        (event as any).event?.caption ||
+                        (event as any).rawEvent?.caption ||
+                        '';
+          
+          if (caption) {
+            if (caption.includes('Vehicle') || caption.includes('vehicle')) {
+              secondaryLabel = 'Vehicle Detected';
+            } else if (caption.includes('Person') || caption.includes('person') || caption.includes('Human') || caption.includes('human')) {
+              secondaryLabel = 'Person Detected';  
+            } else if (caption.includes('Animal') || caption.includes('animal') || caption.includes('Pet') || caption.includes('pet')) {
+              secondaryLabel = 'Animal Detected';
+            } else {
+              secondaryLabel = 'Object Detected';
+            }
+          } else {
+            secondaryLabel = 'Motion Detected';
+          }
+          
+          return { primaryLabel, secondaryLabel };
+        }
+        
+        // For state changes
+        if (parsedEventType.type === 'State Changed') {
+          const state = parsedEventType.displayState || parsedEventType.intermediateState;
+          primaryLabel = deviceName;
+          secondaryLabel = state ? `${state}` : 'State Changed';
+          return { primaryLabel, secondaryLabel };
+        }
+        
+        // For device check-ins
+        if (parsedEventType.type === 'Device Check-in') {
+          primaryLabel = deviceName;
+          secondaryLabel = 'Check-in';
+          
+          if (parsedEventType.batteryPercentage !== undefined) {
+            secondaryLabel = `${parsedEventType.batteryPercentage}% Battery`;
+          }
+          
+          return { primaryLabel, secondaryLabel };
+        }
+        
+        // For other structured events
+        if (parsedEventType.type && typeof parsedEventType.type === 'string') {
+          primaryLabel = parsedEventType.type;
+          secondaryLabel = deviceName;
+          return { primaryLabel, secondaryLabel };
+        }
+      }
+      
+      // Handle simple string event types
+      const eventType = (event.type || '').toString().toLowerCase();
+      
+      if (eventType.includes('intrusion')) {
+        primaryLabel = 'Intrusion Detected';
+        secondaryLabel = 'Motion Detected';
+        return { primaryLabel, secondaryLabel };
+      }
+      
+      if (eventType.includes('motion')) {
+        primaryLabel = 'Motion Detected';
+        secondaryLabel = deviceName;
+        return { primaryLabel, secondaryLabel };
+      }
+      
+      if (eventType.includes('state') || eventType.includes('device_state')) {
+        primaryLabel = deviceName;
+        secondaryLabel = 'State Changed';
+        return { primaryLabel, secondaryLabel };
+      }
+      
+      if (eventType.includes('heartbeat')) {
+        primaryLabel = deviceName;
+        secondaryLabel = 'Heartbeat';
+        return { primaryLabel, secondaryLabel };
+      }
+      
+      if (eventType.includes('connection')) {
+        primaryLabel = 'System';
+        secondaryLabel = 'Connection Event';
+        return { primaryLabel, secondaryLabel };
+      }
+      
+      // Default fallback
+      primaryLabel = event.type || 'Event';
+      secondaryLabel = deviceName;
+      
+    } catch (error) {
+      primaryLabel = event.type || 'Event';
+      secondaryLabel = deviceName;
     }
+    
+    return { primaryLabel, secondaryLabel };
   };
+
+
 
   return (
     <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -134,9 +245,21 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
                         <div className="text-white text-xs font-medium truncate">
                           {event.deviceName}
                         </div>
-                        <div className="text-white/80 text-xs truncate">
-                          {getEventTypeLabel(event)}
-                        </div>
+                        {(() => {
+                          const { primaryLabel, secondaryLabel } = getEventLabels(event);
+                          return (
+                            <>
+                              <div className="text-white/90 text-xs truncate font-medium">
+                                {primaryLabel}
+                              </div>
+                              {secondaryLabel && (
+                                <div className="text-white/75 text-xs truncate">
+                                  {secondaryLabel}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -153,9 +276,21 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
                     <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {event.deviceName}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {getEventTypeLabel(event)}
-                    </div>
+                    {(() => {
+                      const { primaryLabel, secondaryLabel } = getEventLabels(event);
+                      return (
+                        <>
+                          <div className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">
+                            {primaryLabel}
+                          </div>
+                          {secondaryLabel && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {secondaryLabel}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
