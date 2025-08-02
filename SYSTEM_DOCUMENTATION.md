@@ -236,14 +236,20 @@ const result = await validatePin(pin);
 #### `src/components/ui/EventsGridSlide.tsx`
 - **Carousel-embedded events grid** component for seamless navigation
 - **Responsive grid layout**: 2-8 columns based on screen size (matches standalone page)
-- **Reusable component architecture** with optional back navigation callback
-- **Full-height layout** with flex-col structure and overflow handling
-- **Event filtering and sorting** identical to standalone events-grid page
-- **EventDetailsModal integration** for detailed event viewing
+- **Advanced event intelligence**: Sophisticated event parsing and labeling system
+  - Parses JSON event types to extract detailed detection information
+  - Shows specific detection types: "Vehicle Detected", "Person Detected", "Animal Detected"
+  - Handles intrusion detection, state changes, device check-ins, and heartbeat events
+  - Primary/secondary label architecture for enhanced information hierarchy
+  - Caption field analysis for object detection categorization
+- **EventDetailsModal integration** for detailed event viewing with consistent data
 - **Smart empty state handling** with appropriate messaging
-- **Hover effects and animations** for enhanced user interaction
+- **Enhanced visual information display**:
+  - Device name prominently displayed
+  - Primary event label (e.g., "Intrusion Detected") with visual emphasis
+  - Secondary detail label (e.g., "Vehicle Detected") with supporting information
+  - Responsive overlay system for hover interactions
 - **Time badge overlays** with relative timestamp display
-- **Device type labeling** and event categorization
 - **Mobile-first responsive design** with optimal layouts for all screen sizes
 
 ### API Layer

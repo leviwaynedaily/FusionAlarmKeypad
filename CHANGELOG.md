@@ -5,6 +5,30 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2025-01-08
+
+### 🔍 Enhanced Event Intelligence
+- **Detailed Event Information in Grid**: Events now show precise detection details
+  - "Vehicle Detected", "Person Detected", "Animal Detected" labels
+  - Extract object detection information from event caption fields
+  - Parse JSON event types for comprehensive event analysis
+  - Support device-specific information (battery levels, state changes)
+  - Intelligent event categorization with fallback logic
+
+### 📊 Improved Data Consistency
+- **Unified Event Display**: Grid and thumbnail events show identical information
+  - Sophisticated event parsing logic imported from LiveEventsTicker
+  - Primary and secondary label system for enhanced information hierarchy
+  - Consistent EventDetailsModal data when clicking on any event
+  - Proper handling of intrusion detection, state changes, and device check-ins
+
+### 🎨 Enhanced Visual Information
+- **Better Information Architecture**: Clear separation of event details
+  - Device name prominently displayed
+  - Primary label (e.g., "Intrusion Detected") with visual emphasis
+  - Secondary label (e.g., "Vehicle Detected") with supporting detail
+  - Responsive design maintains clarity across all screen sizes
+
 ## [1.7.0] - 2025-01-08
 
 ### ✨ Added
