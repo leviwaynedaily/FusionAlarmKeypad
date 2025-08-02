@@ -311,7 +311,14 @@ function AlarmKeypad() {
           
           // Load weather data if we have the required info and API key
           if (alarmKeypad.selectedLocation.addressPostalCode && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
+            console.log('🌤️ Loading weather for postal code:', alarmKeypad.selectedLocation.addressPostalCode);
             await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
+            console.log('🌤️ Weather loaded:', weather.weather);
+          } else {
+            console.log('🌤️ Weather not loading:', { 
+              postalCode: alarmKeypad.selectedLocation?.addressPostalCode, 
+              hasApiKey: !!process.env.NEXT_PUBLIC_WEATHER_API_KEY 
+            });
           }
         }
       } catch (error) {
