@@ -37,7 +37,7 @@ export const ZoneWarningModal: React.FC<ZoneWarningModalProps> = ({
               Device Warning
             </Dialog.Title>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Issues detected before arming "{zone.name}"
+              Issues detected before arming &quot;{zone.name}&quot;
             </p>
           </div>
         </div>
