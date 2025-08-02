@@ -245,6 +245,7 @@ function SSEConnectionManager({ organization, apiKey }: { organization: any; api
 }
 
 function AlarmKeypad() {
+  console.log('🔥 AlarmKeypad component mounting/rendering');
   // Core hooks
   const alarmKeypad = useAlarmKeypad();
   const auth = useAuthentication();
