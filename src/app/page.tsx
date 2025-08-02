@@ -321,6 +321,8 @@ function AlarmKeypad() {
         
         // Wait for areas to be loaded before continuing
         console.error('🔥 CHECKING selectedLocation condition:', !!alarmKeypad.selectedLocation);
+        console.error('🔍 selectedLocation value:', alarmKeypad.selectedLocation);
+        console.error('🔍 selectedLocation keys:', alarmKeypad.selectedLocation ? Object.keys(alarmKeypad.selectedLocation) : 'null/undefined');
         if (alarmKeypad.selectedLocation) {
           console.error('✅ INSIDE selectedLocation IF block');
           // Give a small delay to ensure areas are loaded from the previous call
