@@ -276,13 +276,19 @@ function AlarmKeypad() {
 
   // Initialize on mount - Railway deployment trigger
   useEffect(() => {
+    console.log('🎬 Main useEffect started - checking API key');
+    console.log('🔑 FUSION_API_KEY available:', !!FUSION_API_KEY);
+    console.log('🔑 FUSION_API_KEY value:', FUSION_API_KEY ? `${FUSION_API_KEY.slice(0, 8)}...` : 'undefined');
+    
     setIsClient(true);
     analytics.trackPageView('main-keypad');
 
     if (!FUSION_API_KEY) {
+      console.log('❌ Early return: No FUSION_API_KEY found');
       alarmKeypad.setError('Fusion API key is not set. Please add NEXT_PUBLIC_FUSION_API_KEY to your .env file.');
       return;
     }
+    console.log('✅ API key check passed, continuing...');
     alarmKeypad.setApiKey(FUSION_API_KEY);
     // 🔒 SECURITY: Store API key securely instead of localStorage
     if (typeof window !== 'undefined') {
