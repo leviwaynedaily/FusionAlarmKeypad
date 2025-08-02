@@ -8,7 +8,7 @@ A responsive, PIN-authenticated alarm keypad web application built to interface 
 - 📍 **Location selection and management** 
 - 🏠 **Area control** (arm/disarm/stay/bypass)
 - 📱 **Device status monitoring** with real-time updates
-- 🌤️ **Weather integration** with OpenWeatherMap
+- 🌤️ **Enhanced weather integration** with temperature unit selection (°F/°C)
 - 📊 **Event history** (coming soon)
 - 🔧 **Automation tracking** (coming soon)
 - 📱 **Responsive design** optimized for tablets and touch devices
@@ -156,7 +156,21 @@ The application integrates with the Fusion platform API:
 
 ## Weather Integration
 
-The application uses OpenWeatherMap API to display current weather conditions based on the selected location's postal code.
+The application provides comprehensive weather integration with the following features:
+
+- **Universal Display**: Weather appears in the header across ALL device layouts (mobile, tablet, desktop, VisionPro)
+- **Temperature Units**: Toggle between Fahrenheit (°F) and Celsius (°C) in settings
+- **Smart Location Detection**: Automatically uses selected location's postal code for weather data
+- **Real-time Updates**: Weather information refreshes automatically every 10 minutes
+- **Persistent Preferences**: Temperature unit choice is saved across browser sessions
+
+### Setup
+1. Get a free API key from [OpenWeatherMap](https://openweathermap.org/api)
+2. Set `NEXT_PUBLIC_WEATHER_API_KEY` in your environment variables
+3. Select a location with a postal code in the app
+4. Weather will automatically appear in the header
+
+For detailed setup instructions, see [weather-setup.md](weather-setup.md).
 
 ## Development
 

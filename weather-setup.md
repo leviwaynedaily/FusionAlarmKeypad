@@ -17,19 +17,28 @@ The Fusion Alarm panel can display current weather information for your location
    - Paste your OpenWeatherMap API key
    - The weather should appear in the header within a few seconds
 
+3. **Configure Temperature Unit (Optional)**
+   - In the Settings modal, find the "Temperature Unit" setting
+   - Toggle between Fahrenheit (°F) and Celsius (°C)
+   - Your preference is automatically saved and applied immediately
+
 ## Features
 
-- Displays current temperature in Fahrenheit
-- Shows weather condition (Clear, Cloudy, Rain, etc.)
-- Weather icon for visual representation
-- Updates automatically every 10 minutes
-- Uses location's postal code for accurate local weather
+- **Universal Display**: Weather appears in the header across ALL views (mobile, tablet, desktop, VisionPro)
+- **Temperature Units**: Choose between Fahrenheit (°F) and Celsius (°C) in settings
+- **Smart Location Detection**: Automatically uses your selected location's postal code
+- **Real-time Updates**: Weather refreshes automatically every 10 minutes
+- **Visual Weather Icons**: Clear icons representing current weather conditions
+- **Responsive Design**: Compact display that works on all device sizes
+- **Persistent Preferences**: Temperature unit choice is saved across sessions
 
 ## Troubleshooting
 
-- **No weather showing?** Make sure you've entered a valid API key
+- **No weather showing?** Make sure you've entered a valid API key and selected a location with a postal code
 - **Wrong location?** Weather is based on the postal code of your selected location
+- **Temperature in wrong unit?** Check the Temperature Unit setting in Settings
 - **API limits?** Free tier allows 60 calls/minute and 1,000,000 calls/month
+- **Weather not updating?** Try refreshing the page or check your internet connection
 
 ## Privacy Note
 
