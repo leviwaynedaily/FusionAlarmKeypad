@@ -5,6 +5,34 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2025-01-08
+
+### ✨ Added
+- **Device Status Checking Before Zone Arming**: Complete pre-arming security validation system
+  - Automatically checks all devices in a zone before allowing arming
+  - Detects open doors, windows, sensors, and unlocked locks
+  - Identifies offline devices, low battery devices, and tamper alerts
+  - Displays clear warning modal with device-specific issue descriptions
+  - Provides "Arm Anyway" option for user override with confirmation
+  - Only validates when arming zones (not when disarming)
+  - Smart device type detection (door, window, sensor, lock) for accurate messaging
+
+### 🎨 UI/UX Improvements
+- **ZoneWarningModal**: Professional warning interface with amber color scheme
+  - Clear categorization of device issues with warning icons
+  - Detailed device status descriptions (e.g., "Front Door: Door is open")
+  - Informational note about security effectiveness
+  - Intuitive Cancel/Arm Anyway button options
+- **Enhanced Security Flow**: Users are informed about potential security gaps before arming
+
+### 🔧 Enhanced
+- **Device Detection Patterns**: Comprehensive state checking for various device types
+  - Open states: 'open', 'opened', 'on'
+  - Unlock states: regex pattern matching for 'unlock' variations
+  - Motion detection: 'motion', 'detected', 'active' states
+  - Offline detection: 'offline' status checking
+- **Analytics Integration**: Device warning events tracked for system monitoring
+
 ## [1.6.1] - 2025-01-08
 
 ### 🔧 Enhanced
