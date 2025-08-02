@@ -208,6 +208,19 @@ const result = await validatePin(pin);
 - **Camera thumbnail** integration
 - **Event type icons** and formatting
 
+#### `src/components/ui/EventDetailsModal.tsx`
+- **Responsive modal** for detailed event information
+- **Two-column grid layout** (desktop: 2/3 details, 1/3 image/actions)
+- **Compact single-screen design** - all details fit without scrolling
+- **Integrated lightbox modal** for full-size image viewing
+- **Separate raw data modal** with tabbed interface (Event Type, Complete Event, Raw Data)
+- **Smart content organization** with logical groupings:
+  - Event Details (action, state, battery, object type, confidence)
+  - Location & Device (device, space, location, device ID, system)
+  - Technical Details (track ID, resource ID, analytics engine, category/type IDs)
+- **Enhanced dark mode support** with consistent Tailwind color scheme
+- **Mobile-first responsive design** with optimal layouts for all screen sizes
+
 ### API Layer
 
 #### `src/lib/api.ts`

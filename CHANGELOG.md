@@ -5,6 +5,31 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-01-08
+
+### ✨ Added
+- **Responsive Event Details Modal**: Complete redesign of event details interface
+  - Two-column grid layout on desktop (2/3 details, 1/3 image/actions)
+  - Dedicated lightbox modal for full-size image viewing
+  - Separate tabbed modal for raw data exploration (Event Type, Complete Event, Raw Data)
+  - InfoRow component for consistent key-value pair display throughout
+
+### 🎨 UI/UX Improvements
+- **Compact Single-Screen Design**: All event details now fit on one screen without scrolling
+- **Enhanced Content Organization**: Logical groupings for better information hierarchy
+  - Event Details (action, state, battery, object type, confidence)
+  - Location & Device (device, space, location, device ID, system)
+  - Technical Details (track ID, resource ID, analytics engine, category/type IDs)
+- **Improved Dark Mode**: Consistent Tailwind color scheme with proper contrast ratios
+- **Better Visual Hierarchy**: Modern button styling, hover states, and typography
+- **Mobile-First Responsive**: Seamless experience across all device sizes
+
+### 🔧 Enhanced
+- **Image Viewing Experience**: Thumbnail with click-to-expand functionality
+- **Raw Data Access**: Clean, organized modal with tabbed interface
+- **Performance Optimization**: Reduced DOM complexity and improved rendering
+- **Accessibility**: Better focus management and keyboard navigation
+
 ## [1.5.0] - 2025-01-08
 
 ### ✨ Added
