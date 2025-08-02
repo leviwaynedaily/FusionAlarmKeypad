@@ -325,6 +325,7 @@ function AlarmKeypad() {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           // Load weather data if we have the required info and API key
+          console.error('🌤️ ABOUT TO CHECK WEATHER CONDITIONS');
           console.log('🌤️ Weather Debug - Location Data:', alarmKeypad.selectedLocation);
           console.log('🌤️ Weather Debug - API Key Available:', !!process.env.NEXT_PUBLIC_WEATHER_API_KEY);
           
