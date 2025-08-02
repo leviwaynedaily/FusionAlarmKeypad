@@ -73,6 +73,9 @@ export function DesktopLayout({
   onSettingsClick,
   lastEvent,
 }: DesktopLayoutProps) {
+  // Debug weather data  
+  console.log('🌤️ DesktopLayout Weather Data:', weather);
+  
   const [selectedZone, setSelectedZone] = useState<ZoneWithDevices | null>(null);
   const [showModal, setShowModal] = useState(false);
 
