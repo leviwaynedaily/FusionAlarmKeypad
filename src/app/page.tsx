@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { analytics } from '@/lib/analytics';
 import { performanceMonitor } from '@/lib/performance';
 import { addAlarmZoneTestFunctions } from '@/lib/utils';
@@ -256,6 +257,7 @@ function AlarmKeypad() {
   const theme = useTheme();
   const systemHealth = useSystemHealth();
   const serviceWorker = useServiceWorker();
+  const router = useRouter();
 
   // Local state for clock and mobile detection
   const [currentTime, setCurrentTime] = useState('');
@@ -633,6 +635,90 @@ function AlarmKeypad() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Events Grid Navigation */}
+            <div className="bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 mb-4 overflow-hidden">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className={`font-semibold text-gray-900 dark:text-white ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                    Recent Events
+                  </h2>
+                  <button
+                    onClick={() => router.push('/events-grid')}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+                  >
+                    View All →
+                  </button>
+                </div>
+                
+                {/* Recent Events Preview */}
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {sse.recentEvents
+                    .filter(event => event.imageUrl)
+                    .slice(0, 4)
+                    .map((event, index) => (
+                      <div
+                        key={`${event.id}-${index}`}
+                        className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer hover:scale-105 transition-transform duration-200"
+                        onClick={() => router.push('/events-grid')}
+                      >
+                        <img
+                          src={event.imageUrl}
+                          alt={`${event.deviceName} event`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  {/* Fill empty slots if less than 4 events */}
+                  {Array.from({ length: Math.max(0, 4 - sse.recentEvents.filter(event => event.imageUrl).length) }).map((_, index) => (
+                    <div
+                      key={`empty-${index}`}
+                      className="aspect-square rounded-lg bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center"
+                    >
+                      <svg className="w-6 h-6 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Swipe Action Card */}
+                <button
+                  onClick={() => router.push('/events-grid')}
+                  className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-3">
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          View Events Grid
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {sse.recentEvents.filter(event => event.imageUrl).length} events with images
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xs text-blue-600 dark:text-blue-400 mr-2 group-hover:mr-3 transition-all duration-200">
+                        Swipe to view
+                      </span>
+                      <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Compact Quick Actions */}
