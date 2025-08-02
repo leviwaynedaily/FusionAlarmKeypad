@@ -16,19 +16,17 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
   const [selectedEvent, setSelectedEvent] = useState<SSEEventDisplay | null>(null);
   const [events, setEvents] = useState<SSEEventDisplay[]>([]);
 
-  // Helper function to find alarm zone for an event (similar to LiveEventsTicker)
+  // Helper function to find alarm zone for an event (exact copy from LiveEventsTicker)
   const getAlarmZoneForEvent = (event: SSEEventDisplay) => {
-    if (!alarmKeypad.alarmZones || alarmKeypad.alarmZones.length === 0) return null;
+    if (!event.deviceName || !alarmKeypad.alarmZones || alarmKeypad.alarmZones.length === 0) return null;
     
-    // If event has device information, find the alarm zone containing this device
-    if (event.deviceId) {
-      const zonesWithDevices = alarmKeypad.getZonesWithDevices();
-      return zonesWithDevices.find(zone => 
-        zone.devices?.some(device => device.id === event.deviceId)
-      ) || null;
-    }
-    
-    return null;
+    // Find alarm zone that contains this device (same logic as LiveEventsTicker)
+    return alarmKeypad.alarmZones.find(zone => 
+      zone.devices?.some(device => 
+        device.name === event.deviceName || 
+        device.id === event.deviceId
+      )
+    ) || null;
   };
 
   // Filter events based on Event Display Settings (same logic as LiveEventsTicker)
@@ -37,56 +35,94 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
     
     const eventFilterSettings = alarmKeypad.eventFilterSettings;
     
+    console.log('🔍 EventsGridSlide Debug Info:', {
+      totalEvents: sse.recentEvents?.length || 0,
+      eventFilterSettings: eventFilterSettings,
+      showAllEvents: eventFilterSettings.showAllEvents,
+      showSpaceEvents: eventFilterSettings.showSpaceEvents,
+      showAlarmZoneEvents: eventFilterSettings.showAlarmZoneEvents,
+      showOnlyAlarmZoneEvents: eventFilterSettings.showOnlyAlarmZoneEvents,
+      selectedAlarmZones: eventFilterSettings.selectedAlarmZones,
+      eventTypes: eventFilterSettings.eventTypes,
+      eventTypeSettings: eventFilterSettings.eventTypeSettings
+    });
+    
     return (sse.recentEvents || []).filter(event => {
       const eventType = event.type?.toLowerCase();
+      
+      console.log('🔍 Filtering event:', {
+        eventType: eventType,
+        deviceName: event.deviceName,
+        deviceId: event.deviceId,
+        spaceId: event.spaceId,
+        spaceName: event.spaceName,
+        category: event.category,
+        displayState: event.displayState
+      });
       
       // Check individual event type settings first (highest priority)
       if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
         const isEnabled = eventFilterSettings.eventTypes[eventType] !== false;
+        console.log('🎯 Individual event type check:', { eventType, isEnabled, showAllEvents: eventFilterSettings.showAllEvents });
         // If "Show All Events" is enabled, it can override disabled events to show them
         if (eventFilterSettings.showAllEvents) {
+          console.log('✅ Showing due to showAllEvents override');
           return true; // Show all events when explicitly requested
         }
+        console.log(isEnabled ? '✅ Showing due to individual toggle' : '❌ Filtered out by individual toggle');
         return isEnabled; // Respect individual toggle when "Show All Events" is off
       }
       
       // Check new event type settings format
       if (eventType && eventFilterSettings.eventTypeSettings[eventType]) {
         const isEnabled = eventFilterSettings.eventTypeSettings[eventType].showInTimeline;
+        console.log('🎯 New event type settings check:', { eventType, isEnabled, showAllEvents: eventFilterSettings.showAllEvents });
         if (eventFilterSettings.showAllEvents) {
+          console.log('✅ Showing due to showAllEvents override');
           return true; // Show all events when explicitly requested
         }
+        console.log(isEnabled ? '✅ Showing due to new settings toggle' : '❌ Filtered out by new settings toggle');
         return isEnabled;
       }
       
       // Alarm zone specific filtering
       const eventAlarmZone = getAlarmZoneForEvent(event);
       const isInAlarmZone = !!eventAlarmZone;
+      console.log('🏠 Alarm zone check:', { eventAlarmZone: eventAlarmZone?.name, isInAlarmZone });
       
       // If "Show only alarm zone events" is enabled, filter out non-alarm-zone events
       if (eventFilterSettings.showOnlyAlarmZoneEvents && !isInAlarmZone) {
+        console.log('❌ Filtered out: showOnlyAlarmZoneEvents is true but event not in alarm zone');
         return false;
       }
       
       // If specific alarm zones are selected, only show events from those zones
       if (eventFilterSettings.selectedAlarmZones.length > 0 && isInAlarmZone) {
         if (!eventFilterSettings.selectedAlarmZones.includes(eventAlarmZone.id)) {
+          console.log('❌ Filtered out: event not in selected alarm zones');
           return false;
         }
       }
       
       // Check if event is space-related
       const isSpaceEvent = event.spaceId && event.spaceName;
-      if (eventFilterSettings.showSpaceEvents && isSpaceEvent) return true;
+      if (eventFilterSettings.showSpaceEvents && isSpaceEvent) {
+        console.log('✅ Showing space event');
+        return true;
+      }
       
       // Check if event is alarm zone related (legacy logic - device in an alarm zone)
       const isAlarmZoneEvent = event.category?.includes('alarm') || 
                                event.type?.includes('alarm') ||
                                event.displayState?.includes('armed') ||
                                isInAlarmZone; // Also include our new alarm zone detection
-      if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) return true;
+      if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) {
+        console.log('✅ Showing alarm zone event (legacy logic)');
+        return true;
+      }
       
       // Default fallback - only show if "Show All Events" is enabled
+      console.log(eventFilterSettings.showAllEvents ? '✅ Showing due to showAllEvents fallback' : '❌ Filtered out by default fallback');
       return eventFilterSettings.showAllEvents;
     });
   }, [sse.recentEvents, alarmKeypad.eventFilterSettings, alarmKeypad.alarmZones]);
