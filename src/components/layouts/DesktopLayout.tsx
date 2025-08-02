@@ -132,6 +132,7 @@ export function DesktopLayout({
               marginBottom: 'clamp(0.25rem, 1vw, 1rem)'
             }}>{currentTime}</div>          
           {/* Weather Display */}
+          {console.log('🌤️ DesktopLayout Weather Data:', weather)}
           {weather && (
             <div className="flex items-center gap-2 mb-2">
               <img 

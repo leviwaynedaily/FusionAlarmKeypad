@@ -310,8 +310,18 @@ function AlarmKeypad() {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           // Load weather data if we have the required info and API key
+          console.log('🌤️ Weather Debug - Location Data:', alarmKeypad.selectedLocation);
+          console.log('🌤️ Weather Debug - API Key Available:', !!process.env.NEXT_PUBLIC_WEATHER_API_KEY);
+          
           if (alarmKeypad.selectedLocation.addressPostalCode && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
+            console.log('🌤️ Fetching weather for postal code:', alarmKeypad.selectedLocation.addressPostalCode);
             await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
+            console.log('🌤️ Weather result:', weather.weather);
+          } else {
+            console.log('🌤️ Weather NOT loaded - Missing:', {
+              postalCode: alarmKeypad.selectedLocation?.addressPostalCode,
+              hasApiKey: !!process.env.NEXT_PUBLIC_WEATHER_API_KEY
+            });
           }
         }
       } catch (error) {
