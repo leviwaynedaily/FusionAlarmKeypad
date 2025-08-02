@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Header from '../Header';
-import { WeatherWidget } from '../ui/WeatherWidget';
 import { ZoneDevicesModal } from '../ui/ZoneDevicesModal';
 import { Area, Device, Space, ZoneWithDevices } from '@/lib/api';
 import { getWeatherStyle } from '@/lib/alarmKeypadUtils';
@@ -119,17 +118,7 @@ export function VisionProLayout({
             <div className="relative">
               <div className="text-sm text-white/70 mb-1 font-medium tracking-wide">{currentDate}</div>
               <div className="text-4xl font-ultra-thin text-white mb-4 tracking-tight">{currentTime}</div>
-              {/* Weather */}
-              {weather && (
-                <WeatherWidget 
-                  weather={weather} 
-                  variant="vision-pro" 
-                  className="mb-2"
-                  temperatureUnit={temperatureUnit}
-                  getDisplayTemperature={getDisplayTemperature}
-                  getTemperatureUnit={getTemperatureUnit}
-                />
-              )}
+
             </div>
           </div>
         </div>
@@ -322,22 +311,7 @@ export function VisionProLayout({
           <div className="relative">
             <div className="text-xl text-white/70 mb-2 font-medium tracking-wide">{currentDate}</div>
             <div className="text-8xl font-ultra-thin text-white mb-8 tracking-tight">{currentTime}</div>
-            
-            {/* Inline Weather */}
-            {weather && (
-              <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-2xl"></div>
-                <div className="relative flex items-center justify-between text-white">
-                  <div>
-                    <div className="text-2xl font-light">{weather.temp}°</div>
-                    <div className="text-sm opacity-80">{weather.condition}</div>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-2xl border border-white/20">
-                    ☀️
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

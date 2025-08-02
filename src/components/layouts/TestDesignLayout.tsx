@@ -1,6 +1,5 @@
 import React from 'react';
 import Header from '../Header';
-import { WeatherWidget } from '../ui/WeatherWidget';
 import { Area, Device, Space } from '@/lib/api';
 import { AlarmZone } from '@/lib/api';
 import { getWeatherStyle } from '@/lib/alarmKeypadUtils';
@@ -100,18 +99,7 @@ export function TestDesignLayout({
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{currentDate}</div>
           <div className="text-5xl font-thin text-gray-900 dark:text-white mb-4">{currentTime}</div>
           
-          {/* Weather */}
-          {weather && (
-            <div className="max-w-xs mx-auto mb-6">
-              <WeatherWidget 
-              weather={weather} 
-              variant="iphone"
-              temperatureUnit={temperatureUnit}
-              getDisplayTemperature={getDisplayTemperature}
-              getTemperatureUnit={getTemperatureUnit}
-            />
-            </div>
-          )}
+
         </div>
 
         {/* Alarm Zones Preview */}
@@ -287,18 +275,7 @@ export function TestDesignLayout({
         <div className="text-xl text-gray-600 dark:text-gray-400 mb-2">{currentDate}</div>
         <div className="text-8xl font-thin text-gray-900 dark:text-white mb-8">{currentTime}</div>
         
-        {/* Weather */}
-        {weather && (
-          <div className="max-w-sm mx-auto mb-8">
-            <WeatherWidget 
-              weather={weather} 
-              variant="compact"
-              temperatureUnit={temperatureUnit}
-              getDisplayTemperature={getDisplayTemperature}
-              getTemperatureUnit={getTemperatureUnit}
-            />
-          </div>
-        )}
+
       </div>
 
       {/* Main Content Area */}

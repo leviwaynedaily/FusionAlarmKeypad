@@ -144,22 +144,7 @@ export function DesktopLayout({
               fontSize: 'clamp(2rem, 6vw, 4rem)',
               marginBottom: 'clamp(0.25rem, 1vw, 1rem)'
             }}>{currentTime}</div>          
-          {/* Weather Display */}
-          {weather && (
-            <div className="flex items-center gap-2 mb-2">
-              <img 
-                src={`https://openweathermap.org/img/wn/${weather.icon}.png`} 
-                alt={weather.condition}
-                className="w-5 h-5"
-              />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {weather.temp}°F
-              </span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {weather.condition}
-              </span>
-            </div>
-          )}
+
            <div className="font-semibold text-gray-800 dark:text-gray-200" 
             style={{ 
               fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)',
