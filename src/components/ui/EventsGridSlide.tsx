@@ -17,16 +17,16 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
   // Load events from SSE context
   useEffect(() => {
     if (sse.recentEvents && sse.recentEvents.length > 0) {
-      // Filter for events with images and sort by timestamp (newest first)
-      const eventsWithImages = sse.recentEvents
-        .filter(event => event.imageUrl && event.timestamp)
+      // Include ALL events and sort by timestamp (newest first)
+      const allEvents = sse.recentEvents
+        .filter(event => event.timestamp) // Only filter out events without timestamps
         .sort((a, b) => {
           const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
           const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
           return bTime - aTime;
         });
       
-      setEvents(eventsWithImages);
+      setEvents(allEvents);
     }
   }, [sse.recentEvents]);
 
@@ -196,7 +196,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
               </h1>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {events.length} events with images
+              {events.length} total events
             </div>
           </div>
         </div>
@@ -213,10 +213,10 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No events with images
+                No recent events
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Events with camera images will appear here when they occur.
+                System events and alerts will appear here when they occur.
               </p>
             </div>
           ) : (
@@ -227,17 +227,66 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
                   onClick={() => handleEventClick(event)}
                   className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 >
-                  {/* Image */}
+                  {/* Image or Icon */}
                   <div className="aspect-square relative overflow-hidden">
-                    <img
-                      src={event.imageUrl}
-                      alt={`${event.deviceName} event`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
+                    {event.imageUrl ? (
+                      <img
+                        src={event.imageUrl}
+                        alt={`${event.deviceName} event`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                        {(() => {
+                          const { primaryLabel } = getEventLabels(event);
+                          const eventType = (event.type || '').toString().toLowerCase();
+                          
+                          // Choose icon based on event type
+                          if (eventType.includes('intrusion') || primaryLabel.includes('Intrusion')) {
+                            return (
+                              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                            );
+                          } else if (eventType.includes('motion') || primaryLabel.includes('Motion')) {
+                            return (
+                              <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            );
+                          } else if (eventType.includes('state') || primaryLabel.includes('State')) {
+                            return (
+                              <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                              </svg>
+                            );
+                          } else if (eventType.includes('heartbeat') || eventType.includes('check-in') || primaryLabel.includes('Check-in')) {
+                            return (
+                              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                              </svg>
+                            );
+                          } else if (eventType.includes('connection') || primaryLabel.includes('Connection')) {
+                            return (
+                              <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                              </svg>
+                            );
+                          } else {
+                            // Default icon
+                            return (
+                              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 17H4l5 5v-5zM9 7H4l5-5v5zM15 7h5l-5-5v5z" />
+                              </svg>
+                            );
+                          }
+                        })()}
+                      </div>
+                    )}
                     
                     {/* Overlay with event info */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
