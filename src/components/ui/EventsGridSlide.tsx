@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSSEContext } from '@/hooks/SSEContext';
+import { useAlarmKeypad } from '@/hooks/useAlarmKeypad';
 import { EventDetailsModal } from '@/components/ui/EventDetailsModal';
 import { SSEEventDisplay } from '@/hooks/useSSE';
 
@@ -11,24 +12,98 @@ interface EventsGridSlideProps {
 
 export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
   const sse = useSSEContext();
+  const alarmKeypad = useAlarmKeypad();
   const [selectedEvent, setSelectedEvent] = useState<SSEEventDisplay | null>(null);
   const [events, setEvents] = useState<SSEEventDisplay[]>([]);
 
-  // Load events from SSE context
-  useEffect(() => {
-    if (sse.recentEvents && sse.recentEvents.length > 0) {
-      // Include ALL events and sort by timestamp (newest first)
-      const allEvents = sse.recentEvents
-        .filter(event => event.timestamp) // Only filter out events without timestamps
-        .sort((a, b) => {
-          const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-          const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-          return bTime - aTime;
-        });
-      
-      setEvents(allEvents);
+  // Helper function to find alarm zone for an event (similar to LiveEventsTicker)
+  const getAlarmZoneForEvent = (event: SSEEventDisplay) => {
+    if (!alarmKeypad.alarmZones || alarmKeypad.alarmZones.length === 0) return null;
+    
+    // If event has device information, find the alarm zone containing this device
+    if (event.deviceId) {
+      const zonesWithDevices = alarmKeypad.getZonesWithDevices();
+      return zonesWithDevices.find(zone => 
+        zone.devices?.some(device => device.id === event.deviceId)
+      ) || null;
     }
-  }, [sse.recentEvents]);
+    
+    return null;
+  };
+
+  // Filter events based on Event Display Settings (same logic as LiveEventsTicker)
+  const filteredEvents = useMemo(() => {
+    if (!alarmKeypad.eventFilterSettings) return sse.recentEvents || [];
+    
+    const eventFilterSettings = alarmKeypad.eventFilterSettings;
+    
+    return (sse.recentEvents || []).filter(event => {
+      const eventType = event.type?.toLowerCase();
+      
+      // Check individual event type settings first (highest priority)
+      if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
+        const isEnabled = eventFilterSettings.eventTypes[eventType] !== false;
+        // If "Show All Events" is enabled, it can override disabled events to show them
+        if (eventFilterSettings.showAllEvents) {
+          return true; // Show all events when explicitly requested
+        }
+        return isEnabled; // Respect individual toggle when "Show All Events" is off
+      }
+      
+      // Check new event type settings format
+      if (eventType && eventFilterSettings.eventTypeSettings[eventType]) {
+        const isEnabled = eventFilterSettings.eventTypeSettings[eventType].showInTimeline;
+        if (eventFilterSettings.showAllEvents) {
+          return true; // Show all events when explicitly requested
+        }
+        return isEnabled;
+      }
+      
+      // Alarm zone specific filtering
+      const eventAlarmZone = getAlarmZoneForEvent(event);
+      const isInAlarmZone = !!eventAlarmZone;
+      
+      // If "Show only alarm zone events" is enabled, filter out non-alarm-zone events
+      if (eventFilterSettings.showOnlyAlarmZoneEvents && !isInAlarmZone) {
+        return false;
+      }
+      
+      // If specific alarm zones are selected, only show events from those zones
+      if (eventFilterSettings.selectedAlarmZones.length > 0 && isInAlarmZone) {
+        if (!eventFilterSettings.selectedAlarmZones.includes(eventAlarmZone.id)) {
+          return false;
+        }
+      }
+      
+      // Check if event is space-related
+      const isSpaceEvent = event.spaceId && event.spaceName;
+      if (eventFilterSettings.showSpaceEvents && isSpaceEvent) return true;
+      
+      // Check if event is alarm zone related (legacy logic - device in an alarm zone)
+      const isAlarmZoneEvent = event.category?.includes('alarm') || 
+                               event.type?.includes('alarm') ||
+                               event.displayState?.includes('armed') ||
+                               isInAlarmZone; // Also include our new alarm zone detection
+      if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) return true;
+      
+      // Default fallback - only show if "Show All Events" is enabled
+      return eventFilterSettings.showAllEvents;
+    });
+  }, [sse.recentEvents, alarmKeypad.eventFilterSettings, alarmKeypad.alarmZones]);
+
+  // Load events from filtered results
+  useEffect(() => {
+    // Apply timestamp filtering and sorting to the already filtered events
+    const sortedFilteredEvents = filteredEvents
+      .filter(event => event.timestamp) // Only filter out events without timestamps
+      .sort((a, b) => {
+        const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return bTime - aTime;
+      });
+    
+    setEvents(sortedFilteredEvents);
+  }, [filteredEvents]);
 
   const handleEventClick = (event: SSEEventDisplay) => {
     setSelectedEvent(event);
@@ -196,7 +271,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
               </h1>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {events.length} total events
+              {events.length} events (filtered)
             </div>
           </div>
         </div>

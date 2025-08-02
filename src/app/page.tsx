@@ -762,7 +762,42 @@ function AlarmKeypad() {
                           View Events Grid
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {sse.recentEvents.filter(event => event.imageUrl).length} events with images
+                          {(() => {
+                            if (!alarmKeypad.eventFilterSettings) return sse.recentEvents.length;
+                            
+                            const eventFilterSettings = alarmKeypad.eventFilterSettings;
+                            
+                            const filteredCount = sse.recentEvents.filter(event => {
+                              const eventType = event.type?.toLowerCase();
+                              
+                              // Check individual event type settings first
+                              if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
+                                const isEnabled = eventFilterSettings.eventTypes[eventType] !== false;
+                                if (eventFilterSettings.showAllEvents) {
+                                  return true;
+                                }
+                                return isEnabled;
+                              }
+                              
+                              // Check new event type settings format
+                              if (eventType && eventFilterSettings.eventTypeSettings[eventType]) {
+                                const isEnabled = eventFilterSettings.eventTypeSettings[eventType].showInTimeline;
+                                if (eventFilterSettings.showAllEvents) {
+                                  return true;
+                                }
+                                return isEnabled;
+                              }
+                              
+                              // Check if event is space-related
+                              const isSpaceEvent = event.spaceId && event.spaceName;
+                              if (eventFilterSettings.showSpaceEvents && isSpaceEvent) return true;
+                              
+                              // Default fallback
+                              return eventFilterSettings.showAllEvents;
+                            }).length;
+                            
+                            return filteredCount;
+                          })()} events (filtered)
                         </div>
                       </div>
                     </div>
