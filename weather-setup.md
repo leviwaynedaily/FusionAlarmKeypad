@@ -27,7 +27,7 @@ The Fusion Alarm panel can display current weather information for your location
 - **Universal Display**: Weather appears in the header across ALL views (mobile, tablet, desktop, VisionPro)
 - **Temperature Units**: Choose between Fahrenheit (°F) and Celsius (°C) in settings
 - **Smart Location Detection**: Automatically uses your selected location's postal code
-- **Real-time Updates**: Weather refreshes automatically every 10 minutes
+- **Real-time Updates**: Weather refreshes automatically every 10 minutes in the background
 - **Visual Weather Icons**: Clear icons representing current weather conditions
 - **Responsive Design**: Compact display that works on all device sizes
 - **Persistent Preferences**: Temperature unit choice is saved across sessions

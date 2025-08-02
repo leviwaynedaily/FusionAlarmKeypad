@@ -5,6 +5,27 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-01-08
+
+### ✨ Added
+- **Automatic Weather Refresh**: Weather now updates every 10 minutes in the background
+  - No more stale weather data during long sessions
+  - Automatic refresh starts when location is available with postal code
+  - Proper interval cleanup prevents memory leaks
+  - Console logging for debugging auto-refresh cycles
+
+### 🐛 Fixed
+- **Weather Loading Timing Issue**: Fixed weather not loading on initial page load
+  - Added dedicated useEffect to watch for location availability
+  - Weather now loads immediately when `alarmKeypad.selectedLocation` becomes available
+  - Eliminated timing race condition between location loading and weather API calls
+
+### 🔧 Enhanced
+- **Weather Display Cleanup**: Removed duplicate weather displays
+  - Weather now appears ONLY in header across all layouts
+  - Removed redundant weather widgets from main content areas
+  - Cleaner, less cluttered interface
+
 ## [1.4.0] - 2025-01-08
 
 ### ✨ Added
