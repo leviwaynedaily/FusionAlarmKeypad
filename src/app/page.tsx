@@ -301,6 +301,7 @@ function AlarmKeypad() {
     const savedLocation = localStorage.getItem('fusion_selected_location');
     const initialLoad = async () => {
       try {
+        console.log('🚀 initialLoad function started');
         alarmKeypad.setLoading(true);
         await alarmKeypad.loadOrganizationAndLocations(savedLocation);
         
