@@ -28,6 +28,9 @@ interface MobileLayoutProps {
   alarmZones: AlarmZone[];
   getZonesWithDevices: () => ZoneWithDevices[];
   weather: WeatherData | null;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
   useDesign2: boolean;
   showZonesPreview: boolean;
   
@@ -56,6 +59,9 @@ export function MobileLayout({
   alarmZones,
   getZonesWithDevices,
   weather,
+  temperatureUnit,
+  getDisplayTemperature,
+  getTemperatureUnit,
   useDesign2,
   showZonesPreview,
   pin,
@@ -76,6 +82,10 @@ export function MobileLayout({
         locationName={locationName}
         postalCode={postalCode}
         organizationName={organizationName}
+        weather={weather}
+        temperatureUnit={temperatureUnit}
+        getDisplayTemperature={getDisplayTemperature}
+        getTemperatureUnit={getTemperatureUnit}
         onSettingsClick={onSettingsClick}
       />
       {/* Mobile Header with Time */}

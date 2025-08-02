@@ -29,6 +29,9 @@ interface DesktopLayoutProps {
   spaces: Space[];
   getZonesWithDevices: () => ZoneWithDevices[];
   weather: WeatherData | null;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
   useDesign2: boolean;
   showZonesPreview: boolean;
   
@@ -59,6 +62,9 @@ export function DesktopLayout({
   spaces,
   getZonesWithDevices,
   weather,
+  temperatureUnit,
+  getDisplayTemperature,
+  getTemperatureUnit,
   useDesign2,
   showZonesPreview,
   pin,
@@ -118,6 +124,10 @@ export function DesktopLayout({
         locationName={locationName}
         postalCode={postalCode}
         organizationName={organizationName}
+        weather={weather}
+        temperatureUnit={temperatureUnit}
+        getDisplayTemperature={getDisplayTemperature}
+        getTemperatureUnit={getTemperatureUnit}
         onSettingsClick={onSettingsClick}
       />
       {/* Main content: two columns with maximum compaction */}

@@ -2,14 +2,33 @@
 
 import { useEffect, useState } from 'react';
 
+interface WeatherData {
+  temp: number;
+  condition: string;
+  icon: string;
+}
+
 interface HeaderProps {
   locationName?: string;
   postalCode?: string;
   organizationName?: string;
+  weather?: WeatherData | null;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
   onSettingsClick?: () => void;
 }
 
-export default function Header({ locationName, postalCode, organizationName, onSettingsClick }: HeaderProps) {
+export default function Header({ 
+  locationName, 
+  postalCode, 
+  organizationName, 
+  weather,
+  temperatureUnit = 'fahrenheit',
+  getDisplayTemperature,
+  getTemperatureUnit,
+  onSettingsClick 
+}: HeaderProps) {
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -55,6 +74,20 @@ export default function Header({ locationName, postalCode, organizationName, onS
         </div>
         
         <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
+          {/* Weather Display */}
+          {weather && (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <img 
+                src={`https://openweathermap.org/img/wn/${weather.icon}.png`} 
+                alt={weather.condition}
+                className="w-4 h-4 sm:w-5 sm:h-5"
+              />
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                {getDisplayTemperature ? getDisplayTemperature(weather.temp) : Math.round(weather.temp)}°{getTemperatureUnit ? getTemperatureUnit() : 'F'}
+              </span>
+            </div>
+          )}
+          
           {/* Connection Status */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>

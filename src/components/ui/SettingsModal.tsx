@@ -65,6 +65,10 @@ interface SettingsModalProps {
   // Location change
   onLocationChange: () => void;
   
+  // Temperature unit
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  onTemperatureUnitChange?: (unit: 'celsius' | 'fahrenheit') => void;
+  
   // New prop
   requireApiKey?: boolean;
 }
@@ -105,6 +109,8 @@ export function SettingsModal({
   alarmZones,
   onAlarmZonesChange,
   onLocationChange,
+  temperatureUnit = 'fahrenheit',
+  onTemperatureUnitChange,
   requireApiKey = false
 }: SettingsModalProps) {
 
@@ -166,7 +172,10 @@ export function SettingsModal({
                         <p>Postal Code: {selectedLocation.addressPostalCode}</p>
                       )}
                       {weather && (
-                        <p>Weather: {weather.temp}°F</p>
+                        <p>Weather: {temperatureUnit === 'celsius' 
+                          ? `${Math.round((weather.temp - 32) * 5/9)}°C` 
+                          : `${weather.temp}°F`}
+                        </p>
                       )}
                       <p>
                         Timezone: {selectedLocation?.timeZone ? (
@@ -271,6 +280,30 @@ export function SettingsModal({
                         }`}
                       />
                     </button>
+                  </div>
+
+                  {/* Temperature Unit */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">Temperature Unit</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Display temperature in Celsius or Fahrenheit</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${temperatureUnit === 'fahrenheit' ? 'text-[#22c55f]' : 'text-gray-500'}`}>°F</span>
+                      <button
+                        onClick={() => onTemperatureUnitChange?.(temperatureUnit === 'celsius' ? 'fahrenheit' : 'celsius')}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                          temperatureUnit === 'celsius' ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            temperatureUnit === 'celsius' ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-xs ${temperatureUnit === 'celsius' ? 'text-[#22c55f]' : 'text-gray-500'}`}>°C</span>
+                    </div>
                   </div>
 
                   {/* Debug Mode */}

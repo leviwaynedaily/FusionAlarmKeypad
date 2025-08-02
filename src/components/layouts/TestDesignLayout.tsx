@@ -30,6 +30,9 @@ interface TestDesignLayoutProps {
   
   // Weather props
   weather: WeatherData | null;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
   
   // Zone props
   spaces: Space[];
@@ -60,6 +63,9 @@ export function TestDesignLayout({
   selectedLocation,
   showSeconds,
   weather,
+  temperatureUnit,
+  getDisplayTemperature,
+  getTemperatureUnit,
   spaces,
   devices,
   showZonesPreview,
@@ -83,6 +89,10 @@ export function TestDesignLayout({
           locationName={locationName}
           postalCode={postalCode}
           organizationName={organizationName}
+          weather={weather}
+          temperatureUnit={temperatureUnit}
+          getDisplayTemperature={getDisplayTemperature}
+          getTemperatureUnit={getTemperatureUnit}
           onSettingsClick={onSettingsClick}
         />
         {/* Centered Clock & Date at Top */}
@@ -93,7 +103,13 @@ export function TestDesignLayout({
           {/* Weather */}
           {weather && (
             <div className="max-w-xs mx-auto mb-6">
-              <WeatherWidget weather={weather} variant="iphone" />
+              <WeatherWidget 
+              weather={weather} 
+              variant="iphone"
+              temperatureUnit={temperatureUnit}
+              getDisplayTemperature={getDisplayTemperature}
+              getTemperatureUnit={getTemperatureUnit}
+            />
             </div>
           )}
         </div>
@@ -260,6 +276,10 @@ export function TestDesignLayout({
         locationName={locationName}
         postalCode={postalCode}
         organizationName={organizationName}
+        weather={weather}
+        temperatureUnit={temperatureUnit}
+        getDisplayTemperature={getDisplayTemperature}
+        getTemperatureUnit={getTemperatureUnit}
         onSettingsClick={onSettingsClick}
       />
       {/* Centered Clock, Date & Weather at Top */}
@@ -270,7 +290,13 @@ export function TestDesignLayout({
         {/* Weather */}
         {weather && (
           <div className="max-w-sm mx-auto mb-8">
-            <WeatherWidget weather={weather} variant="compact" />
+            <WeatherWidget 
+              weather={weather} 
+              variant="compact"
+              temperatureUnit={temperatureUnit}
+              getDisplayTemperature={getDisplayTemperature}
+              getTemperatureUnit={getTemperatureUnit}
+            />
           </div>
         )}
       </div>

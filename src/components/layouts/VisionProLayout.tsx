@@ -28,6 +28,9 @@ interface VisionProLayoutProps {
   
   // Weather props
   weather: WeatherData | null;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
   
   // Zone props
   spaces: Space[];
@@ -57,6 +60,9 @@ export function VisionProLayout({
   selectedLocation,
   showSeconds,
   weather,
+  temperatureUnit,
+  getDisplayTemperature,
+  getTemperatureUnit,
   spaces,
   devices,
   getZonesWithDevices,
@@ -93,6 +99,10 @@ export function VisionProLayout({
           locationName={locationName}
           postalCode={postalCode}
           organizationName={organizationName}
+          weather={weather}
+          temperatureUnit={temperatureUnit}
+          getDisplayTemperature={getDisplayTemperature}
+          getTemperatureUnit={getTemperatureUnit}
           onSettingsClick={onSettingsClick}
         />
         {/* Floating ambient background layers - Full coverage */}
@@ -111,7 +121,14 @@ export function VisionProLayout({
               <div className="text-4xl font-ultra-thin text-white mb-4 tracking-tight">{currentTime}</div>
               {/* Weather */}
               {weather && (
-                <WeatherWidget weather={weather} variant="vision-pro" className="mb-2" />
+                <WeatherWidget 
+                  weather={weather} 
+                  variant="vision-pro" 
+                  className="mb-2"
+                  temperatureUnit={temperatureUnit}
+                  getDisplayTemperature={getDisplayTemperature}
+                  getTemperatureUnit={getTemperatureUnit}
+                />
               )}
             </div>
           </div>
@@ -285,6 +302,10 @@ export function VisionProLayout({
         locationName={locationName}
         postalCode={postalCode}
         organizationName={organizationName}
+        weather={weather}
+        temperatureUnit={temperatureUnit}
+        getDisplayTemperature={getDisplayTemperature}
+        getTemperatureUnit={getTemperatureUnit}
         onSettingsClick={onSettingsClick}
       />
       {/* Floating ambient background layers */}

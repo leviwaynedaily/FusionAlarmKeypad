@@ -11,10 +11,23 @@ interface WeatherWidgetProps {
   weather: WeatherData;
   variant?: 'iphone' | 'vision-pro' | 'compact';
   className?: string;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
+  getDisplayTemperature?: (temp: number) => number;
+  getTemperatureUnit?: () => string;
 }
 
-export function WeatherWidget({ weather, variant = 'iphone', className = '' }: WeatherWidgetProps) {
+export function WeatherWidget({ 
+  weather, 
+  variant = 'iphone', 
+  className = '',
+  temperatureUnit = 'fahrenheit',
+  getDisplayTemperature,
+  getTemperatureUnit
+}: WeatherWidgetProps) {
   const style = getWeatherStyle(weather.condition);
+  
+  const displayTemp = getDisplayTemperature ? getDisplayTemperature(weather.temp) : weather.temp;
+  const tempUnit = getTemperatureUnit ? getTemperatureUnit() : (temperatureUnit === 'celsius' ? 'C' : 'F');
   
   if (variant === 'vision-pro') {
     return (
@@ -22,7 +35,7 @@ export function WeatherWidget({ weather, variant = 'iphone', className = '' }: W
         <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent rounded-xl"></div>
         <div className="relative flex items-center justify-between text-white">
           <div>
-            <div className="text-lg font-light">{weather.temp}°</div>
+            <div className="text-lg font-light">{displayTemp}°{tempUnit}</div>
             <div className="text-xs opacity-80">{weather.condition}</div>
           </div>
           <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-lg border border-white/20">
@@ -42,7 +55,7 @@ export function WeatherWidget({ weather, variant = 'iphone', className = '' }: W
           className="w-5 h-5"
         />
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {weather.temp}°F
+          {displayTemp}°{tempUnit}
         </span>
         <span className="text-xs text-gray-600 dark:text-gray-400">
           {weather.condition}
@@ -57,7 +70,7 @@ export function WeatherWidget({ weather, variant = 'iphone', className = '' }: W
       <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
       <div className="relative flex items-center justify-between text-white">
         <div>
-          <div className="text-2xl font-light">{weather.temp}°</div>
+          <div className="text-2xl font-light">{displayTemp}°{tempUnit}</div>
           <div className="text-sm opacity-90">{weather.condition}</div>
         </div>
         <div className="text-3xl">{style.icon}</div>

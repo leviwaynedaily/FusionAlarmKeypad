@@ -28,7 +28,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ 
       data: data ? {
         eventFilterSettings: data.event_filter_settings,
-        customEventNames: data.custom_event_names
+        customEventNames: data.custom_event_names,
+        temperatureUnit: data.temperature_unit || 'fahrenheit'
       } : null 
     });
   } catch (err) {
@@ -45,7 +46,8 @@ export async function POST(req: Request) {
       locationId, 
       userId = 'default',
       eventFilterSettings, 
-      customEventNames 
+      customEventNames,
+      temperatureUnit = 'fahrenheit'
     } = body;
 
     if (!organizationId) {
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
       user_id: userId,
       event_filter_settings: eventFilterSettings,
       custom_event_names: customEventNames || {},
+      temperature_unit: temperatureUnit,
       updated_at: new Date().toISOString()
     };
 

@@ -276,6 +276,9 @@ function AlarmKeypad() {
   const postalCode = alarmKeypad.selectedLocation?.addressPostalCode;
   const organizationName = alarmKeypad.organization?.name;
 
+  // Temperature unit state
+  const [temperatureUnit, setTemperatureUnit] = useState<'celsius' | 'fahrenheit'>('fahrenheit');
+
   // TEST: Simple useEffect to verify useEffect works
   useEffect(() => {
     console.error('🚨 SIMPLE useEffect test - RUNNING!');
@@ -290,6 +293,13 @@ function AlarmKeypad() {
     
     setIsClient(true);
     analytics.trackPageView('main-keypad');
+
+    // Load temperature unit preference
+    const savedTempUnit = localStorage.getItem('temperature_unit') as 'celsius' | 'fahrenheit';
+    if (savedTempUnit) {
+      setTemperatureUnit(savedTempUnit);
+      weather.setTemperatureUnit(savedTempUnit);
+    }
 
     if (!FUSION_API_KEY) {
       console.log('❌ Early return: No FUSION_API_KEY found');
@@ -319,30 +329,30 @@ function AlarmKeypad() {
         alarmKeypad.setLoading(true);
         await alarmKeypad.loadOrganizationAndLocations(savedLocation);
         
-        // Wait for areas to be loaded before continuing
-        console.error('🔥 CHECKING selectedLocation condition:', !!alarmKeypad.selectedLocation);
-        console.error('🔍 selectedLocation value:', alarmKeypad.selectedLocation);
-        console.error('🔍 selectedLocation keys:', alarmKeypad.selectedLocation ? Object.keys(alarmKeypad.selectedLocation) : 'null/undefined');
-        if (alarmKeypad.selectedLocation) {
-          console.error('✅ INSIDE selectedLocation IF block');
-          // Give a small delay to ensure areas are loaded from the previous call
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Load weather data if we have the required info and API key
-          console.error('🌤️ ABOUT TO CHECK WEATHER CONDITIONS');
-          console.log('🌤️ Weather Debug - Location Data:', alarmKeypad.selectedLocation);
-          console.log('🌤️ Weather Debug - API Key Available:', !!process.env.NEXT_PUBLIC_WEATHER_API_KEY);
-          
-          if (alarmKeypad.selectedLocation.addressPostalCode && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
-            console.log('🌤️ Fetching weather for postal code:', alarmKeypad.selectedLocation.addressPostalCode);
-            await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
-            console.log('🌤️ Weather result:', weather.weather);
-          } else {
-            console.log('🌤️ Weather NOT loaded - Missing:', {
-              postalCode: alarmKeypad.selectedLocation?.addressPostalCode,
-              hasApiKey: !!process.env.NEXT_PUBLIC_WEATHER_API_KEY
-            });
+        // Load weather data directly using savedLocation data (not relying on async React state)
+        console.log('🌤️ Weather Debug - Saved Location:', savedLocation);
+        console.log('🌤️ Weather Debug - API Key Available:', !!process.env.NEXT_PUBLIC_WEATHER_API_KEY);
+
+        if (savedLocation && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
+          try {
+            const locationData = JSON.parse(savedLocation);
+            console.log('🌤️ Parsed location data:', locationData);
+            
+            if (locationData.addressPostalCode) {
+              console.log('🌤️ Fetching weather for postal code:', locationData.addressPostalCode);
+              await weather.fetchWeatherData(locationData.addressPostalCode);
+              console.log('🌤️ Weather result:', weather.weather);
+            } else {
+              console.log('🌤️ Weather NOT loaded - No postal code in location:', locationData);
+            }
+          } catch (e) {
+            console.error('🌤️ Error parsing location for weather:', e);
           }
+        } else {
+          console.log('🌤️ Weather NOT loaded - Missing:', {
+            savedLocation: !!savedLocation,
+            hasApiKey: !!process.env.NEXT_PUBLIC_WEATHER_API_KEY
+          });
         }
       } catch (error) {
         console.error('Initialization error:', error);
@@ -417,6 +427,13 @@ function AlarmKeypad() {
     setDebugMode(value);
     localStorage.setItem('fusion_debug_mode', value.toString());
     console.log(value ? '🐛 Debug mode enabled' : '🐛 Debug mode disabled');
+  };
+
+  const handleTemperatureUnitChange = (unit: 'celsius' | 'fahrenheit') => {
+    setTemperatureUnit(unit);
+    weather.setTemperatureUnit(unit);
+    localStorage.setItem('temperature_unit', unit);
+    console.log(`🌡️ Temperature unit changed to ${unit}`);
   };
 
   // Auto-authenticate when PIN is complete
@@ -683,6 +700,8 @@ function AlarmKeypad() {
           weather={weather.weather}
           selectedLocation={alarmKeypad.selectedLocation}
           organization={alarmKeypad.organization}
+          temperatureUnit={temperatureUnit}
+          onTemperatureUnitChange={handleTemperatureUnitChange}
           showZonesPreview={alarmKeypad.showZonesPreview}
           onShowZonesPreviewChange={(value) => {
             alarmKeypad.setShowZonesPreview(value);
@@ -785,6 +804,9 @@ function AlarmKeypad() {
           selectedLocation={alarmKeypad.selectedLocation}
           showSeconds={alarmKeypad.showSeconds}
           weather={weather.weather}
+          temperatureUnit={temperatureUnit}
+          getDisplayTemperature={weather.getDisplayTemperature}
+          getTemperatureUnit={weather.getTemperatureUnit}
           spaces={alarmKeypad.spaces}
           devices={alarmKeypad.devices}
           showZonesPreview={alarmKeypad.showZonesPreview}
@@ -813,6 +835,9 @@ function AlarmKeypad() {
           alarmZones={alarmKeypad.alarmZones}
           getZonesWithDevices={alarmKeypad.getZonesWithDevices}
           weather={weather.weather}
+          temperatureUnit={temperatureUnit}
+          getDisplayTemperature={weather.getDisplayTemperature}
+          getTemperatureUnit={weather.getTemperatureUnit}
           useDesign2={alarmKeypad.useDesign2}
           showZonesPreview={alarmKeypad.showZonesPreview}
           pin={auth.pin}
@@ -865,6 +890,9 @@ function AlarmKeypad() {
           spaces={alarmKeypad.spaces}
           getZonesWithDevices={alarmKeypad.getZonesWithDevices}
           weather={weather.weather}
+          temperatureUnit={temperatureUnit}
+          getDisplayTemperature={weather.getDisplayTemperature}
+          getTemperatureUnit={weather.getTemperatureUnit}
           useDesign2={alarmKeypad.useDesign2}
           showZonesPreview={alarmKeypad.showZonesPreview}
           pin={auth.pin}
@@ -903,6 +931,8 @@ function AlarmKeypad() {
         weather={weather.weather}
         selectedLocation={alarmKeypad.selectedLocation}
         organization={alarmKeypad.organization}
+        temperatureUnit={temperatureUnit}
+        onTemperatureUnitChange={handleTemperatureUnitChange}
         showZonesPreview={alarmKeypad.showZonesPreview}
         onShowZonesPreviewChange={alarmKeypad.setShowZonesPreview}
         showSeconds={alarmKeypad.showSeconds}

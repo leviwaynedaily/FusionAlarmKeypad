@@ -13,6 +13,30 @@ const WEATHER_API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
 
 export function useWeather() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [temperatureUnit, setTemperatureUnit] = useState<'celsius' | 'fahrenheit'>('fahrenheit');
+
+  // Temperature conversion utilities
+  const convertTemperature = (temp: number, fromUnit: 'celsius' | 'fahrenheit', toUnit: 'celsius' | 'fahrenheit'): number => {
+    if (fromUnit === toUnit) return temp;
+    if (fromUnit === 'fahrenheit' && toUnit === 'celsius') {
+      return (temp - 32) * 5/9;
+    }
+    if (fromUnit === 'celsius' && toUnit === 'fahrenheit') {
+      return (temp * 9/5) + 32;
+    }
+    return temp;
+  };
+
+  const getDisplayTemperature = (tempF: number): number => {
+    if (temperatureUnit === 'celsius') {
+      return Math.round(convertTemperature(tempF, 'fahrenheit', 'celsius'));
+    }
+    return Math.round(tempF);
+  };
+
+  const getTemperatureUnit = (): string => {
+    return temperatureUnit === 'celsius' ? 'C' : 'F';
+  };
 
   // Fetch weather data using environment variable
   const fetchWeatherData = async (postalCode: string) => {
@@ -89,9 +113,16 @@ export function useWeather() {
   return {
     // State
     weather,
+    temperatureUnit,
 
     // Actions
     fetchWeatherData,
     clearWeather,
+    setTemperatureUnit,
+    
+    // Utilities
+    getDisplayTemperature,
+    getTemperatureUnit,
+    convertTemperature,
   };
 } 
