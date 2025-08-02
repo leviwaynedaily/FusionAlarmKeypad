@@ -132,7 +132,7 @@ export function DesktopLayout({
               marginBottom: 'clamp(0.25rem, 1vw, 1rem)'
             }}>{currentTime}</div>          
           {/* Weather Display */}
-          {weather ? (
+          {weather && (
             <div className="flex items-center gap-2 mb-2">
               <img 
                 src={`https://openweathermap.org/img/wn/${weather.icon}.png`} 
@@ -145,10 +145,6 @@ export function DesktopLayout({
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 {weather.condition}
               </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-              Weather loading...
             </div>
           )}
            <div className="font-semibold text-gray-800 dark:text-gray-200" 
