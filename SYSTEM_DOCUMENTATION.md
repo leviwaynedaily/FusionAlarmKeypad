@@ -195,6 +195,9 @@ const result = await validatePin(pin);
 - **Renders appropriate layout** (mobile/desktop/VisionPro)
 - **Handles PIN vs dashboard state**
 - **Manages global settings**
+- **Event Display Settings filtering** applied to dashboard event count
+  - Shows filtered event count with "(filtered)" indicator
+  - Respects user's configured event filtering preferences
 - **Carousel navigation system** for authenticated dashboard
   - Two-slide horizontal carousel: Dashboard → Events Grid
   - Touch and mouse gesture support with threshold recognition
@@ -235,7 +238,15 @@ const result = await validatePin(pin);
 
 #### `src/components/ui/EventsGridSlide.tsx`
 - **Carousel-embedded events grid** component for seamless navigation
-- **Comprehensive event display**: Shows ALL events, not just those with camera images
+- **Event Display Settings Integration**: Fully respects user-configured event filtering
+  - Applies same filtering logic as LiveEventsTicker for UI consistency
+  - Individual event type toggles with highest priority filtering
+  - Alarm zone specific filtering (showOnlyAlarmZoneEvents)
+  - Selected alarm zones filtering for precise event control
+  - Space events filtering (showSpaceEvents toggle)
+  - "Show All Events" fallback setting support
+  - Real-time filter updates when settings change
+- **Comprehensive event display**: Shows ALL events (when filters allow), not just camera images
 - **Responsive grid layout**: 2-8 columns based on screen size (matches standalone page)
 - **Smart visual system**: Intelligent content rendering for mixed event types
   - Camera images for events with available photos
@@ -254,8 +265,9 @@ const result = await validatePin(pin);
   - Secondary detail label (e.g., "Vehicle Detected") with supporting information
   - Responsive overlay system for hover interactions
 - **Time badge overlays** with relative timestamp display
-- **Complete event history**: Displays total event count and comprehensive system activity
+- **Filtered event count**: Displays filtered event count with "(filtered)" indicator
 - **Mobile-first responsive design** with optimal layouts for all screen sizes
+- **getAlarmZoneForEvent helper**: Accurately detects events from alarm zone devices
 
 ### API Layer
 

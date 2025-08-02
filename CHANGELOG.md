@@ -5,6 +5,27 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2025-01-08
+
+### 🎛️ Event Display Settings Integration
+- **Smart Event Filtering**: Recent events grid now respects Event Display Settings
+  - Apply same filtering logic as LiveEventsTicker for consistency
+  - Individual event type toggles (highest priority filtering)
+  - Alarm zone specific filtering (showOnlyAlarmZoneEvents)
+  - Selected alarm zones filtering for precise control
+  - Space events filtering (showSpaceEvents toggle)
+  - "Show All Events" fallback setting support
+- **Real-time Filter Updates**: Events automatically filter when settings change
+- **Filtered Event Count**: Dashboard shows filtered count with "(filtered)" indicator
+- **Comprehensive Filter Logic**: Handles all event categories and edge cases
+- **Maintain Event Intelligence**: Filtered events preserve detailed parsing and smart icons
+
+### 🔧 Technical Enhancements
+- **getAlarmZoneForEvent Helper**: Accurately detect events from alarm zone devices
+- **useMemo Optimization**: Efficient event filtering with proper dependency tracking
+- **Consistent API**: Same filtering behavior across all event displays
+- **Legacy Support**: Backward compatibility with existing event type settings
+
 ## [1.7.2] - 2025-01-08
 
 ### 📊 Complete Event Coverage
