@@ -388,6 +388,38 @@ function AlarmKeypad() {
     };
   }, []);
 
+  // Weather effect - fetch weather when location becomes available
+  useEffect(() => {
+    const fetchWeatherForLocation = async () => {
+      if (alarmKeypad.selectedLocation?.addressPostalCode && process.env.NEXT_PUBLIC_WEATHER_API_KEY) {
+        try {
+          console.log('🌤️ Weather Effect: Fetching weather for location:', alarmKeypad.selectedLocation.name);
+          console.log('🌤️ Weather Effect: Postal code:', alarmKeypad.selectedLocation.addressPostalCode);
+          
+          // Ensure temperature unit is set from localStorage if not already set
+          const savedTempUnit = localStorage.getItem('temperature_unit') as 'celsius' | 'fahrenheit';
+          if (savedTempUnit && weather.temperatureUnit !== savedTempUnit) {
+            weather.setTemperatureUnit(savedTempUnit);
+            setTemperatureUnit(savedTempUnit);
+          }
+          
+          await weather.fetchWeatherData(alarmKeypad.selectedLocation.addressPostalCode);
+          console.log('🌤️ Weather Effect: Weather fetched successfully:', weather.weather);
+        } catch (error) {
+          console.error('🌤️ Weather Effect: Failed to fetch weather:', error);
+        }
+      } else {
+        console.log('🌤️ Weather Effect: Skipping weather fetch:', {
+          hasLocation: !!alarmKeypad.selectedLocation,
+          hasPostalCode: !!alarmKeypad.selectedLocation?.addressPostalCode,
+          hasApiKey: !!process.env.NEXT_PUBLIC_WEATHER_API_KEY
+        });
+      }
+    };
+
+    fetchWeatherForLocation();
+  }, [alarmKeypad.selectedLocation?.addressPostalCode]);
+
   // Handle PIN authentication
   const handleAuthenticate = async () => {
     await auth.handleAuthenticate(alarmKeypad.selectedLocation);
