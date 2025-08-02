@@ -19,8 +19,12 @@ export default function EventsGridPage() {
     if (sse.recentEvents && sse.recentEvents.length > 0) {
       // Filter for events with images and sort by timestamp (newest first)
       const eventsWithImages = sse.recentEvents
-        .filter(event => event.imageUrl)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        .filter(event => event.imageUrl && event.timestamp)
+        .sort((a, b) => {
+          const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return bTime - aTime;
+        });
       
       setEvents(eventsWithImages);
     }
@@ -34,7 +38,9 @@ export default function EventsGridPage() {
     setSelectedEvent(null);
   };
 
-  const getRelativeTime = (timestamp: string) => {
+  const getRelativeTime = (timestamp: string | undefined) => {
+    if (!timestamp) return 'Unknown time';
+    
     const now = new Date();
     const eventTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - eventTime.getTime()) / (1000 * 60));
@@ -134,7 +140,7 @@ export default function EventsGridPage() {
                   {/* Time badge */}
                   <div className="absolute top-2 right-2">
                     <span className="bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
-                      {getRelativeTime(event.timestamp)}
+                      {getRelativeTime(event.timestamp || '')}
                     </span>
                   </div>
                 </div>
