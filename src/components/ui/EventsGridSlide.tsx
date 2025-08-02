@@ -52,6 +52,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
       
       console.log('🔍 Filtering event:', {
         eventType: eventType,
+        originalType: event.type,
         deviceName: event.deviceName,
         deviceId: event.deviceId,
         spaceId: event.spaceId,
@@ -59,6 +60,16 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack }) => {
         category: event.category,
         displayState: event.displayState
       });
+      
+      // Quick check: if this is a connection event, let's see what's happening
+      if (eventType === 'connection') {
+        console.log('🔌 CONNECTION EVENT DETECTED:', {
+          eventType,
+          hasEventTypeSetting: eventFilterSettings.eventTypes.hasOwnProperty(eventType),
+          eventTypeSetting: eventFilterSettings.eventTypes[eventType],
+          showAllEvents: eventFilterSettings.showAllEvents
+        });
+      }
       
       // Check individual event type settings first (highest priority)
       if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
