@@ -5,6 +5,31 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2025-01-08
+
+### 📊 Complete Event Coverage
+- **Show ALL Events**: Grid now displays complete event history, not just camera events
+  - Removed image-only filtering to show comprehensive system activity
+  - Display total event count instead of "events with images"
+  - Include all system events: heartbeat, connection, state changes, etc.
+
+### 🎨 Smart Visual System
+- **Intelligent Event Icons**: Color-coded icons for events without camera images
+  - 🔒 Red lock icon for intrusion/security events
+  - ⚡ Orange lightning for motion detection events
+  - 🔄 Blue arrows for device state changes
+  - ❤️ Green heart for heartbeat/check-in events
+  - 📶 Purple wifi for connection events
+  - ✨ Gray sparkles for unknown event types
+- **Gradient Placeholder Backgrounds**: Professional backgrounds for non-camera events
+- **Unified Grid Experience**: Seamless mix of camera images and smart icons
+
+### 🔧 Enhanced Functionality
+- **EventDetailsModal Integration**: Click any event (image or icon) for full details
+- **Consistent Information Display**: Same detailed parsing for all event types
+- **Responsive Design**: Optimized layout works with mixed content types
+- **Improved Empty States**: Updated messaging for comprehensive event coverage
+
 ## [1.7.1] - 2025-01-08
 
 ### 🔍 Enhanced Event Intelligence
