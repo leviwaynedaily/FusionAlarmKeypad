@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { analytics } from '@/lib/analytics';
 import { performanceMonitor } from '@/lib/performance';
 
@@ -14,6 +14,8 @@ const WEATHER_API_KEY = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
 export function useWeather() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [temperatureUnit, setTemperatureUnit] = useState<'celsius' | 'fahrenheit'>('fahrenheit');
+  const [currentPostalCode, setCurrentPostalCode] = useState<string | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Temperature conversion utilities
   const convertTemperature = (temp: number, fromUnit: 'celsius' | 'fahrenheit', toUnit: 'celsius' | 'fahrenheit'): number => {
@@ -39,7 +41,7 @@ export function useWeather() {
   };
 
   // Fetch weather data using environment variable
-  const fetchWeatherData = async (postalCode: string) => {
+  const fetchWeatherData = useCallback(async (postalCode: string) => {
     if (!WEATHER_API_KEY) {
       console.warn('Weather API key not found. Set NEXT_PUBLIC_WEATHER_API_KEY environment variable.');
       return;
@@ -63,6 +65,7 @@ export function useWeather() {
         };
         
         setWeather(weatherData);
+        setCurrentPostalCode(postalCode); // Track current postal code for auto-refresh
         
         analytics.track({
           action: 'weather_update',
@@ -101,14 +104,45 @@ export function useWeather() {
         }
       });
     }
-  };
+  }, [temperatureUnit]); // Dependencies for useCallback
 
 
 
   // Clear weather data
   const clearWeather = () => {
     setWeather(null);
+    setCurrentPostalCode(null);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
   };
+
+  // Auto-refresh weather every 10 minutes
+  useEffect(() => {
+    // Clear any existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    // Set up new interval if we have a postal code
+    if (currentPostalCode && WEATHER_API_KEY) {
+      console.log('🌤️ Setting up weather auto-refresh for:', currentPostalCode);
+      
+      refreshIntervalRef.current = setInterval(() => {
+        console.log('🌤️ Auto-refreshing weather data...');
+        fetchWeatherData(currentPostalCode);
+      }, 600000); // 10 minutes = 600,000ms
+    }
+
+    // Cleanup interval on unmount or postal code change
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+  }, [currentPostalCode, fetchWeatherData]); // Re-run when postal code or fetchWeatherData changes
 
   return {
     // State
