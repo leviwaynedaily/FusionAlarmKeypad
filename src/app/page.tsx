@@ -245,7 +245,10 @@ function SSEConnectionManager({ organization, apiKey }: { organization: any; api
 }
 
 function AlarmKeypad() {
-  console.log('🔥 AlarmKeypad component mounting/rendering');
+  console.error('🚨 CRITICAL: AlarmKeypad component IS RUNNING');
+  console.warn('🚨 CRITICAL: AlarmKeypad component IS RUNNING');
+  console.log('🚨 CRITICAL: AlarmKeypad component IS RUNNING');
+  
   // Core hooks
   const alarmKeypad = useAlarmKeypad();
   const auth = useAuthentication();
@@ -277,6 +280,9 @@ function AlarmKeypad() {
 
   // Initialize on mount - Railway deployment trigger
   useEffect(() => {
+    console.error('🚨 CRITICAL: useEffect RUNNING - weather loading starts here');
+    console.warn('🚨 CRITICAL: useEffect RUNNING - weather loading starts here');
+    console.log('🚨 CRITICAL: useEffect RUNNING - weather loading starts here');
     console.log('🎬 Main useEffect started - checking API key');
     console.log('🔑 FUSION_API_KEY available:', !!FUSION_API_KEY);
     console.log('🔑 FUSION_API_KEY value:', FUSION_API_KEY ? `${FUSION_API_KEY.slice(0, 8)}...` : 'undefined');
