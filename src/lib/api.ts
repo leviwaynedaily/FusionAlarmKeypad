@@ -534,6 +534,7 @@ export const updateDeviceState = async (deviceId: string, state: string): Promis
 export interface UserPreferences {
   eventFilterSettings: EventFilterSettings;
   customEventNames: Record<string, string>;
+  armingDelaySeconds: number; // Default 20 seconds delay before alarm zones are actually armed
 }
 
 export const saveUserPreferences = async (

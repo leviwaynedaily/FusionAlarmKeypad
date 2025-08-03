@@ -7,4 +7,5 @@ export { EventsGridSlide } from './EventsGridSlide';
 export { Clock } from './Clock';
 export { IconPicker } from './IconPicker';
 export { ProcessingOverlay } from './ProcessingOverlay';
-export { WeatherWidget } from './WeatherWidget'; 
+export { WeatherWidget } from './WeatherWidget';
+export { ArmingCountdown } from './ArmingCountdown'; 

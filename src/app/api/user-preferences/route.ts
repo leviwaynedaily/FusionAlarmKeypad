@@ -29,7 +29,8 @@ export async function GET(req: Request) {
       data: data ? {
         eventFilterSettings: data.event_filter_settings,
         customEventNames: data.custom_event_names,
-        temperatureUnit: data.temperature_unit || 'fahrenheit'
+        temperatureUnit: data.temperature_unit || 'fahrenheit',
+        armingDelaySeconds: data.arming_delay_seconds || 20
       } : null 
     });
   } catch (err) {
@@ -47,7 +48,8 @@ export async function POST(req: Request) {
       userId = 'default',
       eventFilterSettings, 
       customEventNames,
-      temperatureUnit = 'fahrenheit'
+      temperatureUnit = 'fahrenheit',
+      armingDelaySeconds = 20
     } = body;
 
     if (!organizationId) {
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
       event_filter_settings: eventFilterSettings,
       custom_event_names: customEventNames || {},
       temperature_unit: temperatureUnit,
+      arming_delay_seconds: armingDelaySeconds,
       updated_at: new Date().toISOString()
     };
 

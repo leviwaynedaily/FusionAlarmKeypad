@@ -33,6 +33,7 @@ import {
 import { SettingsModal } from '@/components/ui/SettingsModal';
 import { ZoneWarningModal } from '@/components/ui/ZoneWarningModal';
 import { EventsGridSlide } from '@/components/ui/EventsGridSlide';
+import { ArmingCountdown } from '@/components/ui/ArmingCountdown';
 import { updateClock, isMobileDevice, getDeviceType } from '@/lib/alarmKeypadUtils';
 import { SSEProvider, useSSEContext } from '@/hooks/SSEContext';
 
@@ -937,6 +938,8 @@ function AlarmKeypad() {
           organization={alarmKeypad.organization}
           temperatureUnit={temperatureUnit}
           onTemperatureUnitChange={handleTemperatureUnitChange}
+          armingDelaySeconds={alarmKeypad.armingDelaySeconds}
+          onArmingDelaySecondsChange={alarmKeypad.setArmingDelaySeconds}
           showZonesPreview={alarmKeypad.showZonesPreview}
           onShowZonesPreviewChange={(value) => {
             alarmKeypad.setShowZonesPreview(value);
@@ -994,6 +997,15 @@ function AlarmKeypad() {
           onConfirm={alarmKeypad.handleZoneWarningConfirm}
           zone={alarmKeypad.pendingZoneToggle?.zone || null}
           warnings={alarmKeypad.pendingZoneToggle ? (alarmKeypad.zoneWarnings[alarmKeypad.pendingZoneToggle.zone.id] || []) : []}
+        />
+
+        {/* Arming Countdown Modal */}
+        <ArmingCountdown
+          isVisible={alarmKeypad.showArmingCountdown}
+          initialSeconds={alarmKeypad.armingDelaySeconds}
+          zoneName={alarmKeypad.countdownZone?.name || ''}
+          onComplete={alarmKeypad.handleCountdownComplete}
+          onCancel={alarmKeypad.handleCountdownCancel}
         />
       </div>
     );
@@ -1177,6 +1189,8 @@ function AlarmKeypad() {
         organization={alarmKeypad.organization}
         temperatureUnit={temperatureUnit}
         onTemperatureUnitChange={handleTemperatureUnitChange}
+        armingDelaySeconds={alarmKeypad.armingDelaySeconds}
+        onArmingDelaySecondsChange={alarmKeypad.setArmingDelaySeconds}
         showZonesPreview={alarmKeypad.showZonesPreview}
         onShowZonesPreviewChange={alarmKeypad.setShowZonesPreview}
         showSeconds={alarmKeypad.showSeconds}

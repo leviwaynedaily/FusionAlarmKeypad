@@ -69,6 +69,10 @@ interface SettingsModalProps {
   temperatureUnit?: 'celsius' | 'fahrenheit';
   onTemperatureUnitChange?: (unit: 'celsius' | 'fahrenheit') => void;
   
+  // Arming delay
+  armingDelaySeconds?: number;
+  onArmingDelaySecondsChange?: (seconds: number) => void;
+  
   // New prop
   requireApiKey?: boolean;
 }
@@ -111,6 +115,8 @@ export function SettingsModal({
   onLocationChange,
   temperatureUnit = 'fahrenheit',
   onTemperatureUnitChange,
+  armingDelaySeconds = 20,
+  onArmingDelaySecondsChange,
   requireApiKey = false
 }: SettingsModalProps) {
 
@@ -303,6 +309,31 @@ export function SettingsModal({
                         />
                       </button>
                       <span className={`text-xs ${temperatureUnit === 'celsius' ? 'text-[#22c55f]' : 'text-gray-500'}`}>°C</span>
+                    </div>
+                  </div>
+
+                  {/* Arming Delay */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">⏱️ Arming Delay</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Countdown time before alarm zones are actually armed</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">seconds:</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        value={armingDelaySeconds}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value >= 5 && value <= 300 && onArmingDelaySecondsChange) {
+                            onArmingDelaySecondsChange(value);
+                          }
+                        }}
+                        className="w-16 px-2 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-[#22c55f] focus:border-transparent text-center"
+                        placeholder="20"
+                      />
                     </div>
                   </div>
 

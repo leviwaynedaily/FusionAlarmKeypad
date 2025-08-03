@@ -101,6 +101,11 @@ export function useAlarmKeypad() {
   const [zoneWarnings, setZoneWarnings] = useState<Record<string, string[]>>({});
   const [pendingZoneToggle, setPendingZoneToggle] = useState<{ zone: AlarmZone, newState: string } | null>(null);
 
+  // Arming countdown state
+  const [showArmingCountdown, setShowArmingCountdown] = useState(false);
+  const [countdownZone, setCountdownZone] = useState<AlarmZone | null>(null);
+  const [armingDelaySeconds, setArmingDelaySeconds] = useState(20);
+
   // Alarm zones (now fetched from Fusion API)
   const [alarmZones, setAlarmZones] = useState<AlarmZone[]>([]);
 
@@ -554,7 +559,8 @@ export function useAlarmKeypad() {
           selectedLocation?.id || null,
           {
             eventFilterSettings: updated,
-            customEventNames: {}
+            customEventNames: {},
+            armingDelaySeconds: armingDelaySeconds
           },
           'default' // userId - using default for now
         );
@@ -583,6 +589,12 @@ export function useAlarmKeypad() {
           if (response.data?.eventFilterSettings) {
             loadedSettings = response.data.eventFilterSettings;
             logger.info('Event filter settings loaded from database');
+          }
+          
+          // Load arming delay setting
+          if (response.data?.armingDelaySeconds) {
+            setArmingDelaySeconds(response.data.armingDelaySeconds);
+            logger.info('Arming delay seconds loaded from database:', response.data.armingDelaySeconds);
           }
         } catch (error) {
           logger.error('Failed to load event filter settings from database:', error);
@@ -621,6 +633,31 @@ export function useAlarmKeypad() {
 
     loadEventFilterSettings();
   }, [organization?.id, selectedLocation?.id]);
+
+  // Save arming delay when it changes
+  useEffect(() => {
+    const saveArmingDelay = async () => {
+      if (organization?.id && armingDelaySeconds !== 20) { // Only save if different from default
+        try {
+          await saveUserPreferences(
+            organization.id,
+            selectedLocation?.id || null,
+            {
+              eventFilterSettings: eventFilterSettings,
+              customEventNames: {},
+              armingDelaySeconds: armingDelaySeconds
+            },
+            'default'
+          );
+          logger.info('Arming delay saved to database:', armingDelaySeconds);
+        } catch (error) {
+          logger.error('Failed to save arming delay to database:', error);
+        }
+      }
+    };
+
+    saveArmingDelay();
+  }, [armingDelaySeconds, organization?.id, selectedLocation?.id]);
 
   // SSE event handlers for real-time updates
   useEffect(() => {
@@ -1211,6 +1248,14 @@ export function useAlarmKeypad() {
       }
     }
     
+    // If arming, start countdown instead of immediate arming
+    if (newState === 'ARMED' && armingDelaySeconds > 0) {
+      console.log(`⏱️ Starting ${armingDelaySeconds}s arming countdown for zone "${zone.name}"`);
+      setCountdownZone(zone);
+      setShowArmingCountdown(true);
+      return; // Exit early, countdown will handle the actual arming
+    }
+    
     setIsProcessing(true);
     try {
       console.log(`🔒 Toggling zone "${zone.name}" from ${zone.armedState} to ${newState}`);
@@ -1270,6 +1315,71 @@ export function useAlarmKeypad() {
       await handleZoneToggle(pendingZoneToggle.zone, true);
       setPendingZoneToggle(null);
     }
+  };
+
+  // Handle countdown completion - actually arm the zone
+  const handleCountdownComplete = async () => {
+    if (!countdownZone) return;
+    
+    setShowArmingCountdown(false);
+    setIsProcessing(true);
+    
+    try {
+      console.log(`🔒 Countdown complete - arming zone "${countdownZone.name}"`);
+      
+      const result = await setAlarmZoneArmedState(countdownZone.id, 'ARMED');
+      
+      if (result.data.success) {
+        // Update local alarm zone state
+        setAlarmZones(prev => prev.map(z => 
+          z.id === countdownZone.id ? { ...z, armedState: 'ARMED' } : z
+        ));
+        
+        console.log(`🔒 Successfully armed zone "${countdownZone.name}" after countdown`);
+        
+        // Clear any warnings for this zone
+        setZoneWarnings(prev => {
+          const newWarnings = { ...prev };
+          delete newWarnings[countdownZone.id];
+          return newWarnings;
+        });
+        
+        analytics.track({
+          action: 'zone_armed_with_countdown',
+          category: 'security',
+          properties: {
+            zoneId: countdownZone.id,
+            zoneName: countdownZone.name,
+            delaySeconds: armingDelaySeconds
+          }
+        });
+      } else {
+        setError(`Failed to arm ${countdownZone.name}`);
+      }
+    } catch (error) {
+      logger.error('Countdown arm error:', error);
+      setError(`Failed to arm ${countdownZone.name}`);
+    } finally {
+      setIsProcessing(false);
+      setCountdownZone(null);
+    }
+  };
+
+  // Handle countdown cancellation
+  const handleCountdownCancel = () => {
+    console.log(`❌ Arming countdown cancelled for zone "${countdownZone?.name}"`);
+    setShowArmingCountdown(false);
+    setCountdownZone(null);
+    
+    analytics.track({
+      action: 'countdown_cancelled',
+      category: 'security',
+      properties: {
+        zoneId: countdownZone?.id,
+        zoneName: countdownZone?.name,
+        remainingSeconds: armingDelaySeconds
+      }
+    });
   };
 
   return {
@@ -1338,6 +1448,14 @@ export function useAlarmKeypad() {
     handleZoneWarningConfirm,
     zoneWarnings,
     pendingZoneToggle,
+    
+    // Arming countdown
+    showArmingCountdown,
+    countdownZone,
+    armingDelaySeconds,
+    setArmingDelaySeconds,
+    handleCountdownComplete,
+    handleCountdownCancel,
     
     // System health
     systemStatus,
