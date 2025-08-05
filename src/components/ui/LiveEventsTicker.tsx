@@ -565,7 +565,7 @@ export function LiveEventsTicker({
 
   return (
     <>
-    <div className="relative w-full pointer-events-none hidden sm:block">
+    <div className="relative w-full pointer-events-none hidden sm:block pb-2 lg:pb-4 xl:pb-6">
       <div className="relative">
         {/* Timeline header with quick settings */}
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/60 dark:from-[#0f0f0f]/60 to-transparent flex items-center justify-between px-4">
@@ -716,11 +716,11 @@ export function LiveEventsTicker({
         {/* Scrollable timeline with fluid responsive behavior */}
         <div
           ref={rowRef}
-          className="relative flex py-2 sm:py-3 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
+          className="relative flex py-3 sm:py-4 lg:py-5 xl:py-6 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: 'clamp(0.25rem, 0.75vw, 1rem)',
-            paddingLeft: 'clamp(0.5rem, 1.5vw, 2rem)',
-            paddingRight: 'clamp(0.5rem, 1.5vw, 2rem)'
+            gap: 'clamp(0.25rem, 1vw, 1.5rem)',
+            paddingLeft: 'clamp(0.5rem, 2vw, 3rem)',
+            paddingRight: 'clamp(0.5rem, 2vw, 3rem)'
           }}
         >
           {/* Timeline connector line - centered */}
@@ -1236,8 +1236,8 @@ export function LiveEventsTicker({
                 onClick={() => setSelected(event)}
                 className="group flex flex-col items-center scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105 flex-shrink-0"
                 style={{ 
-                  width: 'clamp(100px, 12vw, 160px)',
-                  minWidth: 'clamp(100px, 12vw, 160px)'
+                  width: 'clamp(100px, 15vw, 240px)',
+                  minWidth: 'clamp(100px, 15vw, 240px)'
                 }}
                 title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
@@ -1247,11 +1247,11 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Fluid responsive sizing */}
+                  {/* Image or Icon Container - Larger responsive sizing for big screens */}
                   <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800"
                     style={{
-                      width: 'clamp(70px, 10vw, 120px)',
-                      height: 'clamp(44px, 6.25vw, 75px)'
+                      width: 'clamp(70px, 12vw, 180px)',
+                      height: 'clamp(44px, 8vw, 112px)'
                     }}>
                     {(() => {
                       const { shouldShowImage, hasSpaceContext, hasCamera } = getEventDisplayInfo(event);
@@ -1300,7 +1300,7 @@ export function LiveEventsTicker({
                                 className="absolute inset-0 items-center justify-center w-full h-full text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl"
                                 style={{ 
                                   display: 'none',
-                                  fontSize: 'clamp(1.5rem, 2.5vw, 2.5rem)'
+                                  fontSize: 'clamp(1.5rem, 3vw, 3.5rem)'
                                 }}
                               >
                                 {getEventIcon(event)}
@@ -1312,7 +1312,7 @@ export function LiveEventsTicker({
                       
                       return (
                         <div className="flex items-center justify-center w-full h-full text-gray-600 dark:text-gray-400"
-                          style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2.5rem)' }}>
+                          style={{ fontSize: 'clamp(1.5rem, 3vw, 3.5rem)' }}>
                           {getEventIcon(event)}
                         </div>
                       );

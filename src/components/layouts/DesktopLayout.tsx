@@ -131,26 +131,26 @@ export function DesktopLayout({
         onSettingsClick={onSettingsClick}
       />
       {/* Main content: two columns with maximum compaction */}
-      <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center max-w-screen-xl mx-auto w-full px-1 sm:px-2 py-1 sm:py-2 md:py-4 gap-2 sm:gap-3 md:gap-4 bg-gray-100 dark:bg-[#0f0f0f]">
+      <div className="flex-1 flex flex-col md:flex-row items-stretch justify-center max-w-screen-2xl mx-auto w-full px-1 sm:px-2 lg:px-4 xl:px-6 py-1 sm:py-2 md:py-4 lg:py-6 xl:py-8 gap-2 sm:gap-3 md:gap-4 lg:gap-6 xl:gap-8 bg-gray-100 dark:bg-[#0f0f0f]">
         {/* Left column: clock, date, zone status, areas, latest event - Tablet optimized */}
-        <div className="flex-1 flex flex-col justify-center max-w-md mx-auto md:mx-0 md:items-start">
+        <div className="flex-1 flex flex-col justify-center max-w-md lg:max-w-lg xl:max-w-xl mx-auto md:mx-0 md:items-start">
           <div className="text-gray-500 dark:text-gray-400" 
             style={{ 
-              fontSize: 'clamp(0.75rem, 2vw, 1.125rem)',
-              marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+              fontSize: 'clamp(0.75rem, 2vw, 1.25rem)',
+              marginBottom: 'clamp(0.25rem, 0.5vw, 0.75rem)'
             }}>{currentDate}</div>
           <div className="font-thin text-gray-900 dark:text-white" 
             style={{ 
-              fontSize: 'clamp(2rem, 6vw, 4rem)',
-              marginBottom: 'clamp(0.25rem, 1vw, 1rem)'
+              fontSize: 'clamp(2rem, 6vw, 5rem)',
+              marginBottom: 'clamp(0.25rem, 1vw, 1.5rem)'
             }}>{currentTime}</div>          
 
            <div className="font-semibold text-gray-800 dark:text-gray-200" 
             style={{ 
-              fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)',
-              marginBottom: 'clamp(0.25rem, 0.5vw, 0.5rem)'
+              fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)',
+              marginBottom: 'clamp(0.25rem, 0.5vw, 0.75rem)'
             }}>Alarm Zones</div>
-          <div className="w-full" style={{ gap: 'clamp(0.25rem, 0.75vw, 0.75rem)', display: 'flex', flexDirection: 'column' }}>
+          <div className="w-full" style={{ gap: 'clamp(0.25rem, 0.75vw, 1rem)', display: 'flex', flexDirection: 'column' }}>
             {displayZones.length === 0 && (
               <div className="text-gray-400 text-xs">No alarm zones configured</div>
             )}
@@ -158,17 +158,17 @@ export function DesktopLayout({
               <button
                 key={zone.id} 
                 onClick={() => handleZoneClick(zone)}
-                className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-md shadow border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg lg:rounded-xl shadow-sm lg:shadow border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 style={{
-                  padding: 'clamp(0.375rem, 1vw, 0.75rem) clamp(0.5rem, 1.5vw, 1rem)'
+                  padding: 'clamp(0.375rem, 1vw, 1rem) clamp(0.5rem, 1.5vw, 1.5rem)'
                 }}>
                                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${zone.armedState !== 'DISARMED' ? 'bg-red-500' : 'bg-green-500'}`} />
                     <span className="font-medium text-gray-900 dark:text-white" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>{zone.name}</span>
                   </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{zone.totalCount} devices</span>
-                  <span className={`font-semibold ${zone.armedState !== 'DISARMED' ? 'text-red-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 0.875rem)' }}>
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <span className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{zone.totalCount} device{zone.totalCount !== 1 ? 's' : ''}</span>
+                  <span className={`font-semibold ${zone.armedState !== 'DISARMED' ? 'text-red-500' : 'text-green-500'}`} style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1rem)' }}>
                     {zone.armedState !== 'DISARMED' ? 'Armed' : 'Disarmed'}
                   </span>
                 </div>
@@ -180,9 +180,9 @@ export function DesktopLayout({
             <div className="mt-4">{lastEvent}</div>
           )}
         </div>
-        {/* Right column: PIN entry and keypad - Tablet optimized */}
-        <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto md:mx-0">
-                      <div className="w-full bg-white dark:bg-[#0f0f0f] rounded-2xl shadow-xl border border-gray-100 dark:border-transparent p-2 sm:p-3 md:p-4">
+        {/* Right column: PIN entry and keypad - Scaled for large screens */}
+        <div className="flex-1 flex flex-col items-center justify-center max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto md:mx-0">
+                      <div className="w-full bg-white dark:bg-[#0f0f0f] rounded-2xl lg:rounded-3xl shadow-xl border border-gray-100 dark:border-transparent p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8">
             <PinEntry
               pin={pin}
               isProcessing={isProcessing}
