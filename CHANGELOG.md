@@ -5,6 +5,35 @@ All notable changes to the Fusion Alarm Keypad project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.4] - 2025-01-08
+
+### 🖥️ Large Screen Layout Enhancements
+- **50% Larger Event Thumbnails**: Dramatically improved thumbnail visibility on large screens
+  - Increased container width from 160px to 240px maximum
+  - Enhanced image dimensions from 120px × 75px to 180px × 112px maximum
+  - Scaled icon sizes from 2.5rem to 3.5rem maximum for better visibility
+- **Enhanced Timeline Positioning**: Better spacing and positioning for large displays
+  - Added responsive bottom padding (pb-2 lg:pb-4 xl:pb-6)
+  - Increased horizontal padding with clamp(0.5rem, 2vw, 3rem)
+  - Improved gap between thumbnails with clamp(0.25rem, 1vw, 1.5rem)
+  - Enhanced vertical padding (py-3 sm:py-4 lg:py-5 xl:py-6)
+- **Improved Desktop Layout Responsiveness**: Comprehensive large screen optimization
+  - Extended container max-width from screen-xl (1280px) to screen-2xl (1536px)
+  - Added xl: and 2xl: responsive breakpoints for screens 1280px+
+  - Enhanced typography scaling with larger clamp() maximum values
+  - Better PIN entry area sizing for large displays
+  - Improved alarm zone button styling with enhanced padding and borders
+- **Optimized User Experience**: Better proportional scaling across all screen sizes
+  - MacBook Pro and large tablet displays now fully utilize available screen space
+  - Maintained full responsiveness for mobile and tablet devices
+  - Enhanced visual hierarchy with improved spacing and typography
+
+### 🔧 Technical Improvements
+- **Responsive Design System**: Comprehensive clamp() function usage for fluid scaling
+- **Tailwind CSS Enhancements**: Strategic use of lg: and xl: breakpoints
+- **Performance Optimized**: Maintained smooth transitions and animations
+- **Cross-Device Compatibility**: Tested across mobile, tablet, and desktop displays
+
 ## [1.7.3] - 2025-01-08
 
 ### 🎛️ Event Display Settings Integration
