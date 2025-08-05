@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSSEContext } from '@/hooks/SSEContext';
 import { useAlarmKeypad } from '@/hooks/useAlarmKeypad';
 import { EventDetailsModal } from '@/components/ui/EventDetailsModal';
@@ -18,10 +18,62 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
   const alarmKeypad = useAlarmKeypad();
   const [selectedEvent, setSelectedEvent] = useState<SSEEventDisplay | null>(null);
   const [events, setEvents] = useState<SSEEventDisplay[]>([]);
+  const [allEvents, setAllEvents] = useState<SSEEventDisplay[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Use props if provided, otherwise fallback to hook data
   const activeEventFilterSettings = eventFilterSettings || alarmKeypad.eventFilterSettings;
   const activeAlarmZones = alarmZones || alarmKeypad.alarmZones;
+
+  // Enhanced fetch function to get more events for full-page view
+  const fetchExtendedEvents = useCallback(async () => {
+    if (loading) return;
+    
+    try {
+      setLoading(true);
+      const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+      // Fetch many more events for full-page view: 500 events from last 7 days
+      const response = await fetch(`/api/events?limit=500&sinceHours=168&organizationId=${organizationId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const fetchedEvents = await response.json();
+      
+      if (fetchedEvents && Array.isArray(fetchedEvents)) {
+        // Format events similar to SSE formatting
+        const formattedEvents: SSEEventDisplay[] = fetchedEvents.map((event: any) => ({
+          id: event.id || `${Date.now()}-${Math.random()}`,
+          type: event.event_type || event.type,
+          deviceName: event.device_name || event.deviceName,
+          deviceId: event.device_id || event.deviceId,
+          spaceId: event.space_id || event.spaceId,
+          spaceName: event.space_name || event.spaceName,
+          category: event.category,
+          displayState: event.display_state || event.displayState,
+          timestamp: event.timestamp || event.created_at,
+          imageUrl: event.image_url || event.imageUrl,
+          event_data: event.event_data,
+          caption: event.caption,
+          rawEvent: event
+        }));
+        
+        setAllEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch extended events:', error);
+      // Fallback to SSE events if fetch fails
+      setAllEvents(sse.recentEvents || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, sse.recentEvents]);
+
+  // Load extended events on component mount
+  useEffect(() => {
+    fetchExtendedEvents();
+  }, [fetchExtendedEvents]);
 
   // Helper function to find alarm zone for an event (exact copy from LiveEventsTicker)
   const getAlarmZoneForEvent = (event: SSEEventDisplay) => {
@@ -38,13 +90,13 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
 
   // Filter events based on Event Display Settings (same logic as LiveEventsTicker)
   const filteredEvents = useMemo(() => {
-    if (!activeEventFilterSettings) return sse.recentEvents || [];
+    if (!activeEventFilterSettings) return allEvents;
     
     const filterSettings = activeEventFilterSettings;
     
     // Debug info removed for performance
     
-    return (sse.recentEvents || []).filter(event => {
+    return allEvents.filter(event => {
       const eventType = event.type?.toLowerCase();
       
       // Debug logging removed for performance
@@ -102,21 +154,77 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
       // Default fallback - only show if "Show All Events" is enabled
       return filterSettings.showAllEvents;
     });
-  }, [sse.recentEvents, activeEventFilterSettings, activeAlarmZones]);
+  }, [allEvents, activeEventFilterSettings, activeAlarmZones]);
 
-  // Load events from filtered results
-  useEffect(() => {
-    // Apply timestamp filtering and sorting to the already filtered events
-    const sortedFilteredEvents = filteredEvents
-      .filter(event => event.timestamp) // Only filter out events without timestamps
-      .sort((a, b) => {
-        const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return bTime - aTime;
-      });
+  // Dynamic time grouping function
+  const getTimeGrouping = (timestamp: string | undefined): string => {
+    if (!timestamp) return 'Unknown Time';
     
-    setEvents(sortedFilteredEvents);
+    const now = new Date();
+    const eventTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now.getTime() - eventTime.getTime()) / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    // Dynamic time groupings based on actual time differences
+    if (diffInMinutes < 5) return 'Just Now';
+    if (diffInMinutes < 15) return 'Last 15 Minutes';
+    if (diffInMinutes < 60) return 'Last Hour';
+    if (diffInHours < 6) return 'Last 6 Hours';
+    if (diffInHours < 24) return 'Earlier Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return 'This Week';
+    if (diffInDays < 30) return 'This Month';
+    return 'Older';
+  };
+
+  // Group filtered events by time periods
+  const groupedEvents = useMemo(() => {
+    const groups: { [key: string]: SSEEventDisplay[] } = {};
+    
+    // Sort events by timestamp (newest first)
+    const sortedEvents = [...filteredEvents].sort((a, b) => {
+      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return bTime - aTime;
+    });
+    
+    // Group events by time periods
+    sortedEvents.forEach(event => {
+      const group = getTimeGrouping(event.timestamp);
+      if (!groups[group]) {
+        groups[group] = [];
+      }
+      groups[group].push(event);
+    });
+    
+    // Define display order for time groups (most recent first)
+    const groupOrder = [
+      'Just Now',
+      'Last 15 Minutes', 
+      'Last Hour',
+      'Last 6 Hours',
+      'Earlier Today',
+      'Yesterday',
+      'This Week',
+      'This Month',
+      'Older'
+    ];
+    
+    // Return ordered groups that actually have events
+    return groupOrder
+      .filter(groupName => groups[groupName] && groups[groupName].length > 0)
+      .map(groupName => ({
+        name: groupName,
+        events: groups[groupName],
+        count: groups[groupName].length
+      }));
   }, [filteredEvents]);
+
+  // Total count of all filtered events for display
+  const totalFilteredEvents = useMemo(() => {
+    return groupedEvents.reduce((total, group) => total + group.count, 0);
+  }, [groupedEvents]);
 
   const handleEventClick = (event: SSEEventDisplay) => {
     setSelectedEvent(event);
@@ -284,16 +392,26 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
               </h1>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {events.length} events (filtered)
+              {loading ? 'Loading...' : `${totalFilteredEvents} events (filtered)`}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Events Grid */}
+      {/* Events Grid with Time Grouping */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {events.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-16 h-16 mx-auto mb-4 border-4 border-gray-200 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-300 rounded-full"></div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Loading Events...
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Fetching recent events from the database.
+              </p>
+            </div>
+          ) : groupedEvents.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,8 +426,22 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-              {events.map((event, index) => (
+            <div className="space-y-8">
+              {groupedEvents.map((group) => (
+                <div key={group.name} className="space-y-4">
+                  {/* Time Group Header */}
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {group.name}
+                    </h2>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                      {group.count} event{group.count !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  
+                  {/* Events Grid for this time group */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-4">
+                    {group.events.map((event, index) => (
                 <div
                   key={`${event.id}-${index}`}
                   onClick={() => handleEventClick(event)}
@@ -428,6 +560,9 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
                         </>
                       );
                     })()}
+                  </div>
+                </div>
+                    ))}
                   </div>
                 </div>
               ))}
