@@ -334,10 +334,19 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
 
 
   return (
-    <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Header - Full Width */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+    <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col"
+         style={{
+           marginLeft: 'calc(-1 * env(safe-area-inset-left))',
+           marginRight: 'calc(-1 * env(safe-area-inset-right))',
+           width: 'calc(100vw)',
+           maxWidth: '100vw'
+         }}>
+              {/* Header - Full Width */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="w-full" style={{ 
+            paddingLeft: 'calc(1rem + env(safe-area-inset-left))', 
+            paddingRight: 'calc(1rem + env(safe-area-inset-right))' 
+          }}>
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               {onBack && (
@@ -363,7 +372,10 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
 
       {/* Events Grid with Time Grouping - Full Width */}
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-6">
+        <div className="w-full py-6" style={{ 
+          paddingLeft: 'calc(1rem + env(safe-area-inset-left))', 
+          paddingRight: 'calc(1rem + env(safe-area-inset-right))' 
+        }}>
           {groupedEvents.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -392,8 +404,8 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
                     </span>
                   </div>
                   
-                  {/* Events Grid for this time group - Full Width Utilization */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 2xl:grid-cols-12 gap-4">
+                  {/* Events Grid for this time group - Maximum Width Utilization */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-12 2xl:grid-cols-16 gap-3 sm:gap-4">
                     {group.events.map((event, index) => (
                 <div
                   key={`${event.id}-${index}`}
