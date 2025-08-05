@@ -775,7 +775,7 @@ export function LiveEventsTicker({
           ref={rowRef}
           className="relative flex py-3 sm:py-4 lg:py-5 xl:py-6 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0.125rem, 0.25vw, 0.5rem)', // Dynamic gap in debug mode
+            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0.0625rem, 0.15vw, 0.25rem)', // Much tighter spacing for seamless timeline
             paddingLeft: 'clamp(0.5rem, 2vw, 3rem)',
             paddingRight: 'clamp(0.5rem, 2vw, 3rem)'
           }}
