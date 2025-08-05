@@ -882,7 +882,11 @@ function AlarmKeypad() {
 
           {/* Slide 2: Events Grid */}
           <div className="w-full h-full flex-shrink-0">
-            <EventsGridSlide onBack={() => handleSlideChange(0)} />
+            <EventsGridSlide 
+              onBack={() => handleSlideChange(0)}
+              eventFilterSettings={alarmKeypad.eventFilterSettings}
+              alarmZones={alarmKeypad.alarmZones}
+            />
           </div>
         </div>
 
