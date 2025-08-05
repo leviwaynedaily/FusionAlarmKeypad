@@ -1301,8 +1301,11 @@ export function LiveEventsTicker({
                 style={{ 
                   width: 'clamp(100px, 15vw, 240px)',
                   minWidth: 'clamp(100px, 15vw, 240px)',
-                  margin: debugMode ? (debugGapSize === 0 ? '0 -12px' : '0') : '0 -12px', // Super aggressive negative margin
-                  transform: debugMode ? 'none' : (idx > 0 ? 'translateX(-8px)' : 'translateX(0)') // Additional transform compression
+                  // Responsive negative margins: small screens (no overlap) → medium (iPad Pro perfect) → large (more aggressive)
+                  marginLeft: debugMode && debugGapSize === 0 ? 'clamp(-2px, -0.5vw, -4px)' : (debugMode ? '0' : 'clamp(-2px, -1vw, -16px)'),
+                  marginRight: debugMode && debugGapSize === 0 ? 'clamp(-2px, -0.5vw, -4px)' : (debugMode ? '0' : 'clamp(-2px, -1vw, -16px)'),
+                  // Responsive transforms: gentle on small → perfect on medium → aggressive on large
+                  transform: debugMode ? 'none' : (idx > 0 ? `translateX(clamp(-2px, -0.8vw, -12px))` : 'translateX(0)')
                 }}
                 title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
