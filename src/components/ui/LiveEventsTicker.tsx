@@ -1301,7 +1301,8 @@ export function LiveEventsTicker({
                 style={{ 
                   width: 'clamp(100px, 15vw, 240px)',
                   minWidth: 'clamp(100px, 15vw, 240px)',
-                  margin: debugMode ? (debugGapSize === 0 ? '0 -1px' : '0') : '0 -2px' // Aggressive negative margin for close spacing
+                  margin: debugMode ? (debugGapSize === 0 ? '0 -12px' : '0') : '0 -12px', // Super aggressive negative margin
+                  transform: debugMode ? 'none' : (idx > 0 ? 'translateX(-8px)' : 'translateX(0)') // Additional transform compression
                 }}
                 title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
@@ -1384,8 +1385,8 @@ export function LiveEventsTicker({
                   </div>
                 </div>
 
-                {/* Event details - Moved closer to thumbnails */}
-                <div className="mt-0.5 text-center space-y-0">
+                {/* Event details - Ultra compact */}
+                <div className="mt-0.5 text-center space-y-0 px-1">
                   <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
                     {deviceName}
                   </div>
