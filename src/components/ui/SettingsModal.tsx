@@ -512,8 +512,8 @@ export function SettingsModal({
                   </div>
                 </div>
 
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
+                  <p className="text-xs text-gray-800 dark:text-gray-200">
                     💡 Tip: Toggle off event types you don&apos;t want to see in the alarm keypad. More event types can be added in the future.
                   </p>
                 </div>
@@ -567,7 +567,7 @@ export function SettingsModal({
                         }
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        useTestDesign2 ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-300 dark:bg-gray-700'
+                        useTestDesign2 ? 'bg-gray-800 dark:bg-white' : 'bg-gray-300 dark:bg-gray-700'
                       }`}
                     >
                       <span
@@ -844,12 +844,12 @@ export function SettingsModal({
                           )}
                         </div>
                         
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">🤖 Automatic Device Assignment</p>
-                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-800">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">🤖 Automatic Device Assignment</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             Devices are automatically assigned to alarm zones based on their type and capabilities.
                           </p>
-                          <ul className="text-xs text-blue-600 dark:text-blue-400 mt-2 space-y-1">
+                          <ul className="text-xs text-gray-600 dark:text-gray-400 mt-2 space-y-1">
                             <li>• <strong>Perimeter:</strong> Door contacts, window sensors, glass break detectors</li>
                             <li>• <strong>Interior:</strong> Motion sensors, occupancy sensors, PIR detectors</li>
                             <li>• <strong>Critical:</strong> Smoke detectors, panic buttons, emergency devices</li>
