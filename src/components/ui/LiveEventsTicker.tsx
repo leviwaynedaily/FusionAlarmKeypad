@@ -775,7 +775,7 @@ export function LiveEventsTicker({
           ref={rowRef}
           className="relative flex py-3 sm:py-4 lg:py-5 xl:py-6 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0rem, 0.1vw, 0.125rem)', // Ultra-tight spacing - almost touching
+            gap: debugMode ? `${debugGapSize}rem` : '0rem', // Zero gap - use negative margins for overlapping
             paddingLeft: 'clamp(0.5rem, 2vw, 3rem)',
             paddingRight: 'clamp(0.5rem, 2vw, 3rem)'
           }}
@@ -1297,10 +1297,11 @@ export function LiveEventsTicker({
               <button
                 key={event.id || idx}
                 onClick={() => setSelected(event)}
-                className="group flex flex-col items-center scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105 flex-shrink-0"
+                className="group flex flex-col items-center scroll-snap-start focus:outline-none transition-all duration-200 hover:scale-105 flex-shrink-0 m-0 p-0"
                 style={{ 
                   width: 'clamp(100px, 15vw, 240px)',
-                  minWidth: 'clamp(100px, 15vw, 240px)'
+                  minWidth: 'clamp(100px, 15vw, 240px)',
+                  margin: debugMode ? (debugGapSize === 0 ? '0 -1px' : '0') : '0 -2px' // Aggressive negative margin for close spacing
                 }}
                 title={`${deviceName} – ${primaryLabel}: ${secondaryLabel} at ${formatRelativeTime(event.timestamp ? new Date(event.timestamp).getTime() : Date.now())}`}
               >
@@ -1310,16 +1311,8 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Seamless timeline with optimized borders */}
-                  <div className={`overflow-hidden transition-colors duration-200 bg-gray-50 dark:bg-gray-800 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 ${
-                    idx === 0 && idx === filteredEvents.length - 1 
-                      ? 'rounded-xl border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Single item - full border
-                      : idx === 0 
-                      ? 'rounded-l-xl border-t border-l border-b border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // First item - no right border
-                      : idx === filteredEvents.length - 1 
-                      ? 'rounded-r-xl border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Last item - full border
-                      : 'border-t border-l border-b border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Middle items - no right border for seamless connection
-                  }`}
+                  {/* Image or Icon Container - Close timeline with rounded corners */}
+                  <div className="overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 rounded-lg"
                     style={{
                       width: 'clamp(70px, 12vw, 180px)',
                       height: 'clamp(44px, 8vw, 112px)'
