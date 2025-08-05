@@ -775,7 +775,7 @@ export function LiveEventsTicker({
           ref={rowRef}
           className="relative flex py-3 sm:py-4 lg:py-5 xl:py-6 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0.0625rem, 0.15vw, 0.25rem)', // Much tighter spacing for seamless timeline
+            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0rem, 0.1vw, 0.125rem)', // Ultra-tight spacing - almost touching
             paddingLeft: 'clamp(0.5rem, 2vw, 3rem)',
             paddingRight: 'clamp(0.5rem, 2vw, 3rem)'
           }}
@@ -1310,15 +1310,15 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Timeline style with conditional rounding */}
-                  <div className={`overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800 ${
+                  {/* Image or Icon Container - Seamless timeline with optimized borders */}
+                  <div className={`overflow-hidden transition-colors duration-200 bg-gray-50 dark:bg-gray-800 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 ${
                     idx === 0 && idx === filteredEvents.length - 1 
-                      ? 'rounded-xl' // Single item - round all corners
+                      ? 'rounded-xl border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Single item - full border
                       : idx === 0 
-                      ? 'rounded-l-xl rounded-r-md' // First item - round left, slight round right
+                      ? 'rounded-l-xl border-t border-l border-b border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // First item - no right border
                       : idx === filteredEvents.length - 1 
-                      ? 'rounded-r-xl rounded-l-md' // Last item - round right, slight round left
-                      : 'rounded-md' // Middle items - minimal rounding for timeline effect
+                      ? 'rounded-r-xl border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Last item - full border
+                      : 'border-t border-l border-b border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600' // Middle items - no right border for seamless connection
                   }`}
                     style={{
                       width: 'clamp(70px, 12vw, 180px)',
