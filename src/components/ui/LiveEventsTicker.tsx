@@ -242,6 +242,7 @@ export function LiveEventsTicker({
   const [selected, setSelected] = useState<SSEEventDisplay | null>(null);
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [debugGapSize, setDebugGapSize] = useState(0.25); // In rem units for debug adjustment
 
   // Debug logging helper
   const debugLog = (message: string, data?: any) => {
@@ -690,6 +691,62 @@ export function LiveEventsTicker({
                 <p className="text-xs">Set up alarm zones to enable zone-based filtering</p>
               </div>
             )}
+            
+            {/* Debug Mode Timeline Adjustment */}
+            {debugMode && (
+              <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-3">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🔧 Timeline Debug</h4>
+                
+                <div className="space-y-3">
+                  {/* Gap Size Adjustment */}
+                  <div>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Thumbnail Gap: {debugGapSize}rem ({debugGapSize * 16}px)
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      value={debugGapSize}
+                      onChange={(e) => setDebugGapSize(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      <span>0rem (touching)</span>
+                      <span>1rem (normal)</span>
+                      <span>2rem (wide)</span>
+                    </div>
+                  </div>
+                  
+                  {/* Quick presets */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDebugGapSize(0)}
+                      className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Touching
+                    </button>
+                    <button
+                      onClick={() => setDebugGapSize(0.25)}
+                      className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={() => setDebugGapSize(0.5)}
+                      className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Default
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 Adjust the gap between timeline thumbnails to find the perfect spacing.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -718,13 +775,19 @@ export function LiveEventsTicker({
           ref={rowRef}
           className="relative flex py-3 sm:py-4 lg:py-5 xl:py-6 bg-white dark:bg-[#0f0f0f] overflow-x-auto scrollbar-hide scroll-snap-x mandatory pointer-events-auto min-w-0"
           style={{
-            gap: 'clamp(0.25rem, 1vw, 1.5rem)',
+            gap: debugMode ? `${debugGapSize}rem` : 'clamp(0.125rem, 0.25vw, 0.5rem)', // Dynamic gap in debug mode
             paddingLeft: 'clamp(0.5rem, 2vw, 3rem)',
             paddingRight: 'clamp(0.5rem, 2vw, 3rem)'
           }}
         >
-          {/* Timeline connector line - centered */}
-          <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none transform -translate-y-1/2" />
+          {/* Timeline connector line - properly centered with image containers, adaptive opacity */}
+          <div className="absolute left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent pointer-events-none" 
+            style={{
+              top: 'calc(50% - 1.25rem)', // Center with image container middle, accounting for text below
+              transform: 'translateY(-50%)',
+              opacity: debugMode && debugGapSize < 0.3 ? 0.3 : 0.5 // More subtle when thumbnails are close
+            }} 
+          />
           {filteredEvents.map((event, idx) => {
             let type = (event.type || '').toLowerCase();
             const baseName = event.deviceName || 'Unknown Device';
@@ -1247,8 +1310,16 @@ export function LiveEventsTicker({
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900" />
                   )}
                   
-                  {/* Image or Icon Container - Larger responsive sizing for big screens */}
-                  <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800"
+                  {/* Image or Icon Container - Timeline style with conditional rounding */}
+                  <div className={`overflow-hidden border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 transition-colors duration-200 bg-gray-50 dark:bg-gray-800 ${
+                    idx === 0 && idx === filteredEvents.length - 1 
+                      ? 'rounded-xl' // Single item - round all corners
+                      : idx === 0 
+                      ? 'rounded-l-xl rounded-r-md' // First item - round left, slight round right
+                      : idx === filteredEvents.length - 1 
+                      ? 'rounded-r-xl rounded-l-md' // Last item - round right, slight round left
+                      : 'rounded-md' // Middle items - minimal rounding for timeline effect
+                  }`}
                     style={{
                       width: 'clamp(70px, 12vw, 180px)',
                       height: 'clamp(44px, 8vw, 112px)'
