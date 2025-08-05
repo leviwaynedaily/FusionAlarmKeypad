@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSSEContext } from '@/hooks/SSEContext';
 import { useAlarmKeypad } from '@/hooks/useAlarmKeypad';
 import { EventDetailsModal } from '@/components/ui/EventDetailsModal';
@@ -18,62 +18,9 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
   const alarmKeypad = useAlarmKeypad();
   const [selectedEvent, setSelectedEvent] = useState<SSEEventDisplay | null>(null);
   const [events, setEvents] = useState<SSEEventDisplay[]>([]);
-  const [allEvents, setAllEvents] = useState<SSEEventDisplay[]>([]);
-  const [loading, setLoading] = useState(false);
-
   // Use props if provided, otherwise fallback to hook data
   const activeEventFilterSettings = eventFilterSettings || alarmKeypad.eventFilterSettings;
   const activeAlarmZones = alarmZones || alarmKeypad.alarmZones;
-
-  // Enhanced fetch function to get more events for full-page view
-  const fetchExtendedEvents = useCallback(async () => {
-    if (loading) return;
-    
-    try {
-      setLoading(true);
-      const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
-      // Fetch many more events for full-page view: 500 events from last 7 days
-      const response = await fetch(`/api/events?limit=500&sinceHours=168&organizationId=${organizationId}`);
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const fetchedEvents = await response.json();
-      
-      if (fetchedEvents && Array.isArray(fetchedEvents)) {
-        // Format events similar to SSE formatting
-        const formattedEvents: SSEEventDisplay[] = fetchedEvents.map((event: any) => ({
-          id: event.id || `${Date.now()}-${Math.random()}`,
-          type: event.event_type || event.type,
-          deviceName: event.device_name || event.deviceName,
-          deviceId: event.device_id || event.deviceId,
-          spaceId: event.space_id || event.spaceId,
-          spaceName: event.space_name || event.spaceName,
-          category: event.category,
-          displayState: event.display_state || event.displayState,
-          timestamp: event.timestamp || event.created_at,
-          imageUrl: event.image_url || event.imageUrl,
-          event_data: event.event_data,
-          caption: event.caption,
-          rawEvent: event
-        }));
-        
-        setAllEvents(formattedEvents);
-      }
-    } catch (error) {
-      console.error('❌ Failed to fetch extended events:', error);
-      // Fallback to SSE events if fetch fails
-      setAllEvents(sse.recentEvents || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, sse.recentEvents]);
-
-  // Load extended events on component mount
-  useEffect(() => {
-    fetchExtendedEvents();
-  }, [fetchExtendedEvents]);
 
   // Helper function to find alarm zone for an event (exact copy from LiveEventsTicker)
   const getAlarmZoneForEvent = (event: SSEEventDisplay) => {
@@ -90,13 +37,13 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
 
   // Filter events based on Event Display Settings (same logic as LiveEventsTicker)
   const filteredEvents = useMemo(() => {
-    if (!activeEventFilterSettings) return allEvents;
+    if (!activeEventFilterSettings) return sse.recentEvents || [];
     
     const filterSettings = activeEventFilterSettings;
     
     // Debug info removed for performance
     
-    return allEvents.filter(event => {
+    return (sse.recentEvents || []).filter(event => {
       const eventType = event.type?.toLowerCase();
       
       // Debug logging removed for performance
@@ -154,7 +101,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
       // Default fallback - only show if "Show All Events" is enabled
       return filterSettings.showAllEvents;
     });
-  }, [allEvents, activeEventFilterSettings, activeAlarmZones]);
+  }, [sse.recentEvents, activeEventFilterSettings, activeAlarmZones]);
 
   // Dynamic time grouping function
   const getTimeGrouping = (timestamp: string | undefined): string => {
@@ -392,7 +339,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
               </h1>
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {loading ? 'Loading...' : `${totalFilteredEvents} events (filtered)`}
+              {totalFilteredEvents} events (filtered)
             </div>
           </div>
         </div>
@@ -401,17 +348,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
       {/* Events Grid with Time Grouping */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin w-16 h-16 mx-auto mb-4 border-4 border-gray-200 dark:border-gray-700 border-t-gray-600 dark:border-t-gray-300 rounded-full"></div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Loading Events...
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Fetching recent events from the database.
-              </p>
-            </div>
-          ) : groupedEvents.length === 0 ? (
+          {groupedEvents.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
