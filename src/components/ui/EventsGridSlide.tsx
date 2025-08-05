@@ -181,6 +181,22 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
     setSelectedEvent(null);
   };
 
+  // Enhanced device name display for cameras and other devices
+  const getEnhancedDeviceName = (event: SSEEventDisplay) => {
+    const deviceName = event.deviceName || 'Unknown Device';
+    
+    // Ensure camera events show "Camera" in the name if not already present
+    if (event.imageUrl || event.type?.toLowerCase().includes('intrusion') || 
+        event.type?.toLowerCase().includes('motion') || 
+        deviceName.toLowerCase().includes('cam')) {
+      if (!deviceName.toLowerCase().includes('camera') && !deviceName.toLowerCase().includes('cam')) {
+        return `${deviceName} Camera`;
+      }
+    }
+    
+    return deviceName;
+  };
+
   const getRelativeTime = (timestamp: string | undefined) => {
     if (!timestamp) return 'Unknown time';
     
@@ -319,9 +335,9 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
 
   return (
     <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Header */}
+      {/* Header - Full Width */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               {onBack && (
@@ -345,9 +361,9 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
         </div>
       </div>
 
-      {/* Events Grid with Time Grouping */}
+      {/* Events Grid with Time Grouping - Full Width */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-6">
           {groupedEvents.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -376,13 +392,13 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
                     </span>
                   </div>
                   
-                  {/* Events Grid for this time group */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-4">
+                  {/* Events Grid for this time group - Full Width Utilization */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 2xl:grid-cols-12 gap-4">
                     {group.events.map((event, index) => (
                 <div
                   key={`${event.id}-${index}`}
                   onClick={() => handleEventClick(event)}
-                  className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 min-h-[200px] sm:min-h-[180px]"
                 >
                   {/* Image or Icon */}
                   <div className="aspect-square relative overflow-hidden">
@@ -477,10 +493,10 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
                     </div>
                   </div>
 
-                  {/* Event info (always visible on mobile) */}
-                  <div className="p-3 sm:p-2 lg:hidden">
+                  {/* Event info - Camera name and details always visible */}
+                  <div className="p-3 sm:p-2">
                     <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {event.deviceName}
+                      {getEnhancedDeviceName(event)}
                     </div>
                     {(() => {
                       const { primaryLabel, secondaryLabel } = getEventLabels(event);
@@ -494,6 +510,9 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
                               {secondaryLabel}
                             </div>
                           )}
+                          <div className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
+                            {getRelativeTime(event.timestamp)}
+                          </div>
                         </>
                       );
                     })()}
