@@ -68,9 +68,26 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
       
       const eventType = event.type?.toLowerCase();
       
+      // 🆕 NEW: Image-based filtering (HIGHEST PRIORITY - runs before "Show All Events")
+      const hasImage = !!(event.imageUrl || 
+                         (event as any).thumbnail || 
+                         (event as any).thumbnailData?.data || 
+                         (event as any).event_data?.imageUrl || 
+                         (event as any).event_data?.thumbnail);
+      
+      // If "Show Only Events With Images" is enabled, hide events without images
+      if (filterSettings.showOnlyEventsWithImages && !hasImage) {
+        console.log('🚫 EventsGridSlide: Hiding event without image:', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
       // Debug logging removed for performance
       
-      // Check individual event type settings first (highest priority)
+      // Check individual event type settings (after image filtering)
       if (eventType && filterSettings.eventTypes.hasOwnProperty(eventType)) {
         const isEnabled = filterSettings.eventTypes[eventType] !== false;
         // If "Show All Events" is enabled, it can override disabled events to show them
@@ -136,33 +153,7 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
         return false;
       }
       
-      // 🆕 NEW: Image-based filtering
-      const hasImage = !!(event.imageUrl || 
-                         (event as any).thumbnail || 
-                         (event as any).thumbnailData?.data || 
-                         (event as any).event_data?.imageUrl || 
-                         (event as any).event_data?.thumbnail);
-      
-      // If "Show Only Events With Images" is enabled, hide events without images
-      if (filterSettings.showOnlyEventsWithImages && !hasImage) {
-        console.log('🚫 EventsGridSlide: Hiding event without image:', {
-          device: event.deviceName,
-          type: eventType,
-          hasImage: hasImage
-        });
-        return false;
-      }
-      
-      // If "Hide Events Without Images" is enabled, hide events without images
-      if (filterSettings.hideEventsWithoutImages && !hasImage) {
-        console.log('🚫 EventsGridSlide: Hiding event without image (hideEventsWithoutImages):', {
-          device: event.deviceName,
-          type: eventType,
-          hasImage: hasImage
-        });
-        return false;
-      }
-      
+
       // Default fallback - only show if "Show All Events" is enabled
       return filterSettings.showAllEvents;
     });

@@ -320,7 +320,36 @@ export function LiveEventsTicker({
       
       const eventType = event.type?.toLowerCase();
       
-      // ✅ FIXED: Check individual event type settings first (highest priority)
+      // 🆕 NEW: Image-based filtering (HIGHEST PRIORITY - runs before "Show All Events")
+      const hasImage = !!(event.imageUrl || 
+                         (event as any).thumbnail || 
+                         (event as any).thumbnailData?.data || 
+                         (event as any).event_data?.imageUrl || 
+                         (event as any).event_data?.thumbnail);
+      
+      debugLog('🔍 LiveEventsTicker: Image detection for event:', {
+        device: event.deviceName,
+        type: eventType,
+        hasImage: hasImage,
+        imageUrl: !!event.imageUrl,
+        thumbnail: !!(event as any).thumbnail,
+        thumbnailData: !!(event as any).thumbnailData?.data,
+        eventDataImageUrl: !!(event as any).event_data?.imageUrl,
+        eventDataThumbnail: !!(event as any).event_data?.thumbnail,
+        showOnlyEventsWithImages: eventFilterSettings.showOnlyEventsWithImages
+      });
+      
+      // If "Show Only Events With Images" is enabled, hide events without images
+      if (eventFilterSettings.showOnlyEventsWithImages && !hasImage) {
+        debugLog('🚫 LiveEventsTicker: Hiding event without image:', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
+      // ✅ FIXED: Check individual event type settings (after image filtering)
       if (eventType && eventFilterSettings.eventTypes.hasOwnProperty(eventType)) {
         const isEnabled = eventFilterSettings.eventTypes[eventType] !== false;
         // If "Show All Events" is enabled, it can override disabled events to show them
@@ -383,33 +412,7 @@ export function LiveEventsTicker({
         return false;
       }
       
-      // 🆕 NEW: Image-based filtering
-      const hasImage = !!(event.imageUrl || 
-                         (event as any).thumbnail || 
-                         (event as any).thumbnailData?.data || 
-                         (event as any).event_data?.imageUrl || 
-                         (event as any).event_data?.thumbnail);
-      
-      // If "Show Only Events With Images" is enabled, hide events without images
-      if (eventFilterSettings.showOnlyEventsWithImages && !hasImage) {
-        debugLog('🚫 LiveEventsTicker: Hiding event without image:', {
-          device: event.deviceName,
-          type: eventType,
-          hasImage: hasImage
-        });
-        return false;
-      }
-      
-      // If "Hide Events Without Images" is enabled, hide events without images
-      if (eventFilterSettings.hideEventsWithoutImages && !hasImage) {
-        debugLog('🚫 LiveEventsTicker: Hiding event without image (hideEventsWithoutImages):', {
-          device: event.deviceName,
-          type: eventType,
-          hasImage: hasImage
-        });
-        return false;
-      }
-      
+
       // ✅ FIXED: Default fallback - only show if "Show All Events" is enabled
       // This prevents unknown event types from appearing when user wants filtered events
       return eventFilterSettings.showAllEvents;

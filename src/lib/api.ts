@@ -153,7 +153,6 @@ export interface EventFilterSettings {
   showUnknownEvents: boolean; // Show/hide events with unknown or unrecognized types
   // NEW: Image-based filtering
   showOnlyEventsWithImages: boolean; // Show only events that have images/thumbnails
-  hideEventsWithoutImages: boolean; // Hide events that don't have images/thumbnails
   // Individual event type toggles (legacy - kept for backward compatibility)
   eventTypes: Record<string, boolean>; // eventType -> enabled
   // Category level toggles for bulk operations
