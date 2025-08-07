@@ -108,7 +108,11 @@ export async function insertEvent(event: any, rawEvent?: any) {
     if (error) {
       console.error('[db] insertEvent error:', error);
     } else {
-      console.log('[db] Successfully inserted event:', event.deviceName);
+      console.log('[db] Successfully inserted event:', {
+        device: event.deviceName,
+        hasRawData: !!rawEvent,
+        rawDataKeys: rawEvent ? Object.keys(rawEvent).slice(0, 5) : []
+      });
     }
   } catch (err) {
     console.error('[db] insertEvent exception:', err);

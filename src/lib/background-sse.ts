@@ -319,7 +319,9 @@ class BackgroundSSEService {
           console.log('✅ Background SSE: Event saved to database:', {
             device: eventData.deviceName,
             type: eventData.type,
-            timestamp: eventData.timestamp
+            timestamp: eventData.timestamp,
+            hasRawData: !!rawEvent,
+            rawDataSize: rawEvent ? JSON.stringify(rawEvent).length : 0
           });
           
           // Check for alarm zone state changes - support both device events and direct alarm zone events
