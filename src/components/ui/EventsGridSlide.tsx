@@ -44,6 +44,28 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
     // Debug info removed for performance
     
     return (sse.recentEvents || []).filter(event => {
+      // 🔒 LOCATION FILTERING: Double-check location filtering as defensive measure
+      try {
+        const storedLocation = localStorage.getItem('selected_location') || 
+                              localStorage.getItem('fusion_selected_location');
+        if (storedLocation) {
+          const locationData = JSON.parse(storedLocation);
+          const selectedLocationId = locationData.id;
+          
+          // If event has locationId and it doesn't match selected location, filter it out
+          if (event.locationId && selectedLocationId && event.locationId !== selectedLocationId) {
+            console.log('🔒 EventsGridSlide: Filtering out event from different location:', {
+              eventLocationId: event.locationId,
+              selectedLocationId: selectedLocationId,
+              eventDevice: event.deviceName
+            });
+            return false;
+          }
+        }
+      } catch (e) {
+        // Continue if we can't parse location data
+      }
+      
       const eventType = event.type?.toLowerCase();
       
       // Debug logging removed for performance

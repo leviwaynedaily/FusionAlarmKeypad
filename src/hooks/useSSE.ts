@@ -167,7 +167,27 @@ export function useSSE() {
       
       globalDebugLog('🔍 SSE: Loading recent events from database...');
       const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || '';
-      const response = await fetch(`/api/events?limit=200&sinceHours=72&organizationId=${organizationId}`);
+      
+      // 🔒 LOCATION FILTERING: Get selected location for proper event filtering
+      let locationId = '';
+      try {
+        // Try multiple possible location storage keys for compatibility
+        const storedLocation = localStorage.getItem('selected_location') || 
+                              localStorage.getItem('fusion_selected_location');
+        if (storedLocation) {
+          const locationData = JSON.parse(storedLocation);
+          locationId = locationData.id || '';
+          globalDebugLog('🔍 SSE: Filtering events for location:', locationData.name, 'ID:', locationId);
+        }
+      } catch (e) {
+        globalDebugLog('🔍 SSE: Could not parse stored location, loading all events for organization');
+      }
+      
+      // Build API URL with location filtering
+      const apiUrl = `/api/events?limit=200&sinceHours=72&organizationId=${organizationId}${locationId ? `&locationId=${locationId}` : ''}`;
+      globalDebugLog('🔍 SSE: Loading events from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
        
        if (!response.ok) {
          throw new Error(`API error: ${response.status}`);
