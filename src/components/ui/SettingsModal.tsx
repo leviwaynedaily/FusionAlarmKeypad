@@ -401,6 +401,92 @@ export function SettingsModal({
                   </div>
                 </div>
 
+                {/* Global Event Filtering Options */}
+                <div className="space-y-3 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Global Filtering Options:
+                  </h4>
+                  
+                  {/* Unknown Events Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">❓ Show Unknown Events</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Display events with unrecognized types</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onEventFilterSettingsChange({
+                          ...eventFilterSettings,
+                          showUnknownEvents: !eventFilterSettings.showUnknownEvents
+                        });
+                      }}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                        eventFilterSettings.showUnknownEvents ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          eventFilterSettings.showUnknownEvents ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Show Only Events With Images Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">📸 Show Only Events With Images</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Hide events without images/thumbnails</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onEventFilterSettingsChange({
+                          ...eventFilterSettings,
+                          showOnlyEventsWithImages: !eventFilterSettings.showOnlyEventsWithImages,
+                          // Auto-disable the opposite setting
+                          hideEventsWithoutImages: eventFilterSettings.showOnlyEventsWithImages ? eventFilterSettings.hideEventsWithoutImages : false
+                        });
+                      }}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                        eventFilterSettings.showOnlyEventsWithImages ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          eventFilterSettings.showOnlyEventsWithImages ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Hide Events Without Images Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">🚫 Hide Events Without Images</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Alternative to above - same effect</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onEventFilterSettingsChange({
+                          ...eventFilterSettings,
+                          hideEventsWithoutImages: !eventFilterSettings.hideEventsWithoutImages,
+                          // Auto-disable the opposite setting
+                          showOnlyEventsWithImages: eventFilterSettings.hideEventsWithoutImages ? eventFilterSettings.showOnlyEventsWithImages : false
+                        });
+                      }}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
+                        eventFilterSettings.hideEventsWithoutImages ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          eventFilterSettings.hideEventsWithoutImages ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Event Type Toggles */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -513,9 +599,12 @@ export function SettingsModal({
                 </div>
 
                 <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
-                  <p className="text-xs text-gray-800 dark:text-gray-200">
-                    💡 Tip: Toggle off event types you don&apos;t want to see in the alarm keypad. More event types can be added in the future.
-                  </p>
+                  <div className="space-y-2 text-xs text-gray-800 dark:text-gray-200">
+                    <p>💡 <strong>Tip:</strong> Toggle off event types you don&apos;t want to see in the alarm keypad.</p>
+                    <p>📸 <strong>Image Filtering:</strong> Use "Show Only Events With Images" to see only camera events with thumbnails.</p>
+                    <p>❓ <strong>Unknown Events:</strong> Toggle off to hide unrecognized event types for a cleaner timeline.</p>
+                    <p>🔧 <strong>Advanced:</strong> Visit Event Timeline Management for more detailed filtering options.</p>
+                  </div>
                 </div>
                 </div>
               )}
