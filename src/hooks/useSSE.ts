@@ -177,7 +177,7 @@ export function useSSE() {
         if (storedLocation) {
           const locationData = JSON.parse(storedLocation);
           locationId = locationData.id || '';
-          globalDebugLog('🔍 SSE: Filtering events for location:', locationData.name, 'ID:', locationId);
+          globalDebugLog(`🔍 SSE: Filtering events for location: ${locationData.name} ID: ${locationId}`);
         }
       } catch (e) {
         globalDebugLog('🔍 SSE: Could not parse stored location, loading all events for organization');
