@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     if (action === 'start') {
       try {
         await startBackgroundSSE({ 
-          apiKey: apiKey || process.env.FUSION_API_KEY,
+          apiKey: apiKey || process.env.NEXT_PUBLIC_FUSION_API_KEY,
           organizationId: organizationId || process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID,
         });
         status = getBackgroundSSEStatus();

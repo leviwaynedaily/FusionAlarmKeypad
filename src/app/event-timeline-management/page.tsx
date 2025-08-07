@@ -42,7 +42,7 @@ export default function EventTimelineManagementPage() {
       setLoadingEventTypes(true);
       try {
         // Get organization from localStorage or use default
-        const organizationId = localStorage.getItem('selected_organization_id') || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+        const organizationId = localStorage.getItem('selected_organization_id') || process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || '';
         const locationId = localStorage.getItem('selected_location_id');
         
         const response = await getEventTypes(organizationId, locationId || undefined);

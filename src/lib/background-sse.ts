@@ -6,10 +6,10 @@ interface BackgroundSSEConfig {
   endpoint: string;
 }
 
-// Configuration constants
-const DEFAULT_API_KEY = process.env.FUSION_API_KEY || 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU';
-const DEFAULT_ORGANIZATION_ID = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
-const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || 'https://app.getfusion.io';
+// Configuration constants - ALL values must come from Railway environment variables
+const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
+const DEFAULT_ORGANIZATION_ID = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || '';
+const DEFAULT_BASE_URL = process.env.NEXT_PUBLIC_FUSION_BASE_URL || '';
 
 class BackgroundSSEService {
   private eventSource: any = null;
@@ -68,13 +68,28 @@ class BackgroundSSEService {
       return;
     }
 
+    // 🔒 VALIDATION: Ensure all required config values are present
+    if (!config.apiKey || !config.organizationId || !config.endpoint) {
+      const missingVars = [];
+      if (!config.apiKey) missingVars.push('NEXT_PUBLIC_FUSION_API_KEY');
+      if (!config.organizationId) missingVars.push('NEXT_PUBLIC_FUSION_ORGANIZATION_ID');
+      if (!config.endpoint) missingVars.push('NEXT_PUBLIC_FUSION_BASE_URL');
+      
+      const errorMsg = `❌ Background SSE: Missing required Railway environment variables: ${missingVars.join(', ')}`;
+      console.error(errorMsg);
+      this.lastError = errorMsg;
+      this.addConnectionEvent('error', errorMsg);
+      throw new Error(errorMsg);
+    }
+
     this.config = config;
     this.startTime = Date.now();
     this.lastError = null;
     
     console.log('🔧 Starting Background SSE Service...', {
       endpoint: config.endpoint,
-      organizationId: config.organizationId
+      organizationId: config.organizationId,
+      hasApiKey: !!config.apiKey
     });
 
     this.addConnectionEvent('connected', 'Service started');

@@ -46,7 +46,7 @@ export default function SSEDebugPage() {
     setIsClientMounted(true);
     
     // 🔥 FIX: Force the working API key instead of using environment variables
-    const workingApiKey = 'vjInQXtpHBJWdFUWpCXlPLxkHtMBePTZstbbqgZolRhuDsHDMBbIeWRRhemnZerU';
+    const workingApiKey = process.env.NEXT_PUBLIC_FUSION_API_KEY || '';
     setApiKey(workingApiKey);
     setHasApiKeyFromEnv(!!process.env.NEXT_PUBLIC_FUSION_API_KEY);
     
@@ -70,7 +70,7 @@ export default function SSEDebugPage() {
     
     // Set a default organization ID since it's implicit in the API key
     if (!savedOrgId && !mainAppOrg) {
-      setOrganizationId('GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK');
+      setOrganizationId(process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || '');
     }
   }, []);
 

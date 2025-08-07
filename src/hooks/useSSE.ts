@@ -166,7 +166,7 @@ export function useSSE() {
       setIsLoading(true);
       
       globalDebugLog('🔍 SSE: Loading recent events from database...');
-      const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || 'GF1qXccUcdNJbIkUAbYR9SKAEwVonZZK';
+      const organizationId = process.env.NEXT_PUBLIC_FUSION_ORGANIZATION_ID || '';
       const response = await fetch(`/api/events?limit=200&sinceHours=72&organizationId=${organizationId}`);
        
        if (!response.ok) {
