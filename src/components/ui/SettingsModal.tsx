@@ -442,9 +442,7 @@ export function SettingsModal({
                       onClick={() => {
                         onEventFilterSettingsChange({
                           ...eventFilterSettings,
-                          showOnlyEventsWithImages: !eventFilterSettings.showOnlyEventsWithImages,
-                          // Clear the other image setting when this is toggled
-                          hideEventsWithoutImages: false
+                          showOnlyEventsWithImages: !eventFilterSettings.showOnlyEventsWithImages
                         });
                       }}
                       className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
