@@ -367,6 +367,49 @@ export function LiveEventsTicker({
                                isInAlarmZone; // Also include our new alarm zone detection
       if (eventFilterSettings.showAlarmZoneEvents && isAlarmZoneEvent) return true;
       
+      // 🆕 NEW: Unknown event filtering
+      const isUnknownEvent = !eventType || 
+                             eventType === 'unknown' || 
+                             eventType.includes('unknown') || 
+                             !event.category || 
+                             event.category === 'unknown';
+      
+      if (isUnknownEvent && !eventFilterSettings.showUnknownEvents) {
+        debugLog('🚫 LiveEventsTicker: Hiding unknown event:', {
+          type: eventType,
+          category: event.category,
+          device: event.deviceName
+        });
+        return false;
+      }
+      
+      // 🆕 NEW: Image-based filtering
+      const hasImage = !!(event.imageUrl || 
+                         (event as any).thumbnail || 
+                         (event as any).thumbnailData?.data || 
+                         (event as any).event_data?.imageUrl || 
+                         (event as any).event_data?.thumbnail);
+      
+      // If "Show Only Events With Images" is enabled, hide events without images
+      if (eventFilterSettings.showOnlyEventsWithImages && !hasImage) {
+        debugLog('🚫 LiveEventsTicker: Hiding event without image:', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
+      // If "Hide Events Without Images" is enabled, hide events without images
+      if (eventFilterSettings.hideEventsWithoutImages && !hasImage) {
+        debugLog('🚫 LiveEventsTicker: Hiding event without image (hideEventsWithoutImages):', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
       // ✅ FIXED: Default fallback - only show if "Show All Events" is enabled
       // This prevents unknown event types from appearing when user wants filtered events
       return eventFilterSettings.showAllEvents;

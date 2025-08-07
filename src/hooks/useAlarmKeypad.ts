@@ -81,6 +81,10 @@ export function useAlarmKeypad() {
     showAllEvents: true,
     showOnlyAlarmZoneEvents: false,
     selectedAlarmZones: [], // Empty = show all alarm zones
+    // NEW: Unknown event and image filtering defaults
+    showUnknownEvents: false, // Default to hiding unknown events
+    showOnlyEventsWithImages: false, // Default to showing all events regardless of images
+    hideEventsWithoutImages: false, // Default to showing events without images
     eventTypes: {},
     categories: {},
     eventTypeSettings: {}

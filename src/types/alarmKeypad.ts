@@ -143,6 +143,11 @@ export interface EventFilterSettings {
   // NEW: Alarm zone specific filtering
   showOnlyAlarmZoneEvents: boolean; // Show only events from devices in alarm zones
   selectedAlarmZones: string[]; // Empty array = show all alarm zones, populated = show only selected zones
+  // NEW: Unknown event filtering
+  showUnknownEvents: boolean; // Show/hide events with unknown or unrecognized types
+  // NEW: Image-based filtering
+  showOnlyEventsWithImages: boolean; // Show only events that have images/thumbnails
+  hideEventsWithoutImages: boolean; // Hide events that don't have images/thumbnails
   // Individual event type toggles (legacy - kept for backward compatibility)
   eventTypes: Record<string, boolean>; // eventType -> enabled
   // Category level toggles for bulk operations

@@ -16,6 +16,10 @@ export default function EventTimelineManagementPage() {
     showAllEvents: true,
     showOnlyAlarmZoneEvents: false,
     selectedAlarmZones: [],
+    // NEW: Unknown event and image filtering defaults
+    showUnknownEvents: false, // Default to hiding unknown events
+    showOnlyEventsWithImages: false, // Default to showing all events regardless of images
+    hideEventsWithoutImages: false, // Default to showing events without images
     eventTypes: {},
     categories: {},
     eventTypeSettings: {}
@@ -150,7 +154,8 @@ export default function EventTimelineManagementPage() {
             </div>
             
             {/* Global Controls */}
-            <div className="flex items-center space-x-4">
+            <div className="space-y-4">
+              {/* Show All Events Toggle */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Show All Events
@@ -169,6 +174,89 @@ export default function EventTimelineManagementPage() {
                     }`}
                   />
                 </button>
+              </div>
+
+              {/* Unknown Events Toggle */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Show Unknown Events
+                </label>
+                <button
+                  onClick={() => setEventFilterSettings(prev => ({ ...prev, showUnknownEvents: !prev.showUnknownEvents }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    eventFilterSettings.showUnknownEvents 
+                      ? 'bg-blue-600' 
+                      : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      eventFilterSettings.showUnknownEvents ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Events with unrecognized types
+                </span>
+              </div>
+
+              {/* Image Filtering Toggles */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Show Only Events With Images
+                  </label>
+                  <button
+                    onClick={() => setEventFilterSettings(prev => ({ 
+                      ...prev, 
+                      showOnlyEventsWithImages: !prev.showOnlyEventsWithImages,
+                      // Auto-disable the opposite setting
+                      hideEventsWithoutImages: prev.showOnlyEventsWithImages ? prev.hideEventsWithoutImages : false
+                    }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      eventFilterSettings.showOnlyEventsWithImages 
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        eventFilterSettings.showOnlyEventsWithImages ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Hide events without images/thumbnails
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Hide Events Without Images
+                  </label>
+                  <button
+                    onClick={() => setEventFilterSettings(prev => ({ 
+                      ...prev, 
+                      hideEventsWithoutImages: !prev.hideEventsWithoutImages,
+                      // Auto-disable the opposite setting
+                      showOnlyEventsWithImages: prev.hideEventsWithoutImages ? prev.showOnlyEventsWithImages : false
+                    }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      eventFilterSettings.hideEventsWithoutImages 
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        eventFilterSettings.hideEventsWithoutImages ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Alternative to above - same effect
+                  </span>
+                </div>
               </div>
             </div>
           </div>

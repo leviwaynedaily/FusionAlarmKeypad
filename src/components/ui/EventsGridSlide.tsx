@@ -120,6 +120,49 @@ export const EventsGridSlide: React.FC<EventsGridSlideProps> = ({ onBack, eventF
         return true;
       }
       
+      // 🆕 NEW: Unknown event filtering
+      const isUnknownEvent = !eventType || 
+                             eventType === 'unknown' || 
+                             eventType.includes('unknown') || 
+                             !event.category || 
+                             event.category === 'unknown';
+      
+      if (isUnknownEvent && !filterSettings.showUnknownEvents) {
+        console.log('🚫 EventsGridSlide: Hiding unknown event:', {
+          type: eventType,
+          category: event.category,
+          device: event.deviceName
+        });
+        return false;
+      }
+      
+      // 🆕 NEW: Image-based filtering
+      const hasImage = !!(event.imageUrl || 
+                         (event as any).thumbnail || 
+                         (event as any).thumbnailData?.data || 
+                         (event as any).event_data?.imageUrl || 
+                         (event as any).event_data?.thumbnail);
+      
+      // If "Show Only Events With Images" is enabled, hide events without images
+      if (filterSettings.showOnlyEventsWithImages && !hasImage) {
+        console.log('🚫 EventsGridSlide: Hiding event without image:', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
+      // If "Hide Events Without Images" is enabled, hide events without images
+      if (filterSettings.hideEventsWithoutImages && !hasImage) {
+        console.log('🚫 EventsGridSlide: Hiding event without image (hideEventsWithoutImages):', {
+          device: event.deviceName,
+          type: eventType,
+          hasImage: hasImage
+        });
+        return false;
+      }
+      
       // Default fallback - only show if "Show All Events" is enabled
       return filterSettings.showAllEvents;
     });
