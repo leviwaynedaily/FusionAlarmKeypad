@@ -601,7 +601,7 @@ export function SettingsModal({
                 <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
                   <div className="space-y-2 text-xs text-gray-800 dark:text-gray-200">
                     <p>💡 <strong>Tip:</strong> Toggle off event types you don&apos;t want to see in the alarm keypad.</p>
-                    <p>📸 <strong>Image Filtering:</strong> Use "Show Only Events With Images" to see only camera events with thumbnails.</p>
+                    <p>📸 <strong>Image Filtering:</strong> Use &quot;Show Only Events With Images&quot; to see only camera events with thumbnails.</p>
                     <p>❓ <strong>Unknown Events:</strong> Toggle off to hide unrecognized event types for a cleaner timeline.</p>
                     <p>🔧 <strong>Advanced:</strong> Visit Event Timeline Management for more detailed filtering options.</p>
                   </div>
