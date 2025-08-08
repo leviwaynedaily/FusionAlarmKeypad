@@ -184,16 +184,30 @@ export function useSSE() {
       }
       
       // Build API URL with location filtering
-      const apiUrl = `/api/events?limit=200&sinceHours=72&organizationId=${organizationId}${locationId ? `&locationId=${locationId}` : ''}`;
+      const baseUrl = `/api/events?limit=200&sinceHours=72&organizationId=${organizationId}`;
+      const apiUrl = locationId ? `${baseUrl}&locationId=${locationId}` : baseUrl;
       globalDebugLog('🔍 SSE: Loading events from:', apiUrl);
       
       const response = await fetch(apiUrl);
-       
-       if (!response.ok) {
-         throw new Error(`API error: ${response.status}`);
-       }
-       
-       const events = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      let events = await response.json();
+      
+      // Fallback: if too few events with location filter, try without it
+      if (locationId && Array.isArray(events) && events.length <= 2) {
+        globalDebugLog('🔍 SSE: Very few events returned with location filter, refetching without location...');
+        const refetch = await fetch(baseUrl);
+        if (refetch.ok) {
+          const fallbackEvents = await refetch.json();
+          if (Array.isArray(fallbackEvents) && fallbackEvents.length > events.length) {
+            events = fallbackEvents;
+            globalDebugLog(`🔍 SSE: Using unscoped events fallback: ${events.length} events`);
+          }
+        }
+      }
 
       if (events && Array.isArray(events)) {
         globalDebugLog(`🔍 SSE: Database returned ${events.length} events`);

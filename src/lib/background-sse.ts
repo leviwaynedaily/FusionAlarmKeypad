@@ -290,7 +290,7 @@ class BackgroundSSEService {
       }
 
       const eventData = {
-        organizationId: rawEvent.organizationId || 'unknown',
+        organizationId: this.config?.organizationId || rawEvent.organizationId || 'unknown',
         locationId: rawEvent.locationId,
         spaceId: rawEvent.spaceId,
         deviceId: rawEvent.deviceId,
