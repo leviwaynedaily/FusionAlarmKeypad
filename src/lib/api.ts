@@ -142,6 +142,16 @@ export interface EventTypeDisplaySettings {
   customIcon: string; // emoji or icon identifier
 }
 
+// NEW: Chime settings for per-event audible notifications
+export interface ChimeSettings {
+  enabled: boolean;
+  volume: number; // 0..1
+  onlyWhenVisible: boolean;
+  rateLimitMs: number; // Minimum gap between chimes
+  quietHours: { enabled: boolean; start: string; end: string }; // 24h format HH:mm
+  eventTypeChimes: Record<string, { enabled: boolean; soundId: string; volume?: number }>;
+}
+
 export interface EventFilterSettings {
   showSpaceEvents: boolean;
   showAlarmZoneEvents: boolean;
@@ -539,6 +549,8 @@ export interface UserPreferences {
   eventFilterSettings: EventFilterSettings;
   customEventNames: Record<string, string>;
   armingDelaySeconds: number; // Default 20 seconds delay before alarm zones are actually armed
+  // NEW: Chime settings for audible notifications
+  chimeSettings?: ChimeSettings;
 }
 
 export const saveUserPreferences = async (
@@ -555,7 +567,9 @@ export const saveUserPreferences = async (
       locationId,
       userId,
       eventFilterSettings: preferences.eventFilterSettings,
-      customEventNames: preferences.customEventNames
+      customEventNames: preferences.customEventNames,
+      // NEW
+      chimeSettings: preferences.chimeSettings,
     })
   });
 

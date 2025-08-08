@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SSEEventDisplay } from '@/hooks/useSSE';
 import { EventDetailsModal } from './EventDetailsModal';
 import { formatRelativeTime } from '@/lib/alarmKeypadUtils';
+import { useChime } from '@/hooks/useChime';
 
 // Import necessary types
 import { Camera, Space, EventFilterSettings, AlarmZone } from '@/lib/api';
@@ -291,11 +292,16 @@ export function LiveEventsTicker({
     ) || null;
   };
 
+  const [filteredEvents, setFilteredEvents] = useState<SSEEventDisplay[]>([]);
+  const lastSeenIdsRef = useRef<Set<string>>(new Set());
+  const didHydrateRef = useRef(false);
+  const chime = useChime();
+
   // Filter events based on settings
-  const filteredEvents = useMemo(() => {
-    if (!eventFilterSettings) return recentEvents;
+  useEffect(() => {
+    if (!eventFilterSettings) return;
     
-    return recentEvents.filter(event => {
+    const filtered = recentEvents.filter(event => {
       // 🔒 LOCATION FILTERING: Double-check location filtering as defensive measure
       try {
         const storedLocation = localStorage.getItem('selected_location') || 
@@ -416,6 +422,27 @@ export function LiveEventsTicker({
       // ✅ FIXED: Default fallback - only show if "Show All Events" is enabled
       // This prevents unknown event types from appearing when user wants filtered events
       return eventFilterSettings.showAllEvents;
+    });
+
+    setFilteredEvents(filtered);
+
+    // Trigger chime for truly new events that pass filters (skip initial hydration)
+    if (!didHydrateRef.current) {
+      didHydrateRef.current = true;
+      // Seed lastSeen with current to avoid chimes at load
+      filtered.forEach(ev => {
+        if (ev.id) lastSeenIdsRef.current.add(String(ev.id));
+      });
+      return;
+    }
+
+    filtered.forEach(ev => {
+      const id = String(ev.id || `${ev.timestamp}-${ev.deviceName}-${ev.type}`);
+      if (!lastSeenIdsRef.current.has(id)) {
+        lastSeenIdsRef.current.add(id);
+        const typeKey = (ev.type || '').toLowerCase();
+        chime.playForEvent(ev, typeKey);
+      }
     });
   }, [recentEvents, eventFilterSettings, alarmZones]);
 

@@ -969,6 +969,8 @@ function AlarmKeypad() {
           onDebugModeChange={handleDebugModeChange}
           eventFilterSettings={alarmKeypad.eventFilterSettings}
           onEventFilterSettingsChange={alarmKeypad.updateEventFilterSettings}
+          chimeSettings={alarmKeypad.chimeSettings}
+          onChimeSettingsChange={alarmKeypad.updateChimeSettings}
           useTestDesign={alarmKeypad.useTestDesign}
           onUseTestDesignChange={(value) => {
             alarmKeypad.setUseTestDesign(value);
@@ -991,7 +993,7 @@ function AlarmKeypad() {
           onLocationChange={() => {
             // Handle location change if needed
           }}
-          requireApiKey={!FUSION_API_KEY}
+          requireApiKey={requireApiKey}
         />
 
         {/* Zone Warning Modal */}
@@ -1210,6 +1212,8 @@ function AlarmKeypad() {
         onDebugModeChange={handleDebugModeChange}
         eventFilterSettings={alarmKeypad.eventFilterSettings}
         onEventFilterSettingsChange={alarmKeypad.updateEventFilterSettings}
+        chimeSettings={alarmKeypad.chimeSettings}
+        onChimeSettingsChange={alarmKeypad.updateChimeSettings}
         useTestDesign={alarmKeypad.useTestDesign}
          onUseTestDesignChange={alarmKeypad.setUseTestDesign}
          useTestDesign2={alarmKeypad.useTestDesign2}

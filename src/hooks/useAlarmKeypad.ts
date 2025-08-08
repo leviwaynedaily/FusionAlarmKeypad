@@ -18,7 +18,9 @@ import {
   setAlarmZoneArmedState,
   getCameras,
   saveUserPreferences,
-  loadUserPreferences
+  loadUserPreferences,
+  // NEW
+  ChimeSettings
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { analytics } from '@/lib/analytics';
@@ -87,6 +89,16 @@ export function useAlarmKeypad() {
     eventTypes: {},
     categories: {},
     eventTypeSettings: {}
+  });
+
+  // Chime settings state
+  const [chimeSettings, setChimeSettings] = useState<ChimeSettings>({
+    enabled: false,
+    volume: 0.6,
+    onlyWhenVisible: true,
+    rateLimitMs: 3000,
+    quietHours: { enabled: false, start: '22:00', end: '07:00' },
+    eventTypeChimes: {}
   });
 
   // Save showLiveEvents setting to localStorage
@@ -1385,6 +1397,135 @@ export function useAlarmKeypad() {
     });
   };
 
+  // Chime settings management
+  const updateChimeSettings = async (partial: Partial<ChimeSettings>) => {
+    const updated = { ...chimeSettings, ...partial } as ChimeSettings;
+    setChimeSettings(updated);
+    // Save local backup for quick access by UI and chime hook
+    localStorage.setItem('chime_settings', JSON.stringify(updated));
+    if (organization?.id) {
+      try {
+        await saveUserPreferences(
+          organization.id,
+          selectedLocation?.id || null,
+          {
+            eventFilterSettings,
+            customEventNames: {},
+            armingDelaySeconds,
+            chimeSettings: updated
+          },
+          'default'
+        );
+      } catch (err) {
+        logger.error('Failed to save chime settings to database:', err);
+      }
+    }
+  };
+
+  // Load event filter + chime settings from database (with localStorage fallback)
+  useEffect(() => {
+    const loadEventFilterSettings = async () => {
+      let loadedSettings: any = null;
+      let loadedChime: any = null;
+      
+      // First try to load from database if we have organization context
+      if (organization?.id) {
+        try {
+          const response = await loadUserPreferences(
+            organization.id,
+            selectedLocation?.id || null,
+            'default'
+          );
+          if (response.data?.eventFilterSettings) {
+            loadedSettings = response.data.eventFilterSettings;
+            logger.info('Event filter settings loaded from database');
+          }
+          if (response.data?.chimeSettings) {
+            loadedChime = response.data.chimeSettings;
+            logger.info('Chime settings loaded from database');
+          }
+          if (response.data?.armingDelaySeconds) {
+            setArmingDelaySeconds(response.data.armingDelaySeconds);
+            logger.info('Arming delay seconds loaded from database:', response.data.armingDelaySeconds);
+          }
+        } catch (error) {
+          logger.error('Failed to load preferences from database:', error);
+        }
+      }
+
+      // Fallback to localStorage if database load failed
+      if (!loadedSettings) {
+        const savedSettings = localStorage.getItem('event_filter_settings');
+        if (savedSettings) {
+          try {
+            loadedSettings = JSON.parse(savedSettings);
+            logger.info('Event filter settings loaded from localStorage');
+          } catch (error) {
+            logger.error('Error parsing event filter settings from localStorage:', error);
+          }
+        }
+      }
+      if (!loadedChime) {
+        const saved = localStorage.getItem('chime_settings');
+        if (saved) {
+          try {
+            loadedChime = JSON.parse(saved);
+            logger.info('Chime settings loaded from localStorage');
+          } catch (e) {
+            logger.error('Error parsing chime settings from localStorage:', e);
+          }
+        }
+      }
+
+      // Apply loaded settings with defaults
+      if (loadedSettings) {
+        const settingsWithDefaults = {
+          showSpaceEvents: true,
+          showAlarmZoneEvents: true,
+          showAllEvents: true,
+          showOnlyAlarmZoneEvents: false,
+          selectedAlarmZones: [],
+          eventTypes: {},
+          categories: {},
+          eventTypeSettings: {},
+          ...loadedSettings
+        };
+        setEventFilterSettings(settingsWithDefaults);
+      }
+
+      if (loadedChime) {
+        setChimeSettings((prev) => ({ ...prev, ...loadedChime }));
+      }
+    };
+
+    loadEventFilterSettings();
+  }, [organization?.id, selectedLocation?.id]);
+
+  // Save arming delay when it changes
+  useEffect(() => {
+    const saveArmingDelay = async () => {
+      if (organization?.id && armingDelaySeconds !== 20) { // Only save if different from default
+        try {
+          await saveUserPreferences(
+            organization.id,
+            selectedLocation?.id || null,
+            {
+              eventFilterSettings: eventFilterSettings,
+              customEventNames: {},
+              armingDelaySeconds: armingDelaySeconds
+            },
+            'default'
+          );
+          logger.info('Arming delay saved to database:', armingDelaySeconds);
+        } catch (error) {
+          logger.error('Failed to save arming delay to database:', error);
+        }
+      }
+    };
+
+    saveArmingDelay();
+  }, [armingDelaySeconds, organization?.id, selectedLocation?.id]);
+
   return {
     // Core state
     apiKey,
@@ -1441,6 +1582,9 @@ export function useAlarmKeypad() {
     // Event filtering
     eventFilterSettings,
     updateEventFilterSettings,
+    // NEW
+    chimeSettings,
+    updateChimeSettings,
     
     // Alarm zones
     alarmZones,

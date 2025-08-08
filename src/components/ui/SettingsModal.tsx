@@ -41,6 +41,10 @@ interface SettingsModalProps {
   eventFilterSettings: EventFilterSettings;
   onEventFilterSettingsChange: (settings: EventFilterSettings) => void;
   
+  // NEW: Chime settings
+  chimeSettings?: any;
+  onChimeSettingsChange?: (settings: any) => void;
+  
   // Design options
   useTestDesign: boolean;
   onUseTestDesignChange: (value: boolean) => void;
@@ -117,7 +121,10 @@ export function SettingsModal({
   onTemperatureUnitChange,
   armingDelaySeconds = 20,
   onArmingDelaySecondsChange,
-  requireApiKey = false
+  requireApiKey = false,
+  // NEW props
+  chimeSettings,
+  onChimeSettingsChange,
 }: SettingsModalProps) {
 
   if (!open) return null;
@@ -458,6 +465,67 @@ export function SettingsModal({
                   </div>
                 </div>
 
+                {/* NEW: Chime Notifications */}
+                <div className="space-y-3 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Chime Notifications</h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">🔔 Enable Chimes</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Play a short sound when selected events arrive</p>
+                    </div>
+                    <button
+                      onClick={() => onChimeSettingsChange?.({ ...chimeSettings, enabled: !chimeSettings?.enabled })}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.enabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">🔊 Volume</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Controls chime loudness</p>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={chimeSettings?.volume ?? 0.6}
+                      onChange={(e) => onChimeSettingsChange?.({ ...chimeSettings, volume: parseFloat(e.target.value) })}
+                      className="w-40"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-900 dark:text-white">🪟 Only When Tab Visible</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Avoid chimes when app is in background</p>
+                    </div>
+                    <button
+                      onClick={() => onChimeSettingsChange?.({ ...chimeSettings, onlyWhenVisible: !chimeSettings?.onlyWhenVisible })}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.onlyWhenVisible ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.onlyWhenVisible ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => onChimeSettingsChange?.({ ...chimeSettings })}
+                      className="px-3 py-2 text-sm border rounded-md bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+                    >
+                      Save Chime Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Fire a custom event so a chime hook can play a test
+                        window.dispatchEvent(new CustomEvent('playTestChime'));
+                      }}
+                      className="px-3 py-2 text-sm border rounded-md bg-[#22c55f]/10 text-[#22c55f] border-[#22c55f]"
+                    >
+                      Play Test Chime
+                    </button>
+                  </div>
+                </div>
+
                 {/* Event Type Toggles */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -470,24 +538,33 @@ export function SettingsModal({
                       <p className="text-sm text-gray-900 dark:text-white">🔗 Connection</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Device connection status events</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newEventTypes = { ...eventFilterSettings.eventTypes, 'connection': !(eventFilterSettings.eventTypes['connection'] ?? true) };
-                        onEventFilterSettingsChange({
-                          ...eventFilterSettings,
-                          eventTypes: newEventTypes
-                        });
-                      }}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        (eventFilterSettings.eventTypes['connection'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          (eventFilterSettings.eventTypes['connection'] ?? true) ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Chime</div>
+                      <button
+                        onClick={() => {
+                          const newEventTypes = { ...eventFilterSettings.eventTypes, 'connection': !(eventFilterSettings.eventTypes['connection'] ?? true) };
+                          onEventFilterSettingsChange({ ...eventFilterSettings, eventTypes: newEventTypes });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${(eventFilterSettings.eventTypes['connection'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${(eventFilterSettings.eventTypes['connection'] ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const cur = chimeSettings?.eventTypeChimes?.['connection']?.enabled ?? false;
+                          onChimeSettingsChange?.({
+                            ...chimeSettings,
+                            eventTypeChimes: {
+                              ...(chimeSettings?.eventTypeChimes || {}),
+                              ['connection']: { enabled: !cur, soundId: 'beep' }
+                            }
+                          });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.eventTypeChimes?.['connection']?.enabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.eventTypeChimes?.['connection']?.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Device Check-in */}
@@ -496,24 +573,33 @@ export function SettingsModal({
                       <p className="text-sm text-gray-900 dark:text-white">📋 Device Check-in</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Device heartbeat and status check events</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newEventTypes = { ...eventFilterSettings.eventTypes, 'device check-in': !(eventFilterSettings.eventTypes['device check-in'] ?? true) };
-                        onEventFilterSettingsChange({
-                          ...eventFilterSettings,
-                          eventTypes: newEventTypes
-                        });
-                      }}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        (eventFilterSettings.eventTypes['device check-in'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          (eventFilterSettings.eventTypes['device check-in'] ?? true) ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Chime</div>
+                      <button
+                        onClick={() => {
+                          const newEventTypes = { ...eventFilterSettings.eventTypes, 'device check-in': !(eventFilterSettings.eventTypes['device check-in'] ?? true) };
+                          onEventFilterSettingsChange({ ...eventFilterSettings, eventTypes: newEventTypes });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${(eventFilterSettings.eventTypes['device check-in'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${(eventFilterSettings.eventTypes['device check-in'] ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const cur = chimeSettings?.eventTypeChimes?.['device check-in']?.enabled ?? false;
+                          onChimeSettingsChange?.({
+                            ...chimeSettings,
+                            eventTypeChimes: {
+                              ...(chimeSettings?.eventTypeChimes || {}),
+                              ['device check-in']: { enabled: !cur, soundId: 'beep' }
+                            }
+                          });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.eventTypeChimes?.['device check-in']?.enabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.eventTypeChimes?.['device check-in']?.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Intrusion Detected */}
@@ -522,24 +608,33 @@ export function SettingsModal({
                       <p className="text-sm text-gray-900 dark:text-white">🚨 Intrusion Detected</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Security breach and intrusion alerts</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newEventTypes = { ...eventFilterSettings.eventTypes, 'intrusion detected': !(eventFilterSettings.eventTypes['intrusion detected'] ?? true) };
-                        onEventFilterSettingsChange({
-                          ...eventFilterSettings,
-                          eventTypes: newEventTypes
-                        });
-                      }}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        (eventFilterSettings.eventTypes['intrusion detected'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          (eventFilterSettings.eventTypes['intrusion detected'] ?? true) ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Chime</div>
+                      <button
+                        onClick={() => {
+                          const newEventTypes = { ...eventFilterSettings.eventTypes, 'intrusion detected': !(eventFilterSettings.eventTypes['intrusion detected'] ?? true) };
+                          onEventFilterSettingsChange({ ...eventFilterSettings, eventTypes: newEventTypes });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${(eventFilterSettings.eventTypes['intrusion detected'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${(eventFilterSettings.eventTypes['intrusion detected'] ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const cur = chimeSettings?.eventTypeChimes?.['intrusion detected']?.enabled ?? false;
+                          onChimeSettingsChange?.({
+                            ...chimeSettings,
+                            eventTypeChimes: {
+                              ...(chimeSettings?.eventTypeChimes || {}),
+                              ['intrusion detected']: { enabled: !cur, soundId: 'beep' }
+                            }
+                          });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.eventTypeChimes?.['intrusion detected']?.enabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.eventTypeChimes?.['intrusion detected']?.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* State Changed */}
@@ -548,24 +643,33 @@ export function SettingsModal({
                       <p className="text-sm text-gray-900 dark:text-white">🔄 State Changed</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Device state and configuration changes</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newEventTypes = { ...eventFilterSettings.eventTypes, 'State Changed': !(eventFilterSettings.eventTypes['State Changed'] ?? true) };
-                        onEventFilterSettingsChange({
-                          ...eventFilterSettings,
-                          eventTypes: newEventTypes
-                        });
-                      }}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${
-                        (eventFilterSettings.eventTypes['State Changed'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          (eventFilterSettings.eventTypes['State Changed'] ?? true) ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Chime</div>
+                      <button
+                        onClick={() => {
+                          const newEventTypes = { ...eventFilterSettings.eventTypes, 'State Changed': !(eventFilterSettings.eventTypes['State Changed'] ?? true) };
+                          onEventFilterSettingsChange({ ...eventFilterSettings, eventTypes: newEventTypes });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${(eventFilterSettings.eventTypes['State Changed'] ?? true) ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${(eventFilterSettings.eventTypes['State Changed'] ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const cur = chimeSettings?.eventTypeChimes?.['State Changed']?.enabled ?? false;
+                          onChimeSettingsChange?.({
+                            ...chimeSettings,
+                            eventTypeChimes: {
+                              ...(chimeSettings?.eventTypeChimes || {}),
+                              ['State Changed']: { enabled: !cur, soundId: 'beep' }
+                            }
+                          });
+                        }}
+                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all ${chimeSettings?.eventTypeChimes?.['State Changed']?.enabled ? 'bg-[#22c55f]' : 'bg-gray-300 dark:bg-gray-700'}`}
+                      >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${chimeSettings?.eventTypeChimes?.['State Changed']?.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 

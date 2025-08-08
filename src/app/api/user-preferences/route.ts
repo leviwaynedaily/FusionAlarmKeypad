@@ -30,7 +30,9 @@ export async function GET(req: Request) {
         eventFilterSettings: data.event_filter_settings,
         customEventNames: data.custom_event_names,
         temperatureUnit: data.temperature_unit || 'fahrenheit',
-        armingDelaySeconds: data.arming_delay_seconds || 20
+        armingDelaySeconds: data.arming_delay_seconds || 20,
+        // NEW: chime settings
+        chimeSettings: data.chime_settings || null,
       } : null 
     });
   } catch (err) {
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
       custom_event_names: customEventNames || {},
       temperature_unit: temperatureUnit,
       arming_delay_seconds: armingDelaySeconds,
+      // NEW: chime settings
+      chime_settings: body.chimeSettings || null,
       updated_at: new Date().toISOString()
     };
 

@@ -135,6 +135,16 @@ export interface EventTypeDisplaySettings {
   customIcon: string; // emoji or icon identifier
 }
 
+// NEW: Chime settings for per-event audible notifications
+export interface ChimeSettings {
+  enabled: boolean;
+  volume: number; // 0..1
+  onlyWhenVisible: boolean;
+  rateLimitMs: number; // Minimum gap between chimes
+  quietHours: { enabled: boolean; start: string; end: string }; // 24h format HH:mm
+  eventTypeChimes: Record<string, { enabled: boolean; soundId: string; volume?: number }>;
+}
+
 // Event filtering options for timeline
 export interface EventFilterSettings {
   showSpaceEvents: boolean;
